@@ -1,0 +1,52 @@
+import { motion } from "motion/react";
+
+import Transaction from "~/components/Transaction";
+import TransactionButton from "~/components/TransactionButton";
+
+import { useSuspenseProposalByKey, useWalletStore } from "~/state/wallet";
+
+export type Status = "ready" | "executed" | "cancelled";
+
+export default function TransactionSection() {
+  const { currentMultisigWallet } = useWalletStore();
+  const { transactions } = useSuspenseProposalByKey(
+    currentMultisigWallet?.address,
+  );
+
+  return (
+    <div className="flex flex-1 flex-col gap-0 overflow-y-auto scroll-smooth grow pr-4 -ml-4">
+      {!transactions?.length ? (
+        <div>
+          <div className="flex flex-col justify-center items-center">
+            <img
+              src="/empty-transaction-placeholder.svg"
+              alt="No transactions yet"
+            />
+            <span className="font-semibold text-lg opacity-40">
+              No transactions yet
+            </span>
+          </div>
+        </div>
+      ) : (
+        transactions.map((data, i) => {
+          return (
+            <motion.div
+              key={data.address}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              whileHover={{
+                backgroundColor: "var(--color-trn-hover)",
+              }}
+              className="cursor-pointer p-3 rounded-[20px]"
+            >
+              <TransactionButton address={data.address} status={data.status}>
+                <Transaction {...data} />
+              </TransactionButton>
+            </motion.div>
+          );
+        })
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,12 @@
+.react-router/
+app/env.ts
+
+node_modules
+
+/.cache
+/build
+/public/build
+.env
+
+/test-ledger
+**/.DS_Store

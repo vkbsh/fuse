@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "SFProDisplay";
+  font-style: normal;
+  src: url("/fonts/SF-Pro.ttf") format("truetype");
+}
+
+@theme {
+  --color-background: #f3f3f3;
+  --color-foreground: #ebebeb;
+  --color-foreground-text: #7b7b7b;
+  --color-trn-hover: rgba(179, 179, 179, 0.24);
+  --color-hover-background: rgba(256, 256, 256, 0.2);
+  --color-hover-text: rgba(256, 256, 256, 0.3);
+  --color-grey-text: rgba(256, 256, 256, 0.4);
+
+  --color-primary-text: #1f1e1e;
+
+  /* Status */
+  --color-status-primary: #2685e1;
+  --color-status-success: #41be6b;
+  --color-status-error: #ff4a4a;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+body {
+  font-family: SFProDisplay;
+  color: var(--color-primary-text);
+  background-color: var(--color-background);
+}
+
+/* Disable arrow bar - input[type='number'] */
+input[type="number"],
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+.logo-mask {
+  mask: url(/fuse.svg) center / contain no-repeat;
+  transform: rotate3d(1, 1, 1, -70deg);
+}
