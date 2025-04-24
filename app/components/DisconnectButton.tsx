@@ -3,7 +3,6 @@ import { motion } from "motion/react";
 import Dropdown from "~/components/ui/Dropdown";
 import { IconDots } from "~/components/icons/IconDots";
 import { IconDisconnect } from "~/components/icons/IconDisconnect";
-import { ConnectWalletDialog } from "~/components/ConnectWalletDialog";
 
 import { useWalletStore } from "~/state/wallet";
 import { abbreviateAddress } from "~/utils/address";
@@ -16,16 +15,15 @@ export default function DisconnectButton() {
 
   return (
     <Dropdown
-      key="disconnect"
       align="end"
       trigger={<IconDots />}
       items={[
-        <span className="pt-2 text-sm px-2 flex flex-col gap-4">
-          {/* <ConnectWalletDialog> */}
-          <span className="cursor-pointer">Switch wallet</span>
-          {/* </ConnectWalletDialog> */}
-          <span className="">{walletAddress}</span>
-        </span>,
+        // <div
+        //   onClick={(e) => e.stopPropagation()}
+        //   className="p-2 flex items-center justify-between"
+        // >
+        //   <span className="text-sm">{walletAddress}</span>
+        // </div>,
         <motion.span
           onClick={removeWallet}
           className="cursor-pointer flex flex-row items-center p-2 gap-8"

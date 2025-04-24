@@ -50,16 +50,22 @@ export function createVaultTransactionExecuteInstruction({
   memberAddress: Address;
   transactionPda: Address;
 }): IInstruction {
+  const accounts: Array<[Address, AccountRole]> = [
+    [multisigPda, READONLY],
+    [proposalPda, WRITABLE],
+    [transactionPda, READONLY_SIGNER],
+    [memberAddress, WRITABLE_SIGNER],
+  ];
+
+  if (accounts.length < 4) {
+    throw new Error("Not enough accounts");
+  }
+
   return createInstruction({
+    accounts,
     data: getVaultExecuteCodec().encode({
       instructionDiscriminator: discriminator.vaultTransactionExecute,
     }),
-    accounts: [
-      [multisigPda, READONLY],
-      [proposalPda, WRITABLE],
-      [transactionPda, READONLY_SIGNER],
-      [memberAddress, WRITABLE_SIGNER],
-    ],
   });
 }
 

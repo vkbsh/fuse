@@ -1,10 +1,6 @@
 import { create } from "zustand";
-import {
-  createSolanaRpc,
-  mainnet,
-  Rpc,
-  SolanaRpcApiMainnet,
-} from "@solana/web3.js";
+import { Rpc, mainnet, createSolanaRpc, SolanaRpcApiMainnet } from "gill";
+
 import { RPC_URL } from "../env";
 
 type RpcState = {

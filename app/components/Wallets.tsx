@@ -1,7 +1,7 @@
 import { ErrorBoundary } from "react-error-boundary";
 import { Suspense } from "react";
 import { useSuspenseWalletByKey } from "~/state/wallet";
-import { Address } from "@solana/web3.js";
+import { Address } from "~/model/web3js";
 import { Wallet } from "~/model/wallet";
 
 export function Wallets({ keyAddress }: { keyAddress: Address }) {

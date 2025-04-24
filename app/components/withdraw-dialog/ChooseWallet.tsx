@@ -1,6 +1,6 @@
 import { address } from "gill";
+import { useState } from "react";
 import { motion } from "motion/react";
-import { useEffect, useState } from "react";
 
 import Input from "~/components/ui/Input";
 import Button from "~/components/ui/Button";
@@ -25,8 +25,8 @@ const ChooseWallet = ({
   const [error, setError] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const { currentMultisigWallet, history } = useWalletStore();
-  const { toAddress = "", set } = useWithdrawStore();
-  const [value, setValue] = useState<string | Address>(toAddress); // TODO: remove initial value if no persisted value
+  const { toAddress, set } = useWithdrawStore();
+  const [value, setValue] = useState<string | Address>(toAddress || ""); // TODO: remove initial value if no persisted value
   const { totalAmount } = useWalletTokens({
     address: address(currentMultisigWallet?.defaultVault as Address),
   });

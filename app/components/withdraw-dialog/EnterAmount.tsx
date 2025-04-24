@@ -1,6 +1,6 @@
 import { address } from "gill";
 import { motion } from "motion/react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import Input from "~/components/ui/Input";
 import Button from "~/components/ui/Button";
@@ -95,7 +95,9 @@ const EnterAmount = ({
     }
   };
 
-  console.log("selectedToken", selectedToken);
+  useEffect(() => {
+    set("token", selectedToken);
+  }, [selectedToken]);
 
   return (
     <>

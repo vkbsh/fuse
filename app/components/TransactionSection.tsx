@@ -1,7 +1,7 @@
 import { motion } from "motion/react";
 
 import Transaction from "~/components/Transaction";
-import TransactionButton from "~/components/TransactionButton";
+import TransactionDialog from "~/components/TransactionDialog";
 
 import { useSuspenseProposalByKey, useWalletStore } from "~/state/wallet";
 
@@ -28,24 +28,26 @@ export default function TransactionSection() {
           </div>
         </div>
       ) : (
-        transactions.map((data, i) => {
-          return (
-            <motion.div
-              key={data.address}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              whileHover={{
-                backgroundColor: "var(--color-trn-hover)",
-              }}
-              className="cursor-pointer p-3 rounded-[20px]"
-            >
-              <TransactionButton address={data.address} status={data.status}>
-                <Transaction {...data} />
-              </TransactionButton>
-            </motion.div>
-          );
-        })
+        transactions
+          ?.sort((a, b) => Number(b?.timestamp) - Number(a?.timestamp))
+          .map((data, i) => {
+            return (
+              <motion.div
+                key={data.transactionIndex}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                whileHover={{
+                  backgroundColor: "var(--color-trn-hover)",
+                }}
+                className="cursor-pointer p-3 rounded-[20px]"
+              >
+                <TransactionDialog address={data.address} status={data.status}>
+                  <Transaction {...data} />
+                </TransactionDialog>
+              </motion.div>
+            );
+          })
       )}
     </div>
   );

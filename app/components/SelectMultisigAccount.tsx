@@ -1,4 +1,4 @@
-import { address } from "@solana/web3.js";
+import { address } from "gill";
 
 import Dropdown from "~/components/ui/Dropdown";
 import { IconChevronDown } from "~/components/icons/IconChevronDown";

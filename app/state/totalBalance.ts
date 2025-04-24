@@ -1,9 +1,9 @@
-import { Address } from "@solana/web3.js";
 import { useQueries } from "@tanstack/react-query";
 
 import { useSuspenseBalance } from "~/state/balance";
+import { Address } from "~/model/web3js";
 
-const fetchTokenMeta = async (mint: string) => {
+export const fetchTokenMeta = async (mint: string) => {
   const res = await fetch(`https://api.jup.ag/tokens/v1/token/${mint}`);
   return res.json();
 };

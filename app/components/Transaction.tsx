@@ -2,7 +2,7 @@ import { cn } from "~/utils/tw";
 
 import { IconArrowUp } from "~/components/icons/IconArrowUp";
 import { IconArrowDown } from "~/components/icons/IconArrowDown";
-import { Address } from "@solana/web3.js";
+import { Address } from "~/model/web3js";
 import { abbreviateAddress } from "~/utils/address";
 import { useWalletStore } from "~/state/wallet";
 
@@ -11,10 +11,10 @@ export type Status = "ready" | "executed" | "cancelled";
 
 export type Transaction = {
   message: {
-    instructionType: string;
+    txType: string;
     fromAccount: Address;
     toAccount: Address;
-    lamports: number;
+    amountInSol: number;
   };
   approved: Address[];
   rejected: Address[];
@@ -35,6 +35,15 @@ const getIconByType = (type: TransactionType) => {
   }
 };
 
+const nativeToken = {
+  address: "So11111111111111111111111111111111111111112",
+  name: "Solana",
+  symbol: "SOL",
+  decimals: 9,
+  logoURI:
+    "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+};
+
 export default function Transaction({
   message,
   status,
@@ -48,10 +57,6 @@ export default function Transaction({
     "text-status-error": status === "Cancelled",
   });
 
-  const { currentWallet } = useWalletStore();
-
-  const isReceiver = currentWallet?.address === message.toAccount;
-  const type = isReceiver ? "receive" : "send";
   const milliseconds = Number(timestamp) * 1000;
   const dateStamp = new Date(milliseconds);
   const userLocale = new Intl.DateTimeFormat().resolvedOptions().locale;
@@ -61,23 +66,29 @@ export default function Transaction({
     minute: "2-digit",
   });
 
+  const isNativeToken = message?.txType === "transferSol";
+
+  const logoURI = isNativeToken ? nativeToken.logoURI : message?.mint?.logoURI;
+  const name = isNativeToken ? nativeToken.name : message?.mint?.name;
+  const symbol = isNativeToken ? nativeToken.symbol : message?.mint?.symbol;
+
   return (
     <div className="flex justify-between items-center gap-4">
       <div className="flex flex-row items-center gap-4">
         <span className="relative w-[42px] h-[42px] bg-foreground text-foreground-text rounded-[14px] flex items-center justify-center">
-          {getIconByType(type)}
-          <span className="absolute -top-1 -right-1 w-[20px] h-[20px] rounded-full overflow-hidden flex items-center justify-center border-2 border-background">
-            {/* {icon} */}
-            {/* TODO: Get token icon */}
-          </span>
+          <IconArrowUp />
+          <img
+            src={logoURI}
+            alt={name}
+            className="w-[20px] h-[20px] rounded-full absolute -top-1 -right-1"
+          />
         </span>
-        <span className="flex flex-col gap-0">
-          <span className="capitalize font-semibold text-base">{type}</span>
+        <span className="flex items-start flex-col gap-0">
+          <span className="capitalize font-semibold text-base">Send</span>
           <span className="text-sm font-medium">
-            {message.lamports}{" "}
+            {message?.amountInSol}{" "}
             <span className="text-foreground-text  uppercase">
-              {/* {code} */}
-              {/* TODO: Get token code */}
+              {symbol?.toLowerCase()}
             </span>
           </span>
         </span>
@@ -86,7 +97,7 @@ export default function Transaction({
         <div className="font-medium text-sm flex flex-row gap-2">
           <span className="text-foreground-text">To</span>
           <span className="font-semibold">
-            {abbreviateAddress(message.toAccount)}
+            {message?.toAccount ? abbreviateAddress(message?.toAccount) : null}
           </span>
         </div>
         {timestamp && (

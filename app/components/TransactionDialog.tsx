@@ -1,6 +1,3 @@
-import { useState } from "react";
-import { Address } from "@solana/web3.js";
-
 import Dialog from "~/components/ui/Dialog";
 import Button from "~/components/ui/Button";
 
@@ -8,6 +5,8 @@ import { Status } from "./Transaction";
 import { IconSquareDot } from "~/components/icons/IconSquareDot";
 import { IconCircleDot } from "~/components/icons/IconCircleDot";
 import { IconCirclePlus } from "~/components/icons/IconCirclePlus";
+
+import { Address } from "~/model/web3js";
 
 const states = [
   {
@@ -31,18 +30,8 @@ type Props = {
 };
 
 export default function WithdrawButton({ children, address, status }: Props) {
-  const [isModalOpen, setisModalOpen] = useState(false);
-
   return (
-    <Dialog
-      isOpen={isModalOpen}
-      trigger={
-        <button className="w-full" onClick={() => setisModalOpen(true)}>
-          {children}
-        </button>
-      }
-      close={() => setisModalOpen(false)}
-    >
+    <Dialog trigger={children}>
       <div className="flex flex-col gap-8 w-[516px] p-8 m-auto bg-black text-white rounded-[40px]">
         {children}
         <div className="p-7 flex flex-col gap-4">
@@ -81,7 +70,7 @@ export default function WithdrawButton({ children, address, status }: Props) {
 const ListIcons = () => {
   return states.map(({ label, icon }, i) => {
     return (
-      <>
+      <span key={label}>
         <span className="flex justify-center items-center text-white">
           {icon}
         </span>
@@ -100,7 +89,7 @@ const ListIcons = () => {
             </svg>
           )}
         </span>
-      </>
+      </span>
     );
   });
 };

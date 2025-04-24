@@ -1,20 +1,5 @@
 import * as multisig from "@sqds/multisig";
-
-import {
-  pipe,
-  address,
-  IAccountMeta,
-  IInstruction,
-  compileTransaction,
-  parseJsonRpcAccount,
-  createTransactionMessage,
-  setTransactionMessageFeePayer,
-  appendTransactionMessageInstruction,
-  setTransactionMessageLifetimeUsingBlockhash,
-  TransactionWithBlockhashLifetime,
-  getBase64EncodedWireTransaction,
-  appendTransactionMessageInstructions,
-} from "gill";
+import { PublicKey, SystemProgram, TransactionMessage } from "web3js1";
 
 import {
   getTransferInstruction,
@@ -23,27 +8,17 @@ import {
 } from "@solana-program/token";
 
 import {
-  getU8Encoder,
-  getU32Encoder,
-  getBytesEncoder,
-  getStructEncoder,
-  addEncoderSizePrefix,
-} from "@solana/kit";
+  pipe,
+  address,
+  IInstruction,
+  compileTransaction,
+  createTransactionMessage,
+  setTransactionMessageFeePayer,
+  appendTransactionMessageInstructions,
+  setTransactionMessageLifetimeUsingBlockhash,
+} from "gill";
 
-import {
-  PublicKey,
-  Transaction,
-  SystemProgram,
-  TransactionMessage,
-  TransactionInstruction,
-} from "web3js1";
-
-import {
-  getVaultPda,
-  getProposalPda,
-  getTransactionPda,
-  getEphemeralSignerPda,
-} from "~/program/multisig/pda";
+import { getProposalPda, getTransactionPda } from "~/program/multisig/pda";
 
 import {
   createProposalCancelInstruction,
@@ -52,8 +27,6 @@ import {
   createProposalApproveInstruction,
   createVaultTransactionExecuteInstruction,
 } from "~/program/multisig/instruction";
-
-import { getVaultTransactionCodec } from "~/program/multisig/codec";
 
 import { Address } from "~/model/web3js";
 import { useRpcStore } from "~/state/rpc";
@@ -181,23 +154,21 @@ export async function createTransferTokenInnerMessage({
   console.log("createATAIx.accounts", createATAIx.accounts);
   console.log("transferIx.accounts", transferIx.accounts);
 
-  // export declare enum AccountRole {
-  //   WRITABLE_SIGNER = 3, // prettier-ignore
-  //   READONLY_SIGNER = 2, // prettier-ignore
-  //   WRITABLE = 1, // prettier-ignore
-  //   READONLY = 0,
-  // }
-
   const transferInnerMessage = new TransactionMessage({
     payerKey: new PublicKey(authority),
     instructions: [
-      // createATAIx, transferIx
+      //   createATAIx, transferIx
+      //   convert to legacy:
+      //   WRITABLE_SIGNER = 3,
+      //   READONLY_SIGNER = 2,
+      //   WRITABLE = 1,
+      //   READONLY = 0,
       {
         programId: new PublicKey(createATAIx.programAddress),
         keys: createATAIx.accounts.map((meta) => ({
           pubkey: new PublicKey(meta.address),
-          isSigner: meta.role === 3 || meta.role === 2, // TODO: check new format
-          isWritable: meta.role === 3 || meta.role === 1, // TODO: check new format
+          isSigner: meta.role === 3 || meta.role === 2,
+          isWritable: meta.role === 3 || meta.role === 1,
         })),
         data: Buffer.from(createATAIx.data),
       },
@@ -205,8 +176,8 @@ export async function createTransferTokenInnerMessage({
         programId: new PublicKey(transferIx.programAddress),
         keys: transferIx.accounts.map((meta) => ({
           pubkey: new PublicKey(meta.address),
-          isSigner: meta.role === 3 || meta.role === 2, // TODO: check new format
-          isWritable: meta.role === 3 || meta.role === 1, // TODO: check new format
+          isSigner: meta.role === 3 || meta.role === 2,
+          isWritable: meta.role === 3 || meta.role === 1,
         })),
         data: Buffer.from(transferIx.data),
       },
@@ -365,78 +336,34 @@ export async function proposalCancel({
   });
 }
 
-// export async function vaultTransactionExecute({
-//   multisigPda,
-//   memberAddress,
-//   transactionIndex,
-// }: {
-//   multisigPda: Address;
-//   memberAddress: Address;
-//   transactionIndex: bigint;
-// }) {
-//   const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
+export async function vaultTransactionExecute({
+  multisigPda,
+  memberAddress,
+  transactionIndex,
+}: {
+  multisigPda: Address;
+  memberAddress: Address;
+  transactionIndex: bigint;
+}) {
+  const proposalPda = await getProposalPda({
+    multisigAddress: multisigPda,
+    transactionIndex,
+  });
 
-//   const proposalPda = await getProposalPda({
-//     multisigAddress: multisigPda,
-//     transactionIndex,
-//   });
+  const transactionPda = await getTransactionPda({
+    transactionIndex,
+    multisigAddress: multisigPda,
+  });
 
-//   const transactionPda = await getTransactionPda({
-//     transactionIndex,
-//     multisigAddress: multisigPda,
-//   });
+  const vaultTransactionExecuteIx = createVaultTransactionExecuteInstruction({
+    multisigPda,
+    proposalPda,
+    memberAddress,
+    transactionPda,
+  });
 
-//   const { value: account } = await rpc
-//     .getAccountInfo(transactionPda, {
-//       encoding: "jsonParsed",
-//     })
-//     .send();
-
-//   const transactionAccount = parseJsonRpcAccount<
-//     // TODO: update types
-//     {
-//       vaultIndex: number;
-//       message: {
-//         addressTableLookups: Address[];
-//       };
-//       ephemeralSignerBumps: number[];
-//     },
-//     Address
-//   >(transactionPda, account as Parameters<typeof parseJsonRpcAccount>[1]);
-
-//   if (!transactionAccount.exists) {
-//     throw new Error("Transaction account not found");
-//   }
-
-//   const vaultPda = await getVaultPda({
-//     multisigAddress: multisigPda,
-//     vaultIndex: transactionAccount.data.vaultIndex,
-//   });
-
-//   const { accountMetas, lookupTableAccounts } =
-//     // multisig.utils.accountsForTransactionExecute
-//     await accountsForTransactionExecute({
-//       vaultPda,
-//       transactionPda,
-//       message: transactionAccount.data.message,
-//       ephemeralSignerBumps: [...transactionAccount.data.ephemeralSignerBumps],
-//     });
-
-//   const vaultTransactionExecuteIx = createVaultTransactionExecuteInstruction({
-//     multisigPda,
-//     proposalPda,
-//     memberAddress,
-//     transactionPda,
-//   });
-
-//   const transactionMessage = pipe(
-//     createTransactionMessage({ version: 0 }),
-//     (tx) => setTransactionMessageFeePayer(memberAddress, tx),
-//     (tx) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
-//     (tx) => appendTransactionMessageInstruction(vaultTransactionExecuteIx, tx),
-//   );
-
-//   const transaction = compileTransaction(transactionMessage);
-
-//   return transaction;
-// }
+  return compileTransactionWithIx({
+    feePayer: memberAddress,
+    instructions: [vaultTransactionExecuteIx],
+  });
+}

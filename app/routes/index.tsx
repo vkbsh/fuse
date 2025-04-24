@@ -7,7 +7,7 @@ import Balance from "~/components/Balance";
 import CoinSection from "~/components/CoinSectioin";
 import { IconLogo } from "~/components/icons/IconLogo";
 import SelectMultisigAccount from "~/components/SelectMultisigAccount";
-import WithdrawButton from "~/components/WithdrawButton";
+import WithdrawDialog from "~/components/WithdrawDialog";
 import DisconnectButton from "~/components/DisconnectButton";
 import TransactionSection from "~/components/TransactionSection";
 
@@ -49,7 +49,7 @@ export default function Index() {
             <SelectMultisigAccount />
           </div>
           <div className="flex items-center gap-8">
-            <WithdrawButton />
+            <WithdrawDialog />
             <DisconnectButton />
           </div>
         </header>

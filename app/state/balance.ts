@@ -1,7 +1,9 @@
+import { Address, Rpc, SolanaRpcApiMainnet } from "gill";
 import { UseQueryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { Balance } from "../model/balance";
-import { getBalance } from "../service/getBalance";
-import { Address, Rpc, SolanaRpcApiMainnet } from "@solana/web3.js";
+
+import { Balance } from "~/model/balance";
+import { getBalance } from "~/service/getBalance";
+
 import { useRpcStore } from "./rpc";
 
 export type BalanceData = {

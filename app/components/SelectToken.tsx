@@ -18,6 +18,8 @@ type Props = {
   onSelect: (token: Token) => void;
 };
 export default function SelectToken({ items, selected, onSelect }: Props) {
+  console.log("items", items);
+
   const itemsComponent = items.map((item, i) => {
     const amount =
       item.symbol.toLocaleLowerCase() === "sol"

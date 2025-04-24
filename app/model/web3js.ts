@@ -4,7 +4,7 @@ import {
   Lamports as LamportsType,
   isAddress,
   Address as AddressType,
-} from "@solana/web3.js";
+} from "gill";
 
 export const Lamports = z.custom<LamportsType>((value: unknown) => {
   return typeof value === "bigint" && isLamports(value);

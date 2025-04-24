@@ -7,7 +7,7 @@ import {
 } from "@wallet-standard/react";
 import { address } from "gill";
 import { motion } from "motion/react";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 
 import Dialog from "~/components/ui/Dialog";
 
@@ -18,16 +18,8 @@ export function ConnectWalletDialog({
 }: {
   children: React.ReactNode;
 }) {
-  const [connectModalOpen, setConnectModalOpen] = useState(false);
-
   return (
-    <Dialog
-      isOpen={connectModalOpen}
-      trigger={
-        <button onClick={() => setConnectModalOpen(true)}>{children}</button>
-      }
-      close={() => setConnectModalOpen(false)}
-    >
+    <Dialog trigger={children}>
       <WalletOptions />
     </Dialog>
   );
@@ -37,13 +29,19 @@ function WalletOptions() {
   const wallets = useWallets();
   const { addWallet } = useWalletStore();
 
+  // TODO: add message for no wallets found
+
   return (
     <div className="flex flex-col gap-6 w-80 p-8 m-auto bg-black text-white rounded-[40px]">
       <span className="text-xl font-bold text-center">Select wallet</span>
       <hr className=" opacity-20" />
       <div className="flex flex-col gap-6">
         {wallets
-          .filter((wallet) => wallet.chains.includes("solana:mainnet"))
+          .filter(
+            (wallet) =>
+              wallet.chains.includes("solana:mainnet") &&
+              wallet.features.includes("solana:signAndSendTransaction"),
+          )
           .map((wallet) => (
             <WalletOption
               key={wallet.name}
@@ -69,21 +67,29 @@ function WalletOptions() {
 
 function WalletOption({
   wallet,
-  onAccountSelect,
   onError,
+  onAccountSelect,
 }: {
   wallet: UiWallet;
-  onAccountSelect(account: UiWalletAccount | null): void;
   onError(err: unknown): void;
+  onAccountSelect(account: UiWalletAccount | null): void;
 }) {
   const [isConnecting, connect] = useConnect(wallet);
 
   const handleConnectClick = useCallback(async () => {
     try {
       const existingAccounts = [...wallet.accounts];
-      const nextAccounts = await connect();
+      const nextAccounts = await connect({ silent: true });
+      const withSignAndSendTransaction = nextAccounts.filter(
+        (nextAccount) =>
+          nextAccount.features.includes("solana:signAndSendTransaction") &&
+          nextAccount.chains.includes("solana:mainnet"),
+      );
+
+      console.log("withSignAndSendTransaction", withSignAndSendTransaction);
+
       // Try to choose the first never-before-seen account.
-      for (const nextAccount of nextAccounts) {
+      for (const nextAccount of withSignAndSendTransaction) {
         if (
           !existingAccounts.some((existingAccount) =>
             uiWalletAccountsAreSame(nextAccount, existingAccount),

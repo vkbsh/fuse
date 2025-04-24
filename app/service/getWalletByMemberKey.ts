@@ -1,26 +1,31 @@
 import {
   Rpc,
-  Address,
+  address,
+  IInstruction,
   getBase64Codec,
-  parseBase64RpcAccount,
   SolanaRpcApiMainnet,
-} from "@solana/web3.js";
+  parseBase64RpcAccount,
+} from "gill";
+import { parseTransferSolInstruction } from "@solana-program/system";
+import { parseTransferInstruction, fetchToken } from "@solana-program/token";
 
 import {
   getMultisigAccountCodec,
   getProposalAccountCodec,
   getVaultTransactionCodec,
 } from "~/program/multisig/codec";
-
 import {
   SQUADS_PROGRAM_ID,
   MULTISIG_ACCOUNT_DISCRIMINATOR_BASE64,
   PROPOSAL_ACCOUNT_DISCRIMINATOR_BASE64,
 } from "~/program/multisig/address";
-
 import { getTransactionPda, getVaultPda } from "~/program/multisig/pda";
 
 import { Wallet } from "~/model/wallet";
+import { Address } from "~/model/web3js";
+
+import { fetchTokenMeta } from "~/state/totalBalance";
+import { LAMPORTS_PER_SOL } from "gill";
 
 export async function getWalletByMemberKey(
   rpc: Rpc<SolanaRpcApiMainnet>,
@@ -59,7 +64,7 @@ export async function getProposalAccounts(
   keyAddress: Address,
   index: 1 | 2 | 3 | 4 | 5,
 ): Promise<any> {
-  const accounts = await rpc
+  const proposals = await rpc
     .getProgramAccounts(SQUADS_PROGRAM_ID, {
       filters: [
         // discriminator
@@ -92,7 +97,7 @@ export async function getProposalAccounts(
     .send();
 
   return Promise.all(
-    accounts.map(async (proposal) => {
+    proposals.map(async (proposal) => {
       const { data } = parseBase64RpcAccount(proposal.pubkey, proposal.account);
       const { status, rejected, approved, cancelled, transactionIndex } =
         getProposalAccountCodec().decode(data);
@@ -112,13 +117,74 @@ export async function getProposalAccounts(
         parseBase64RpcAccount(transactionPda, transactionPdaInfo.value).data,
       );
 
+      const { instructions, accountKeys } = vaultTransaction?.message;
+
+      const test = await Promise.all(
+        instructions.map(async (ix) => {
+          const customIx: IInstruction = {
+            data: new Uint8Array(ix.data),
+            accounts: ix.accountIndexes.map((index) => ({
+              address: accountKeys[index],
+              role: 0, // any role to satisfy the type
+            })),
+            programAddress: accountKeys[ix.programIdIndex]
+              ? address(accountKeys[ix.programIdIndex])
+              : "",
+          };
+
+          let decoded = null;
+
+          if (customIx.programAddress === "11111111111111111111111111111111") {
+            decoded = parseTransferSolInstruction(customIx);
+          } else if (
+            customIx.programAddress ===
+            "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+          ) {
+            decoded = parseTransferInstruction(customIx);
+
+            console.log("decoded.accounts", decoded.accounts);
+
+            const tokenInfo = await fetchToken(
+              rpc,
+              address(decoded.accounts.destination.address),
+            );
+
+            const mint = await fetchTokenMeta(tokenInfo?.data?.mint);
+
+            decoded.accounts.source.address = tokenInfo?.address;
+            decoded.mint = {
+              name: mint?.name,
+              symbol: mint?.symbol,
+              logoURI: mint?.logoURI,
+            };
+          }
+
+          if (decoded && typeof decoded === "object") {
+            return {
+              txType:
+                customIx.programAddress === "11111111111111111111111111111111"
+                  ? "transferSol"
+                  : customIx.programAddress ===
+                      "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+                    ? "transferToken"
+                    : "any other instruction",
+              fromAccount: decoded.accounts.source.address,
+              toAccount: decoded.accounts.destination.address,
+              amountInSol: Number(decoded?.data?.amount) / LAMPORTS_PER_SOL,
+              mint: decoded?.mint,
+            };
+          } else {
+            return null;
+          }
+        }),
+      );
+
+      const filteredTest = test.filter((t) => t !== null);
+
+      const result = filteredTest[0];
+
       return {
-        message: {
-          instructionType: 2,
-          fromAccount: "null",
-          toAccount: "null",
-          lamports: 0,
-        },
+        message: result,
         approved,
         rejected,
         cancelled,

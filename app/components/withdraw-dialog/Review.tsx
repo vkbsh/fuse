@@ -1,6 +1,6 @@
 import bs58 from "bs58";
 import { z } from "zod";
-import { useState } from "react";
+
 import {
   useConnect,
   useWallets,
@@ -16,7 +16,11 @@ import { useWithdrawStore } from "~/state/withdraw";
 
 import { abbreviateAddress } from "~/utils/address";
 import { getProposalPda } from "~/program/multisig/pda";
-import { address, getBase64EncodedWireTransaction } from "gill";
+import {
+  address,
+  getBase64EncodedWireTransaction,
+  LAMPORTS_PER_SOL,
+} from "gill";
 import {
   compileTransactionWithIx,
   createVaultInstruction,
@@ -38,22 +42,18 @@ const Review = ({
   prevStep: () => void;
 }) => {
   const wallets = useWallets();
-  const { currentWallet, currentMultisigWallet } = useWalletStore();
   const { memo, toAddress, token, amount, set } = useWithdrawStore();
+  const { currentWallet, currentMultisigWallet, history } = useWalletStore();
 
-  const wallet = wallets.find((w) => w.name === currentWallet?.name); // TODO: check features available (filter by features)
+  const wallet = wallets
+    .filter((w) => w.features.includes("solana:signAndSendTransaction"))
+    .find((w) => w.name === currentWallet?.name);
   const [, connect] = useConnect(wallet);
 
   const handleTx = async () => {
     const nextTxIndex = BigInt(
       currentMultisigWallet.account.transactionIndex + 1n,
     );
-
-    console.log(
-      "transactionIndex",
-      currentMultisigWallet?.account.transactionIndex,
-    );
-    console.log("nextTxIndex", nextTxIndex);
 
     const proposalPda = await getProposalPda({
       transactionIndex: nextTxIndex,
@@ -71,7 +71,7 @@ const Review = ({
       });
     } else {
       transferMessage = await createTransferInnerMessage({
-        lamports: 1_000_000 * amount,
+        lamports: Math.round(amount * LAMPORTS_PER_SOL),
         toAddress: address(toAddress),
         payer: address(currentMultisigWallet.defaultVault),
         fromAddress: address(currentMultisigWallet.defaultVault),
@@ -114,7 +114,7 @@ const Review = ({
     );
 
     const [{ signature }] = await signAndSendTransaction({
-      account: accounts[0], // TODO: check if correct account selected
+      account: accounts[0],
       chain: "solana:mainnet",
       transaction: Buffer.from(getBase64EncodedWireTransaction(tx), "base64"),
     });
@@ -123,6 +123,8 @@ const Review = ({
 
     onClose();
   };
+
+  const fromHistory = history?.find((w) => w.address === toAddress);
 
   return (
     <>
@@ -147,11 +149,15 @@ const Review = ({
         <span>To</span>
         <span className="flex flex-row items-center gap-3">
           <span className="flex w-8 h-8 rounded-full bg-white justify-center items-center text-black">
-            <img
-              src={currentWallet?.icon}
-              alt={currentWallet?.name}
-              className="rounded-full w-6 h-6"
-            />
+            {toAddress === fromHistory?.address ? (
+              <img
+                src={fromHistory?.icon}
+                alt={fromHistory?.name}
+                className="rounded-full w-6 h-6"
+              />
+            ) : (
+              <span className="w-6 h-6 rounded-full bg-black" />
+            )}
           </span>
           <span>{abbreviateAddress(toAddress)}</span>
         </span>
