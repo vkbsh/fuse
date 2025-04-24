@@ -5,22 +5,18 @@ import {
   getU16Codec,
   getU32Codec,
   getU64Codec,
+  getI64Codec,
   getUtf8Codec,
+  getUnitCodec,
+  getBytesCodec,
   getArrayCodec,
+  getOptionCodec,
   getStructCodec,
   getBooleanCodec,
   getAddressCodec,
   getNullableCodec,
   addCodecSizePrefix,
-  getOptionCodec,
-  getEnumCodec,
-  getDiscriminatedUnionDecoder,
   getDiscriminatedUnionCodec,
-  getStructDecoder,
-  getUnitDecoder,
-  getI64Codec,
-  getUnitCodec,
-  getBytesCodec,
 } from "gill";
 
 import { Address } from "~/model/web3js";
@@ -177,6 +173,8 @@ export function getVaultTransactionCodec() {
     ["message", getVaultTransactionMessageCodec()],
   ]);
 }
+
+// TODO: Add validation
 
 export function getVaultTransactionMessageCodec() {
   return getStructCodec([

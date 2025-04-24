@@ -1,6 +1,7 @@
-import { Rpc, Address, assertIsAddress, SolanaRpcApiMainnet } from "gill";
 import { TOKEN_PROGRAM_ADDRESS } from "@solana-program/token";
 import { TOKEN_2022_PROGRAM_ADDRESS } from "@solana-program/token-2022";
+import { Rpc, Address, assertIsAddress, SolanaRpcApiMainnet } from "gill";
+
 import { Balance, SplTokenBalance, SplTokenBalances } from "~/model/balance";
 
 export async function getBalance(

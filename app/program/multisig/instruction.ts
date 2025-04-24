@@ -1,7 +1,5 @@
 import { IInstruction, AccountRole, ReadonlyUint8Array } from "gill";
 
-const { READONLY, WRITABLE, READONLY_SIGNER, WRITABLE_SIGNER } = AccountRole;
-
 import {
   getProposalCodec,
   getVaultExecuteCodec,
@@ -24,6 +22,8 @@ const discriminator = {
   proposalReject: [243, 62, 134, 156, 230, 106, 246, 135],
   vaultTransactionExecute: [194, 8, 161, 87, 153, 164, 25, 171],
 };
+
+const { READONLY, WRITABLE, READONLY_SIGNER, WRITABLE_SIGNER } = AccountRole;
 
 export function createInstruction({
   data,

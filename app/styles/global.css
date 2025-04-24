@@ -29,8 +29,6 @@ body {
   overflow: hidden;
   margin: 0;
   padding: 0;
-}
-body {
   font-family: SFProDisplay;
   color: var(--color-primary-text);
   background-color: var(--color-background);
@@ -41,9 +39,4 @@ input[type="number"],
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
   -webkit-appearance: none;
-}
-
-.logo-mask {
-  mask: url(/fuse.svg) center / contain no-repeat;
-  transform: rotate3d(1, 1, 1, -70deg);
 }

@@ -18,8 +18,6 @@ import {
   setTransactionMessageLifetimeUsingBlockhash,
 } from "gill";
 
-import { getProposalPda, getTransactionPda } from "~/program/multisig/pda";
-
 import {
   createProposalCancelInstruction,
   createProposalCreateInstruction,
@@ -27,6 +25,8 @@ import {
   createProposalApproveInstruction,
   createVaultTransactionExecuteInstruction,
 } from "~/program/multisig/instruction";
+
+import { getProposalPda, getTransactionPda } from "~/program/multisig/pda";
 
 import { Address } from "~/model/web3js";
 import { useRpcStore } from "~/state/rpc";
@@ -150,9 +150,6 @@ export async function createTransferTokenInnerMessage({
     authority: address(authority),
     source: address(fromToken.ata),
   });
-
-  console.log("createATAIx.accounts", createATAIx.accounts);
-  console.log("transferIx.accounts", transferIx.accounts);
 
   const transferInnerMessage = new TransactionMessage({
     payerKey: new PublicKey(authority),

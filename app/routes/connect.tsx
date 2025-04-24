@@ -57,11 +57,7 @@ function MultisigWallets({ address }: { readonly address: Address }) {
     }
   }, [multisig?.wallets]);
 
-  return (
-    <>
-      {noMultisigFound && (
-        <span className="text-status-error">No multisig wallets found</span>
-      )}
-    </>
-  );
+  return noMultisigFound ? (
+    <span className="text-status-error">No multisig wallets found</span>
+  ) : null;
 }

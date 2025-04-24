@@ -3,6 +3,7 @@ import {
   address,
   IInstruction,
   getBase64Codec,
+  LAMPORTS_PER_SOL,
   SolanaRpcApiMainnet,
   parseBase64RpcAccount,
 } from "gill";
@@ -14,18 +15,19 @@ import {
   getProposalAccountCodec,
   getVaultTransactionCodec,
 } from "~/program/multisig/codec";
+
 import {
   SQUADS_PROGRAM_ID,
   MULTISIG_ACCOUNT_DISCRIMINATOR_BASE64,
   PROPOSAL_ACCOUNT_DISCRIMINATOR_BASE64,
 } from "~/program/multisig/address";
+
 import { getTransactionPda, getVaultPda } from "~/program/multisig/pda";
 
 import { Wallet } from "~/model/wallet";
 import { Address } from "~/model/web3js";
 
 import { fetchTokenMeta } from "~/state/totalBalance";
-import { LAMPORTS_PER_SOL } from "gill";
 
 export async function getWalletByMemberKey(
   rpc: Rpc<SolanaRpcApiMainnet>,

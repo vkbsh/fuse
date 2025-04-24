@@ -1,19 +1,19 @@
+import { Suspense } from "react";
 import { motion } from "motion/react";
 import { MetaFunction } from "react-router";
 
 import Connect from "~/routes/connect";
 
+import Loading from "~/components/Loading";
 import Balance from "~/components/Balance";
 import CoinSection from "~/components/CoinSectioin";
 import { IconLogo } from "~/components/icons/IconLogo";
-import SelectMultisigAccount from "~/components/SelectMultisigAccount";
 import WithdrawDialog from "~/components/WithdrawDialog";
 import DisconnectButton from "~/components/DisconnectButton";
 import TransactionSection from "~/components/TransactionSection";
+import SelectMultisigAccount from "~/components/SelectMultisigAccount";
 
 import { useWalletStore } from "~/state/wallet";
-import { Suspense } from "react";
-import Loading from "~/components/Loading";
 
 export const meta: MetaFunction = () => {
   return [
@@ -53,17 +53,19 @@ export default function Index() {
             <DisconnectButton />
           </div>
         </header>
-        <Balance />
-        <main className="flex-1 flex w-full h-full min-h-0 gap-10">
-          <section className="w-full h-full flex flex-col gap-4">
-            <h3 className="font-semibold text-xl">Coins</h3>
-            <CoinSection />
-          </section>
-          <span className="w-px bg-black opacity-20" />
-          <section className="w-full h-full flex flex-col gap-2">
-            <h3 className="font-semibold text-xl">Transactions</h3>
-            <TransactionSection />
-          </section>
+        <main className="flex-1 flex flex-col w-full h-full min-h-0 gap-10">
+          <Balance />
+          <div className="flex-1 flex w-full h-full min-h-0 gap-10">
+            <section className="w-full h-full flex flex-col gap-4">
+              <h3 className="font-semibold text-xl">Coins</h3>
+              <CoinSection />
+            </section>
+            <span className="w-px bg-black opacity-20" />
+            <section className="w-full h-full flex flex-col gap-2">
+              <h3 className="font-semibold text-xl">Transactions</h3>
+              <TransactionSection />
+            </section>
+          </div>
         </main>
       </motion.div>
     </Suspense>

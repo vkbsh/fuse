@@ -78,19 +78,3 @@ export async function getProposalPda({
     SEED_PROPOSAL,
   ]);
 }
-
-export async function getEphemeralSignerPda({
-  transactionPda,
-  ephemeralSignerIndex,
-}: {
-  transactionPda: Address;
-  ephemeralSignerIndex: number;
-}): Promise<Address> {
-  return getPda([
-    SEED_PREFIX,
-    getAddressEncoder().encode(transactionPda),
-    SEED_EPHEMERAL_SIGNER,
-    getU8Encoder().encode(ephemeralSignerIndex),
-    SEED_PROPOSAL,
-  ]);
-}

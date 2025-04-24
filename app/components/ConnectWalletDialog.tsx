@@ -6,8 +6,8 @@ import {
   uiWalletAccountsAreSame,
 } from "@wallet-standard/react";
 import { address } from "gill";
-import { motion } from "motion/react";
 import { useCallback } from "react";
+import { motion } from "motion/react";
 
 import Dialog from "~/components/ui/Dialog";
 
@@ -76,17 +76,17 @@ function WalletOption({
 }) {
   const [isConnecting, connect] = useConnect(wallet);
 
+  // TODO: extract to separate util
   const handleConnectClick = useCallback(async () => {
     try {
       const existingAccounts = [...wallet.accounts];
       const nextAccounts = await connect({ silent: true });
+      // Filter to accounts that support the features we need.
       const withSignAndSendTransaction = nextAccounts.filter(
         (nextAccount) =>
           nextAccount.features.includes("solana:signAndSendTransaction") &&
           nextAccount.chains.includes("solana:mainnet"),
       );
-
-      console.log("withSignAndSendTransaction", withSignAndSendTransaction);
 
       // Try to choose the first never-before-seen account.
       for (const nextAccount of withSignAndSendTransaction) {
@@ -100,8 +100,8 @@ function WalletOption({
         }
       }
       // Failing that, choose the first account in the list.
-      if (nextAccounts[0]) {
-        onAccountSelect(nextAccounts[0]);
+      if (withSignAndSendTransaction[0]) {
+        onAccountSelect(withSignAndSendTransaction[0]);
       }
     } catch (e) {
       onError(e);

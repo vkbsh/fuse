@@ -1,16 +1,24 @@
-import { address } from "gill";
+import { motion } from "motion/react";
+
 import { useWalletStore } from "~/state/wallet";
 import { useWalletTokens } from "~/state/totalBalance";
 
 import { Address } from "~/model/web3js";
 import { getRoundedCoin, getRoundedUSD } from "~/utils/amount";
-import { motion } from "motion/react";
 
-const Coins = () => {
+export default function CoinsSection() {
   const { currentMultisigWallet } = useWalletStore();
-  const { coins } = useWalletTokens({
-    address: address(currentMultisigWallet?.defaultVault as Address),
-  });
+  const vaultAddress = currentMultisigWallet?.defaultVault;
+
+  if (!vaultAddress) {
+    return null;
+  }
+
+  return <Coins address={vaultAddress} />;
+}
+
+function Coins({ address }: { address: Address }) {
+  const { coins } = useWalletTokens({ address });
 
   return (
     <div className="flex-1 flex flex-col gap-5 scroll-smooth overflow-y-auto grow pr-4">
@@ -57,6 +65,4 @@ const Coins = () => {
       })}
     </div>
   );
-};
-
-export default Coins;
+}
