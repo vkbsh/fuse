@@ -183,7 +183,7 @@ export async function createTransferTokenInnerMessage({
   });
 
   const transferIx = getTransferInstruction({
-    amount: BigInt(amount),
+    amount: Math.round(amount),
     destination: address(toAta),
     authority: address(authority),
     source: address(fromToken.ata),

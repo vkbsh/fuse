@@ -4,6 +4,7 @@ import {
   getUtf8Encoder,
   getAddressEncoder,
   getProgramDerivedAddress,
+  getU8Codec,
 } from "gill";
 
 import { Address } from "~/model/web3js";
@@ -76,5 +77,20 @@ export async function getProposalPda({
     SEED_TRANSACTION,
     getU64Codec().encode(transactionIndex),
     SEED_PROPOSAL,
+  ]);
+}
+
+export async function getEphemeralSignerPda({
+  transactionPda,
+  ephemeralSignerIndex,
+}: {
+  transactionPda: Address;
+  ephemeralSignerIndex: bigint;
+}): Promise<Address> {
+  return getPda([
+    SEED_PREFIX,
+    getAddressEncoder().encode(transactionPda),
+    SEED_EPHEMERAL_SIGNER,
+    getU8Codec().encode(ephemeralSignerIndex),
   ]);
 }

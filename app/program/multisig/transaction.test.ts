@@ -1,20 +1,23 @@
-import * as multisig from "@sqds/multisig";
-import { PublicKey, Connection } from "web3js1";
-import { describe, test, assert } from "vitest";
+import { describe, test, assert, beforeEach } from "vitest";
 import {
   LAMPORTS_PER_SOL,
   getBase58Encoder,
   createSolanaClient,
+  parseBase64RpcAccount,
   createKeyPairFromBytes,
   createSignerFromKeyPair,
   getSignatureFromTransaction,
   signTransactionMessageWithSigners,
 } from "gill";
 
+import { Address } from "~/model/web3js";
+import { getWalletByMemberKey } from "~/service/getWalletByMemberKey";
+
 import {
   createVaultInstruction,
   createMessageWithSigner,
   createTransferInnerMessage,
+  createTransferTokenInnerMessage,
 } from "./transaction";
 
 import {
@@ -23,12 +26,9 @@ import {
   createVaultTransactionExecuteInstruction,
 } from "./instruction";
 
-import { getWalletByMemberKey } from "~/service/getWalletByMemberKey";
-
 import { RPC_URL } from "../../env";
-import { getProposalPda, getTransactionPda } from "./pda";
-import { SQUADS_PROGRAM_ID } from "./address";
-import { instructionFromLegacyInstruction } from "~/utils/instruction";
+import { getVaultTransactionCodec } from "./codec";
+import { getProposalPda, getTransactionPda, getVaultPda } from "./pda";
 
 const memberPrivateKey1 =
   "4QuarDxdbbkC1os7hyDMYAqM5i99yRdgJ6RUE85wrHrGB6WRiMbptoFy6vd7FAFktMpTSqC1USd8UfysFi9WGSYt";
@@ -63,6 +63,8 @@ describe("Multisig", async () => {
     multisigAddress,
     transactionIndex: nextTxIndex,
   });
+
+  beforeEach(async () => {}, 60000);
 
   test("Create VaultTransaction with: [TransferSOL, ProposalCreate, ProposalApprove]", async () => {
     const transferMessage = await createTransferInnerMessage({
@@ -141,78 +143,97 @@ describe("Multisig", async () => {
       console.log("Error", error);
     }
   });
-  test(
-    "[Legacy v4] - Execute VaultTransaction by Creator",
-    async () => {
-      const connection = new Connection(RPC_URL, "confirmed");
+  test("Execute VaultTransaction by Creator", async () => {
+    const wallets = await getWalletByMemberKey(rpc, memberSigner1.address);
+    const transactionIndex = wallets[0].account.transactionIndex;
 
-      try {
-        const legacyIx = await multisig.instructions.vaultTransactionExecute({
-          connection,
-          feePayer: new PublicKey(memberSigner1.address),
-          transactionIndex: nextTxIndex,
-          multisigPda: new PublicKey(multisigAddress),
-          member: new PublicKey(memberSigner1.address),
-          programId: new PublicKey(SQUADS_PROGRAM_ID),
-        });
+    const proposalPda = await getProposalPda({
+      multisigAddress,
+      transactionIndex,
+    });
 
-        const tx = await createMessageWithSigner({
-          instructions: [
-            instructionFromLegacyInstruction(legacyIx.instruction),
-          ],
-          feePayer: memberSigner1,
-        });
+    const transactionPda = await getTransactionPda({
+      multisigAddress,
+      transactionIndex,
+    });
 
-        const signedTransaction = await signTransactionMessageWithSigners(tx);
-        const signature = getSignatureFromTransaction(signedTransaction);
-        console.log("Signature", signature);
+    const transactionPdaInfo = await rpc
+      .getAccountInfo(transactionPda, { encoding: "base64" })
+      .send();
 
-        await sendAndConfirmTransaction(signedTransaction);
-        console.log("Transaction confirmed!");
-        assert.equal(1, 1);
-      } catch (error) {
-        console.log("Error", error);
-      }
-    },
-    { timeout: 10000 },
-  );
-  // test("Transfer USDC", async () => {
-  //   const fromToken = {
-  //     decimals: 6,
-  //     mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" as Address,
-  //     ata: "" as Address, // TODO: Set ATA
-  //   };
+    const vaultTransaction = getVaultTransactionCodec().decode(
+      parseBase64RpcAccount(transactionPda, transactionPdaInfo.value).data,
+    );
 
-  //   const transferMessage = await createTransferTokenInnerMessage({
-  //     fromToken,
-  //     toAddress: memberSigner1.address,
-  //     authority: vaultAddress,
-  //     amount: amount * 10 ** fromToken.decimals,
-  //   });
+    const vaultPda = await getVaultPda({
+      vaultIndex: 0,
+      multisigAddress: multisigAddress,
+    });
 
-  //   const instructions = [
-  //     createVaultInstruction({
-  //       vaultIndex: 0,
-  //       ephemeralSigners: 0,
-  //       creator: memberSigner1.address,
-  //       multisigPda: multisigAddress,
-  //       transactionIndex: nextTxIndex,
-  //       transactionMessage: transferMessage,
-  //     }),
-  //     createProposalCreateInstruction({
-  //       creator: memberSigner1.address,
-  //       proposalPda: proposalPda,
-  //       multisigPda: multisigAddress,
-  //       transactionIndex: nextTxIndex,
-  //     }),
-  //     createProposalApproveInstruction({
-  //       proposalPda,
-  //       memo: "auto approve",
-  //       memberAddress: memberSigner1.address,
-  //       multisigPda: multisigAddress,
-  //     }),
-  //   ];
+    const instr = createVaultTransactionExecuteInstruction({
+      vaultPda,
+      multisigPda: multisigAddress,
+      proposalPda,
+      memberAddress: memberSigner1.address,
+      transactionPda,
+      message: vaultTransaction.message,
+      ephemeralSignerBumps: vaultTransaction.ephemeralSignerBumps,
+    });
 
-  //   assert.equal(1, 1);
-  // });
+    try {
+      const tx = await createMessageWithSigner({
+        instructions: [instr],
+        feePayer: memberSigner1,
+      });
+
+      const signedTransaction = await signTransactionMessageWithSigners(tx);
+      const signature = getSignatureFromTransaction(signedTransaction);
+      console.log("Signature", signature);
+
+      await sendAndConfirmTransaction(signedTransaction);
+      console.log("Transaction confirmed!");
+      assert.equal(1, 1);
+    } catch (error) {
+      console.log("Error", error);
+    }
+  });
+  test("Transfer USDC", async () => {
+    const fromToken = {
+      decimals: 6,
+      mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" as Address,
+      ata: "6iuS9UZsFcS8Z2xLuPkJAxzowYNJcJ8ZupQBZH8hjaAJ" as Address,
+    };
+
+    const transferMessage = await createTransferTokenInnerMessage({
+      fromToken,
+      toAddress: memberSigner1.address,
+      authority: vaultAddress,
+      amount: amount * 10 ** fromToken.decimals,
+    });
+
+    const instructions = [
+      createVaultInstruction({
+        vaultIndex: 0,
+        ephemeralSigners: 0,
+        creator: memberSigner1.address,
+        multisigPda: multisigAddress,
+        transactionIndex: nextTxIndex,
+        transactionMessage: transferMessage,
+      }),
+      createProposalCreateInstruction({
+        creator: memberSigner1.address,
+        proposalPda: proposalPda,
+        multisigPda: multisigAddress,
+        transactionIndex: nextTxIndex,
+      }),
+      createProposalApproveInstruction({
+        proposalPda,
+        memo: "auto approve",
+        memberAddress: memberSigner1.address,
+        multisigPda: multisigAddress,
+      }),
+    ];
+
+    assert.equal(1, 1);
+  });
 });

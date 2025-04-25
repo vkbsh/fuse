@@ -1,4 +1,9 @@
-import { IInstruction, AccountRole, ReadonlyUint8Array } from "gill";
+import {
+  IInstruction,
+  AccountRole,
+  ReadonlyUint8Array,
+  isWritableRole,
+} from "gill";
 
 import {
   getProposalCodec,
@@ -13,6 +18,9 @@ import {
 } from "~/program/multisig/address";
 
 import { Address } from "~/model/web3js";
+import { AccountMeta } from "web3js1";
+import { VaultTransactionMessage } from "~/generated";
+import { getEphemeralSignerPda } from "./pda";
 
 const discriminator = {
   vaultTransactionCreate: [48, 250, 78, 168, 208, 226, 218, 211],
@@ -39,34 +47,99 @@ export function createInstruction({
   };
 }
 
+export function isStaticWritableIndex(
+  message: VaultTransactionMessage,
+  index: number,
+): boolean {
+  const numAccountKeys = message.accountKeys.length;
+  const { numSigners, numWritableSigners, numWritableNonSigners } = message;
+
+  if (index < 0 || index >= numAccountKeys) {
+    return false;
+  }
+
+  const isWritableSigner = index < numWritableSigners;
+  const isWritableNonSigner =
+    index >= numSigners && index < numSigners + numWritableNonSigners;
+
+  return isWritableSigner || isWritableNonSigner;
+}
+
+export function isSignerIndex(message: VaultTransactionMessage, index: number) {
+  return index < message.numSigners;
+}
+
+// (WRITABLE_SIGNER = 3),
+// (READONLY_SIGNER = 2),
+// (WRITABLE = 1),
+// (READONLY = 0);
+
+function convertRoles(
+  accountMetas: AccountMeta[],
+): Array<[Address, AccountRole]> {
+  return accountMetas.map((meta) => {
+    let role = READONLY;
+    if (meta.isWritable) {
+      role = WRITABLE;
+    }
+    if (meta.isSigner) {
+      role = isWritableRole(role) ? WRITABLE_SIGNER : READONLY_SIGNER;
+    }
+    return [meta.pubkey, role];
+  });
+}
+
 export function createVaultTransactionExecuteInstruction({
   multisigPda,
   proposalPda,
   memberAddress,
   transactionPda,
+  message,
+  vaultPda,
+  ephemeralSignerBumps,
 }: {
+  vaultPda: Address;
   multisigPda: Address;
   proposalPda: Address;
   memberAddress: Address;
   transactionPda: Address;
-}): IInstruction {
-  // const originalAccounts = {
-  //   multisig: { value: input.multisig ?? null, isWritable: false },
-  //   proposal: { value: input.proposal ?? null, isWritable: true },
-  //   transaction: { value: input.transaction ?? null, isWritable: false },
-  //   member: { value: input.member ?? null, isWritable: false },
-  // };
+  ephemeralSignerBumps: any;
+  message: VaultTransactionMessage;
+}) {
+  const accountMetas: AccountMeta[] = [];
+
+  const ephemeralSignerPdas = ephemeralSignerBumps.map(
+    async (_, additionalSignerIndex) => {
+      return await getEphemeralSignerPda({
+        transactionPda,
+        ephemeralSignerIndex: additionalSignerIndex,
+      });
+    },
+  );
+
+  // Then add static account keys included into the message.
+  for (const [accountIndex, accountKey] of message.accountKeys.entries()) {
+    accountMetas.push({
+      pubkey: accountKey,
+      isWritable: isStaticWritableIndex(message, accountIndex),
+      // NOTE: vaultPda and ephemeralSignerPdas cannot be marked as signers,
+      // because they are PDAs and hence won't have their signatures on the transaction.
+      isSigner:
+        isSignerIndex(message, accountIndex) &&
+        !(accountKey === vaultPda) &&
+        !ephemeralSignerPdas.find((k) => accountKey.equals(k)),
+    });
+  }
+
+  const converted = convertRoles(accountMetas);
 
   const accounts: Array<[Address, AccountRole]> = [
     [multisigPda, READONLY],
     [proposalPda, WRITABLE],
-    [transactionPda, READONLY_SIGNER],
-    [memberAddress, WRITABLE_SIGNER],
+    [transactionPda, READONLY],
+    [memberAddress, READONLY_SIGNER],
+    ...converted,
   ];
-
-  if (accounts.length < 4) {
-    throw new Error("Not enough accounts");
-  }
 
   return createInstruction({
     accounts,
