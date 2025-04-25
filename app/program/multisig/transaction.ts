@@ -12,10 +12,12 @@ import {
   address,
   IInstruction,
   compileTransaction,
+  TransactionSigner,
   createTransactionMessage,
   setTransactionMessageFeePayer,
   appendTransactionMessageInstructions,
   setTransactionMessageLifetimeUsingBlockhash,
+  setTransactionMessageFeePayerSigner,
 } from "gill";
 
 import {
@@ -34,7 +36,26 @@ import { instructionFromLegacyInstruction } from "~/utils/instruction";
 
 const rpc = useRpcStore.getState().rpc;
 
-export async function compileTransactionWithIx({
+export async function createMessageWithSigner({
+  feePayer,
+  instructions,
+}: {
+  feePayer: TransactionSigner;
+  instructions: IInstruction[];
+}) {
+  const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
+
+  const transactionMessage = pipe(
+    createTransactionMessage({ version: 0 }),
+    (tx) => setTransactionMessageFeePayerSigner(feePayer, tx),
+    (tx) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
+    (tx) => appendTransactionMessageInstructions(instructions, tx),
+  );
+
+  return transactionMessage;
+}
+
+export async function createMessage({
   feePayer,
   instructions,
 }: {
@@ -49,6 +70,21 @@ export async function compileTransactionWithIx({
     (tx) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
     (tx) => appendTransactionMessageInstructions(instructions, tx),
   );
+
+  return transactionMessage;
+}
+
+export async function compileTransactionWithIx({
+  feePayer,
+  instructions,
+}: {
+  feePayer: Address;
+  instructions: IInstruction[];
+}) {
+  const transactionMessage = await createMessage({
+    feePayer,
+    instructions,
+  });
 
   const transaction = compileTransaction(transactionMessage);
 
@@ -88,10 +124,12 @@ export function createVaultInstruction({
 }
 
 export async function createTransferInnerMessage({
+  payer,
   lamports,
   toAddress,
   fromAddress,
 }: {
+  payer?: Address;
   lamports: number;
   toAddress: Address;
   fromAddress: Address;
@@ -106,7 +144,7 @@ export async function createTransferInnerMessage({
         fromPubkey: new PublicKey(fromAddress),
       }),
     ],
-    payerKey: new PublicKey(toAddress),
+    payerKey: new PublicKey(payer ?? fromAddress),
     recentBlockhash: latestBlockhash.blockhash,
   });
 

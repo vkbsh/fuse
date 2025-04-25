@@ -1,4 +1,3 @@
-import bs58 from "bs58";
 import { z } from "zod";
 
 import {
@@ -118,8 +117,6 @@ const Review = ({
       chain: "solana:mainnet",
       transaction: Buffer.from(getBase64EncodedWireTransaction(tx), "base64"),
     });
-
-    console.log("Signature", bs58.encode(signature));
 
     onClose();
   };

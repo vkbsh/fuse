@@ -50,6 +50,13 @@ export function createVaultTransactionExecuteInstruction({
   memberAddress: Address;
   transactionPda: Address;
 }): IInstruction {
+  // const originalAccounts = {
+  //   multisig: { value: input.multisig ?? null, isWritable: false },
+  //   proposal: { value: input.proposal ?? null, isWritable: true },
+  //   transaction: { value: input.transaction ?? null, isWritable: false },
+  //   member: { value: input.member ?? null, isWritable: false },
+  // };
+
   const accounts: Array<[Address, AccountRole]> = [
     [multisigPda, READONLY],
     [proposalPda, WRITABLE],

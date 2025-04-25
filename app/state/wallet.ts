@@ -47,8 +47,8 @@ const keys = {
 };
 
 export function walletsByKeyQuery({
-  keyAddress,
   rpc,
+  keyAddress,
 }: {
   keyAddress: Address;
   rpc: Rpc<SolanaRpcApiMainnet>;
@@ -75,8 +75,8 @@ export function useSuspenseWalletByKey(
 }
 
 export function proposalByKeyQuery({
-  keyAddress,
   rpc,
+  keyAddress,
 }: {
   keyAddress: Address;
   rpc: Rpc<SolanaRpcApiMainnet>;

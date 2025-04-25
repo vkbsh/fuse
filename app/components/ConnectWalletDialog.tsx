@@ -76,11 +76,10 @@ function WalletOption({
 }) {
   const [isConnecting, connect] = useConnect(wallet);
 
-  // TODO: extract to separate util
   const handleConnectClick = useCallback(async () => {
     try {
       const existingAccounts = [...wallet.accounts];
-      const nextAccounts = await connect({ silent: true });
+      const nextAccounts = await connect();
       // Filter to accounts that support the features we need.
       const withSignAndSendTransaction = nextAccounts.filter(
         (nextAccount) =>

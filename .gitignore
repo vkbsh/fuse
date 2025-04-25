@@ -1,5 +1,6 @@
 .react-router/
 app/env.ts
+app/generated
 
 node_modules
 
