@@ -14,7 +14,7 @@ export const fetchTokenPrice = async (mint: string) => {
   return resJSON?.data?.[mint]?.price || 1;
 };
 
-export function useWalletTokens({ address }: { address: Address }) {
+export function useVaultTokens({ address }: { address: Address }) {
   const balanceData = useSuspenseBalance({ address });
 
   if (!balanceData) {
@@ -38,6 +38,7 @@ export function useWalletTokens({ address }: { address: Address }) {
 
   const results = useQueries({
     queries: coins.map((coin) => ({
+      enabled: !!coin,
       queryKey: ["tokenMeta", coin.mint],
       queryFn: async () => {
         const [meta, price] = await Promise.all([

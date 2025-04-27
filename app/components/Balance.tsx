@@ -1,7 +1,7 @@
 import { memo } from "react";
 
 import { useWalletStore } from "~/state/wallet";
-import { useWalletTokens } from "~/state/totalBalance";
+import { useVaultTokens } from "~/state/totalBalance";
 
 import { Address } from "~/model/web3js";
 import { getRoundedUSD } from "~/utils/amount";
@@ -19,7 +19,7 @@ export default function Balance() {
 }
 
 function TotalAmount({ address }: { address: Address }) {
-  const { totalAmount } = useWalletTokens({ address });
+  const { totalAmount } = useVaultTokens({ address });
 
   return (
     <span className="text-[45px] font-bold">

@@ -18,15 +18,16 @@ import { getProposalPda } from "~/program/multisig/pda";
 import {
   address,
   getBase64EncodedWireTransaction,
+  getSignatureFromTransaction,
   LAMPORTS_PER_SOL,
 } from "gill";
 import {
   compileTransactionWithIx,
-  createVaultInstruction,
   createTransferInnerMessage,
   createTransferTokenInnerMessage,
 } from "~/program/multisig/transaction";
 import {
+  createVaultInstruction,
   createProposalApproveInstruction,
   createProposalCreateInstruction,
 } from "~/program/multisig/instruction";
@@ -112,13 +113,17 @@ const Review = ({
       "solana:signAndSendTransaction",
     );
 
-    const [{ signature }] = await signAndSendTransaction({
-      account: accounts[0],
-      chain: "solana:mainnet",
-      transaction: Buffer.from(getBase64EncodedWireTransaction(tx), "base64"),
-    });
+    try {
+      const [{ signature }] = await signAndSendTransaction({
+        account: accounts[0],
+        chain: "solana:mainnet",
+        transaction: Buffer.from(getBase64EncodedWireTransaction(tx), "base64"),
+      });
 
-    onClose();
+      typeof onClose === "function" && onClose();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const fromHistory = history?.find((w) => w.address === toAddress);

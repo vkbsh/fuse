@@ -7,6 +7,7 @@
 }
 
 @theme {
+  --color-white: #ffffff;
   --color-background: #f3f3f3;
   --color-foreground: #ebebeb;
   --color-foreground-text: #7b7b7b;
@@ -16,6 +17,11 @@
   --color-grey-text: rgba(256, 256, 256, 0.4);
 
   --color-primary-text: #1f1e1e;
+
+  /* Select */
+  --color-select-bg-hover: rgba(256, 256, 256, 0.15);
+  --color-select-text-hover: rgba(256, 256, 256, 0.5);
+  --color-select-border-hover: rgba(256, 256, 256, 0.15);
 
   /* Status */
   --color-status-primary: #2685e1;

@@ -21,6 +21,7 @@ export default function TransactionSection() {
 
 function Transactions({ address }: { address: Address }) {
   const { transactions } = useSuspenseProposalByKey(address);
+  // return null;
 
   return (
     <div className="flex flex-1 flex-col gap-0 overflow-y-auto scroll-smooth grow pr-4 -ml-4">

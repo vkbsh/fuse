@@ -45,7 +45,7 @@ function Steps() {
           initial={{ backdropFilter: "blur(10px)", opacity: 0, height: 300 }}
           animate={{ backdropFilter: "blur(0px)", opacity: 1, height: "auto" }}
           exit={{ backdropFilter: "blur(10px)", opacity: 0, height: 300 }}
-          className="flex flex-col gap-6 overflow-hidden"
+          className="flex flex-col gap-6"
         >
           {currentStep === 1 && <ChooseWallet nextStep={nextStep} />}
           {currentStep === 2 && (

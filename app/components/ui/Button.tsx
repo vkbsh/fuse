@@ -6,12 +6,13 @@ import { motion } from "motion/react";
 import { cn } from "~/utils/tw";
 
 type Size = "sm" | "md" | "lg" | "full";
-type Variant = "primary" | "secondary" | "bordered";
+type Variant = "primary" | "secondary" | "bordered" | "max";
 
 const variants: { [key in Variant]: string } = {
   primary: "bg-black text-white",
   secondary: "bg-white text-black",
-  bordered: "bg-black text-white ring-3 ring-gray-300 font-medium text-sm",
+  bordered: "bg-black text-white ring-3 ring-[#BFBFBF] font-medium text-sm",
+  max: "bg-white/30 text-white border-4 border-black/10 font-extrabold  text-xl",
 };
 
 const sizes: { [k in Size]: string } = {

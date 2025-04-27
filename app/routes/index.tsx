@@ -11,7 +11,7 @@ import { IconLogo } from "~/components/icons/IconLogo";
 import WithdrawDialog from "~/components/WithdrawDialog";
 import DisconnectButton from "~/components/DisconnectButton";
 import TransactionSection from "~/components/TransactionSection";
-import SelectMultisigAccount from "~/components/SelectMultisigAccount";
+import SelectVaultAccount from "~/components/SelectVaultAccount";
 
 import { useWalletStore } from "~/state/wallet";
 
@@ -46,7 +46,7 @@ export default function Index() {
             <span className="w-[42px] h-[42px] rounded-full bg-[#EBEBEB] flex items-center justify-center text-black">
               <IconLogo />
             </span>
-            <SelectMultisigAccount />
+            <SelectVaultAccount />
           </div>
           <div className="flex items-center gap-8">
             <WithdrawDialog />

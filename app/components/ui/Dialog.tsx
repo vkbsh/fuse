@@ -66,7 +66,7 @@ export default function Dialog({
                     whileHover={{
                       scale: 1.1,
                     }}
-                    className="cursor-pointer absolute -bottom-14 left-0 right-0 z-20 w-[47px] h-[47px] rounded-full bg-black text-white flex items-center justify-center mx-auto drop-shadow-2xl"
+                    className="cursor-pointer absolute -bottom-20 left-0 right-0 z-0 w-[47px] h-[47px] rounded-full bg-black text-white flex items-center justify-center mx-auto drop-shadow-2xl"
                   >
                     <IconClose />
                   </motion.button>

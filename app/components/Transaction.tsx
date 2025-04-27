@@ -7,14 +7,14 @@ import { abbreviateAddress } from "~/utils/address";
 import { useWalletStore } from "~/state/wallet";
 
 export type TransactionType = "send" | "receive";
-export type Status = "ready" | "executed" | "cancelled";
+export type Status = "active" | "ready" | "executed" | "cancelled";
 
 export type Transaction = {
   message: {
     txType: string;
     fromAccount: Address;
     toAccount: Address;
-    amountInSol: number;
+    amount: number;
   };
   approved: Address[];
   rejected: Address[];
@@ -35,15 +35,6 @@ const getIconByType = (type: TransactionType) => {
   }
 };
 
-const nativeToken = {
-  address: "So11111111111111111111111111111111111111112",
-  name: "Solana",
-  symbol: "SOL",
-  decimals: 9,
-  logoURI:
-    "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
-};
-
 export default function Transaction({
   message,
   status,
@@ -52,6 +43,7 @@ export default function Transaction({
   // TODO: Add custom status names
 
   const statusColor = cn({
+    // "": status === "Ready",
     "text-status-primary": status === "Active",
     "text-status-success": status === "Executed",
     "text-status-error": status === "Cancelled",
@@ -66,11 +58,7 @@ export default function Transaction({
     minute: "2-digit",
   });
 
-  const isNativeToken = message?.txType === "transferSol";
-
-  const logoURI = isNativeToken ? nativeToken.logoURI : message?.mint?.logoURI;
-  const name = isNativeToken ? nativeToken.name : message?.mint?.name;
-  const symbol = isNativeToken ? nativeToken.symbol : message?.mint?.symbol;
+  const { logoURI, name, symbol } = message?.mint || {};
 
   return (
     <div className="flex justify-between items-center gap-4">
@@ -86,14 +74,14 @@ export default function Transaction({
         <span className="flex items-start flex-col gap-0">
           <span className="capitalize font-semibold text-base">Send</span>
           <span className="text-sm font-medium">
-            {message?.amountInSol}{" "}
+            {message?.amount.toFixed(9).replace(/\.?0+$/, "")}{" "}
             <span className="text-foreground-text  uppercase">
               {symbol?.toLowerCase()}
             </span>
           </span>
         </span>
       </div>
-      <div className="flex flex-row items-center gap-6">
+      <div className="flex flex-row mt-auto items-end  gap-6">
         <div className="font-medium text-sm flex flex-row gap-2">
           <span className="text-foreground-text">To</span>
           <span className="font-semibold">
@@ -101,7 +89,7 @@ export default function Transaction({
           </span>
         </div>
         {timestamp && (
-          <span className="shrink-0 text-foreground-text font-medium text-sm">
+          <span className="w-18 text-foreground-text font-medium text-sm">
             {formattedDate}
           </span>
         )}

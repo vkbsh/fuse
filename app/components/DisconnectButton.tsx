@@ -16,8 +16,8 @@ export default function DisconnectButton() {
       items={[
         <motion.span
           onClick={removeWallet}
-          className="cursor-pointer flex flex-row items-center p-2 gap-8"
           whileHover={{ color: "var(--color-status-error)" }}
+          className="cursor-pointer flex flex-row items-center p-2 gap-8"
         >
           <span className="text-sm">Disconnect</span>
           <IconDisconnect />

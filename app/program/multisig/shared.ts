@@ -11,17 +11,6 @@ import {
 } from "gill";
 
 /**
- * Asserts that the given value is not null or undefined.
- * @internal
- */
-export function expectSome<T>(value: T | null | undefined): T {
-  if (value == null) {
-    throw new Error("Expected a value but received null or undefined.");
-  }
-  return value;
-}
-
-/**
  * Asserts that the given value is a PublicKey.
  * @internal
  */

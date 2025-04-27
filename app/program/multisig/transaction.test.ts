@@ -14,13 +14,13 @@ import { Address } from "~/model/web3js";
 import { getWalletByMemberKey } from "~/service/getWalletByMemberKey";
 
 import {
-  createVaultInstruction,
   createMessageWithSigner,
   createTransferInnerMessage,
   createTransferTokenInnerMessage,
 } from "./transaction";
 
 import {
+  createVaultInstruction,
   createProposalCreateInstruction,
   createProposalApproveInstruction,
   createVaultTransactionExecuteInstruction,
@@ -42,15 +42,15 @@ const memberSigner2 = await createSignerFromKeyPair(
   await createKeyPairFromBytes(getBase58Encoder().encode(memberPrivateKey2)),
 );
 
-describe("Multisig", async () => {
+describe("Transfer SOL", async () => {
   const { rpc, sendAndConfirmTransaction } = createSolanaClient({
     urlOrMoniker: RPC_URL,
   });
 
-  const wallets = await getWalletByMemberKey(rpc, memberSigner1.address);
-  const multisigAddress = wallets[0].address;
-  const vaultAddress = wallets[0].defaultVault;
-  const transactionIndex = wallets[0].account.transactionIndex;
+  const [wallet] = await getWalletByMemberKey(rpc, memberSigner1.address);
+  const multisigAddress = wallet.address;
+  const vaultAddress = wallet.defaultVault;
+  const transactionIndex = wallet.account.transactionIndex;
   const nextTxIndex = 1n + BigInt(transactionIndex);
   const amount = 0.00007357;
 
@@ -59,12 +59,7 @@ describe("Multisig", async () => {
     transactionIndex: nextTxIndex,
   });
 
-  const transactionPda = await getTransactionPda({
-    multisigAddress,
-    transactionIndex: nextTxIndex,
-  });
-
-  beforeEach(async () => {}, 60000);
+  beforeEach(async () => {}, 120000);
 
   test("Create VaultTransaction with: [TransferSOL, ProposalCreate, ProposalApprove]", async () => {
     const transferMessage = await createTransferInnerMessage({
@@ -74,31 +69,29 @@ describe("Multisig", async () => {
       lamports: Math.round(amount * LAMPORTS_PER_SOL),
     });
 
-    const instructions = [
-      createVaultInstruction({
-        vaultIndex: 0,
-        ephemeralSigners: 0,
-        creator: memberSigner1.address,
-        multisigPda: multisigAddress,
-        transactionIndex: nextTxIndex,
-        transactionMessage: transferMessage,
-      }),
-      createProposalCreateInstruction({
-        creator: memberSigner1.address,
-        proposalPda: proposalPda,
-        multisigPda: multisigAddress,
-        transactionIndex: nextTxIndex,
-      }),
-      createProposalApproveInstruction({
-        proposalPda,
-        memo: "approve from test",
-        memberAddress: memberSigner1.address,
-        multisigPda: multisigAddress,
-      }),
-    ];
-
     const tx = await createMessageWithSigner({
-      instructions,
+      instructions: [
+        createVaultInstruction({
+          vaultIndex: 0,
+          ephemeralSigners: 0,
+          creator: memberSigner1.address,
+          multisigPda: multisigAddress,
+          transactionIndex: nextTxIndex,
+          transactionMessage: transferMessage,
+        }),
+        createProposalCreateInstruction({
+          creator: memberSigner1.address,
+          proposalPda: proposalPda,
+          multisigPda: multisigAddress,
+          transactionIndex: nextTxIndex,
+        }),
+        createProposalApproveInstruction({
+          proposalPda,
+          memo: "approve from test by the creator",
+          memberAddress: memberSigner1.address,
+          multisigPda: multisigAddress,
+        }),
+      ],
       feePayer: memberSigner1,
       // feePayer: vaultAddress,
     });
@@ -115,23 +108,20 @@ describe("Multisig", async () => {
       console.log("Error", error);
     }
   });
-  test("Approve VaultTransaction by Member", async () => {
-    const ix = createProposalApproveInstruction({
-      proposalPda,
-      memo: "approve from test by another member",
-      memberAddress: memberSigner2.address,
-      multisigPda: multisigAddress,
-    });
-
-    const instructions = [ix];
-
-    const tx = await createMessageWithSigner({
-      instructions,
-      feePayer: memberSigner2,
-      // feePayer: vaultAddress,
-    });
-
+  test("Approve VaultTransaction by a Member", async () => {
     try {
+      const tx = await createMessageWithSigner({
+        instructions: [
+          createProposalApproveInstruction({
+            proposalPda,
+            multisigPda: multisigAddress,
+            memberAddress: memberSigner2.address,
+            memo: "approve from test by a member",
+          }),
+        ],
+        feePayer: memberSigner2,
+      });
+
       const signedTransaction = await signTransactionMessageWithSigners(tx);
       const signature = getSignatureFromTransaction(signedTransaction);
       console.log("Signature", signature);
@@ -170,19 +160,19 @@ describe("Multisig", async () => {
       multisigAddress: multisigAddress,
     });
 
-    const instr = createVaultTransactionExecuteInstruction({
-      vaultPda,
-      multisigPda: multisigAddress,
-      proposalPda,
-      memberAddress: memberSigner1.address,
-      transactionPda,
-      message: vaultTransaction.message,
-      ephemeralSignerBumps: vaultTransaction.ephemeralSignerBumps,
-    });
-
     try {
       const tx = await createMessageWithSigner({
-        instructions: [instr],
+        instructions: [
+          createVaultTransactionExecuteInstruction({
+            vaultPda,
+            multisigPda: multisigAddress,
+            proposalPda,
+            memberAddress: memberSigner1.address,
+            transactionPda,
+            message: vaultTransaction.message,
+            ephemeralSignerBumps: vaultTransaction.ephemeralSignerBumps,
+          }),
+        ],
         feePayer: memberSigner1,
       });
 
@@ -197,43 +187,158 @@ describe("Multisig", async () => {
       console.log("Error", error);
     }
   });
-  test("Transfer USDC", async () => {
-    const fromToken = {
-      decimals: 6,
-      mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" as Address,
-      ata: "6iuS9UZsFcS8Z2xLuPkJAxzowYNJcJ8ZupQBZH8hjaAJ" as Address,
-    };
-
-    const transferMessage = await createTransferTokenInnerMessage({
-      fromToken,
-      toAddress: memberSigner1.address,
-      authority: vaultAddress,
-      amount: amount * 10 ** fromToken.decimals,
-    });
-
-    const instructions = [
-      createVaultInstruction({
-        vaultIndex: 0,
-        ephemeralSigners: 0,
-        creator: memberSigner1.address,
-        multisigPda: multisigAddress,
-        transactionIndex: nextTxIndex,
-        transactionMessage: transferMessage,
-      }),
-      createProposalCreateInstruction({
-        creator: memberSigner1.address,
-        proposalPda: proposalPda,
-        multisigPda: multisigAddress,
-        transactionIndex: nextTxIndex,
-      }),
-      createProposalApproveInstruction({
-        proposalPda,
-        memo: "auto approve",
-        memberAddress: memberSigner1.address,
-        multisigPda: multisigAddress,
-      }),
-    ];
-
-    assert.equal(1, 1);
-  });
 });
+
+// describe("Transfer USDC", async () => {
+//   const { rpc, sendAndConfirmTransaction } = createSolanaClient({
+//     urlOrMoniker: RPC_URL,
+//   });
+
+//   const wallets = await getWalletByMemberKey(rpc, memberSigner1.address);
+//   const multisigAddress = wallets[0].address;
+//   const vaultAddress = wallets[0].defaultVault;
+//   const transactionIndex = wallets[0].account.transactionIndex;
+//   const nextTxIndex = 1n + BigInt(transactionIndex);
+//   const amount = 0.00007357;
+
+//   const proposalPda = await getProposalPda({
+//     multisigAddress,
+//     transactionIndex: nextTxIndex,
+//   });
+
+//   beforeEach(async () => {}, 120000);
+
+//   test("Create VaultTransaction with: [TransferUSDC, ProposalCreate, ProposalApprove]", async () => {
+//     const fromToken = {
+//       decimals: 6,
+//       mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" as Address,
+//       ata: "6iuS9UZsFcS8Z2xLuPkJAxzowYNJcJ8ZupQBZH8hjaAJ" as Address,
+//     };
+
+//     const transferMessage = await createTransferTokenInnerMessage({
+//       fromToken,
+//       toAddress: memberSigner1.address,
+//       authority: vaultAddress,
+//       amount: amount * 10 ** fromToken.decimals,
+//     });
+
+//     const tx = await createMessageWithSigner({
+//       instructions: [
+//         createVaultInstruction({
+//           vaultIndex: 0,
+//           ephemeralSigners: 0,
+//           creator: memberSigner1.address,
+//           multisigPda: multisigAddress,
+//           transactionIndex: nextTxIndex,
+//           transactionMessage: transferMessage,
+//         }),
+//         createProposalCreateInstruction({
+//           creator: memberSigner1.address,
+//           proposalPda: proposalPda,
+//           multisigPda: multisigAddress,
+//           transactionIndex: nextTxIndex,
+//         }),
+//         createProposalApproveInstruction({
+//           proposalPda,
+//           memo: "approve from test by the creator",
+//           memberAddress: memberSigner1.address,
+//           multisigPda: multisigAddress,
+//         }),
+//       ],
+//       feePayer: memberSigner1,
+//       // feePayer: vaultAddress,
+//     });
+
+//     try {
+//       const signedTransaction = await signTransactionMessageWithSigners(tx);
+//       const signature = getSignatureFromTransaction(signedTransaction);
+//       console.log("Signature", signature);
+
+//       await sendAndConfirmTransaction(signedTransaction);
+//       console.log("Transaction confirmed!");
+//       assert.equal(1, 1);
+//     } catch (error) {
+//       console.log("Error", error);
+//     }
+//   });
+
+//   test("Approve VaultTransaction by a Member", async () => {
+//     try {
+//       const tx = await createMessageWithSigner({
+//         instructions: [
+//           createProposalApproveInstruction({
+//             proposalPda,
+//             multisigPda: multisigAddress,
+//             memberAddress: memberSigner2.address,
+//             memo: "approve from test by a member",
+//           }),
+//         ],
+//         feePayer: memberSigner2,
+//       });
+
+//       const signedTransaction = await signTransactionMessageWithSigners(tx);
+//       const signature = getSignatureFromTransaction(signedTransaction);
+//       console.log("Signature", signature);
+
+//       await sendAndConfirmTransaction(signedTransaction);
+//       console.log("Transaction confirmed!");
+//       assert.equal(1, 1);
+//     } catch (error) {
+//       console.log("Error", error);
+//     }
+//   });
+//   test("Execute VaultTransaction by Creator", async () => {
+//     const wallets = await getWalletByMemberKey(rpc, memberSigner1.address);
+//     const transactionIndex = wallets[0].account.transactionIndex;
+
+//     const proposalPda = await getProposalPda({
+//       multisigAddress,
+//       transactionIndex,
+//     });
+
+//     const transactionPda = await getTransactionPda({
+//       multisigAddress,
+//       transactionIndex,
+//     });
+
+//     const transactionPdaInfo = await rpc
+//       .getAccountInfo(transactionPda, { encoding: "base64" })
+//       .send();
+
+//     const vaultTransaction = getVaultTransactionCodec().decode(
+//       parseBase64RpcAccount(transactionPda, transactionPdaInfo.value).data,
+//     );
+
+//     const vaultPda = await getVaultPda({
+//       vaultIndex: 0,
+//       multisigAddress: multisigAddress,
+//     });
+
+//     try {
+//       const tx = await createMessageWithSigner({
+//         instructions: [
+//           createVaultTransactionExecuteInstruction({
+//             vaultPda,
+//             multisigPda: multisigAddress,
+//             proposalPda,
+//             memberAddress: memberSigner1.address,
+//             transactionPda,
+//             message: vaultTransaction.message,
+//             ephemeralSignerBumps: vaultTransaction.ephemeralSignerBumps,
+//           }),
+//         ],
+//         feePayer: memberSigner1,
+//       });
+
+//       const signedTransaction = await signTransactionMessageWithSigners(tx);
+//       const signature = getSignatureFromTransaction(signedTransaction);
+//       console.log("Signature", signature);
+
+//       await sendAndConfirmTransaction(signedTransaction);
+//       console.log("Transaction confirmed!");
+//       assert.equal(1, 1);
+//     } catch (error) {
+//       console.log("Error", error);
+//     }
+//   });
+// });

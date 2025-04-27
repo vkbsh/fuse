@@ -21,7 +21,12 @@ export const getRoundedUSD = (amount: number): number | string => {
 
   const r = Math.round(num * 100) / 100;
 
-  return r.toFixed(2);
+  return cleanFloat(r.toFixed(2));
+};
+// TODO: remove all 0 in the end
+
+export const cleanFloat = (num: string) => {
+  return num.replace(/\.?0+$/, "");
 };
 
 export const getRoundedCoin = (amount: number): number | string => {
@@ -29,7 +34,7 @@ export const getRoundedCoin = (amount: number): number | string => {
 
   if (typeof num === "string") return num;
 
-  return num.toFixed(3);
+  return cleanFloat(num.toFixed(3));
 };
 
 export const getRoundedSOL = (amount: number): number | string => {
@@ -37,5 +42,5 @@ export const getRoundedSOL = (amount: number): number | string => {
 
   if (typeof num === "string") return num;
 
-  return num.toFixed(4);
+  return cleanFloat(num.toFixed(4));
 };

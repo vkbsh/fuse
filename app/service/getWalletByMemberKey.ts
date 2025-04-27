@@ -9,6 +9,7 @@ import {
 } from "gill";
 import { parseTransferSolInstruction } from "@solana-program/system";
 import { parseTransferInstruction, fetchToken } from "@solana-program/token";
+import { parseTransferInstruction as parseTransferInstruction2022 } from "@solana-program/token-2022";
 
 import {
   getMultisigAccountCodec,
@@ -20,6 +21,7 @@ import {
   SQUADS_PROGRAM_ID,
   MULTISIG_ACCOUNT_DISCRIMINATOR_BASE64,
   PROPOSAL_ACCOUNT_DISCRIMINATOR_BASE64,
+  TOKEN_2022_PROGRAM_ID,
 } from "~/program/multisig/address";
 
 import { getTransactionPda, getVaultPda } from "~/program/multisig/pda";
@@ -115,70 +117,120 @@ export async function getProposalAccounts(
         })
         .send();
 
-      const vaultTransaction = getVaultTransactionCodec().decode(
-        parseBase64RpcAccount(transactionPda, transactionPdaInfo.value).data,
-      );
+      const VaultData = parseBase64RpcAccount(
+        transactionPda,
+        transactionPdaInfo.value,
+      ).data;
 
-      const { instructions, accountKeys } = vaultTransaction?.message;
+      let vaultTransaction = null;
+
+      try {
+        vaultTransaction = getVaultTransactionCodec().decode(VaultData);
+      } catch (error) {
+        console.log("error", error);
+      }
+
+      const instructions = vaultTransaction?.message?.instructions || [];
+      const accountKeys = vaultTransaction?.message?.accountKeys || [];
 
       const test = await Promise.all(
-        instructions.map(async (ix) => {
-          const customIx: IInstruction = {
-            data: new Uint8Array(ix.data),
-            accounts: ix.accountIndexes.map((index) => ({
-              address: accountKeys[index],
-              role: 0, // any role to satisfy the type
-            })),
-            programAddress: accountKeys[ix.programIdIndex]
-              ? address(accountKeys[ix.programIdIndex])
-              : "",
-          };
+        instructions
+          .filter((ix) => {
+            let programAddress = accountKeys[ix.programIdIndex];
+            const isTokenProgram = [
+              "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+              TOKEN_2022_PROGRAM_ID,
+            ].includes(programAddress);
 
-          let decoded = null;
+            return isTokenProgram;
+          })
+          .map(async (ix) => {
+            let programAddress = accountKeys[ix.programIdIndex];
+            const isTokenProgram = [
+              "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+              TOKEN_2022_PROGRAM_ID,
+            ].includes(programAddress);
 
-          if (customIx.programAddress === "11111111111111111111111111111111") {
-            decoded = parseTransferSolInstruction(customIx);
-          } else if (
-            customIx.programAddress ===
-            "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-          ) {
-            decoded = parseTransferInstruction(customIx);
-
-            console.log("decoded.accounts", decoded.accounts);
-
-            const tokenInfo = await fetchToken(
-              rpc,
-              address(decoded.accounts.destination.address),
-            );
-
-            const mint = await fetchTokenMeta(tokenInfo?.data?.mint);
-
-            decoded.accounts.source.address = tokenInfo?.address;
-            decoded.mint = {
-              name: mint?.name,
-              symbol: mint?.symbol,
-              logoURI: mint?.logoURI,
+            const customIx: IInstruction = {
+              data: new Uint8Array(ix.data),
+              accounts: ix.accountIndexes.map((index) => ({
+                address: accountKeys[index],
+                role: 1, // any role to satisfy the type
+              })),
+              programAddress: address(programAddress),
             };
-          }
 
-          if (decoded && typeof decoded === "object") {
-            return {
-              txType:
-                customIx.programAddress === "11111111111111111111111111111111"
+            let decoded = null;
+
+            if (!isTokenProgram) {
+              decoded = parseTransferSolInstruction(customIx);
+            } else if (isTokenProgram) {
+              if (
+                customIx.programAddress ===
+                "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+              ) {
+                decoded = parseTransferInstruction(customIx);
+              }
+              if (customIx.programAddress === TOKEN_2022_PROGRAM_ID) {
+                decoded = parseTransferInstruction2022(customIx);
+              }
+
+              let tokenInfo = null;
+              try {
+                tokenInfo = await fetchToken(
+                  rpc,
+                  address(decoded.accounts.destination.address),
+                );
+              } catch (error) {
+                console.log("vaultTransaction", vaultTransaction);
+                console.log("decoded", decoded);
+                console.log("error", error);
+              }
+
+              const mint = await fetchTokenMeta(tokenInfo?.data?.mint);
+
+              decoded.accounts.source.address = tokenInfo?.address;
+              decoded.accounts.destination.address = tokenInfo?.data?.owner;
+              decoded.mint = {
+                name: mint?.name,
+                symbol: mint?.symbol,
+                logoURI: mint?.logoURI,
+                decimals: mint?.decimals,
+              };
+            }
+
+            const nativeToken = {
+              address: "So11111111111111111111111111111111111111112",
+              name: "Solana",
+              symbol: "SOL",
+              decimals: 9,
+              logoURI:
+                "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+            };
+
+            if (decoded && typeof decoded === "object") {
+              const isNative =
+                customIx.programAddress === "11111111111111111111111111111111";
+              return {
+                txType: isNative
                   ? "transferSol"
                   : customIx.programAddress ===
                       "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
                     ? "transferToken"
                     : "any other instruction",
-              fromAccount: decoded.accounts.source.address,
-              toAccount: decoded.accounts.destination.address,
-              amountInSol: Number(decoded?.data?.amount) / LAMPORTS_PER_SOL,
-              mint: decoded?.mint,
-            };
-          } else {
-            return null;
-          }
-        }),
+                fromAccount: decoded.accounts.source.address,
+                toAccount: decoded.accounts.destination.address,
+                amount: isNative
+                  ? Number(decoded?.data?.amount) / LAMPORTS_PER_SOL
+                  : Number(decoded?.data?.amount) /
+                    10 ** decoded?.mint?.decimals,
+
+                mint: isNative ? nativeToken : decoded?.mint,
+              };
+            } else {
+              return null;
+            }
+          }),
       );
 
       const filteredTest = test.filter((t) => t !== null);

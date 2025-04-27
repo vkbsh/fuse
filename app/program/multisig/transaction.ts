@@ -1,5 +1,5 @@
-import * as multisig from "@sqds/multisig";
 import { PublicKey, SystemProgram, TransactionMessage } from "web3js1";
+import { VaultTransactionMessage } from "~/generated";
 
 import {
   getTransferInstruction,
@@ -15,24 +15,27 @@ import {
   TransactionSigner,
   createTransactionMessage,
   setTransactionMessageFeePayer,
+  setTransactionMessageFeePayerSigner,
   appendTransactionMessageInstructions,
   setTransactionMessageLifetimeUsingBlockhash,
-  setTransactionMessageFeePayerSigner,
 } from "gill";
 
 import {
+  createVaultInstruction,
   createProposalCancelInstruction,
   createProposalCreateInstruction,
-  createProposalRejectInstruction,
   createProposalApproveInstruction,
   createVaultTransactionExecuteInstruction,
 } from "~/program/multisig/instruction";
 
-import { getProposalPda, getTransactionPda } from "~/program/multisig/pda";
+import {
+  getVaultPda,
+  getProposalPda,
+  getTransactionPda,
+} from "~/program/multisig/pda";
 
 import { Address } from "~/model/web3js";
 import { useRpcStore } from "~/state/rpc";
-import { instructionFromLegacyInstruction } from "~/utils/instruction";
 
 const rpc = useRpcStore.getState().rpc;
 
@@ -89,38 +92,6 @@ export async function compileTransactionWithIx({
   const transaction = compileTransaction(transactionMessage);
 
   return transaction;
-}
-
-export function createVaultInstruction({
-  memo,
-  creator,
-  vaultIndex,
-  multisigPda,
-  ephemeralSigners,
-  transactionIndex,
-  transactionMessage,
-}: {
-  memo?: string;
-  creator: Address;
-  vaultIndex: number;
-  multisigPda: Address;
-  transactionIndex: bigint;
-  ephemeralSigners: number;
-  transactionMessage: TransactionMessage;
-}): IInstruction {
-  const createVaultTransactionIx = multisig.instructions.vaultTransactionCreate(
-    {
-      memo,
-      vaultIndex,
-      ephemeralSigners,
-      transactionIndex,
-      // @ts-ignore (incompatible types sqds/multisig/web3 and fuse/web3js1)
-      transactionMessage,
-      creator: new PublicKey(creator),
-      multisigPda: new PublicKey(multisigPda),
-    },
-  );
-  return instructionFromLegacyInstruction(createVaultTransactionIx);
 }
 
 export async function createTransferInnerMessage({
@@ -183,7 +154,7 @@ export async function createTransferTokenInnerMessage({
   });
 
   const transferIx = getTransferInstruction({
-    amount: Math.round(amount),
+    amount: amount,
     destination: address(toAta),
     authority: address(authority),
     source: address(fromToken.ata),
@@ -192,12 +163,6 @@ export async function createTransferTokenInnerMessage({
   const transferInnerMessage = new TransactionMessage({
     payerKey: new PublicKey(authority),
     instructions: [
-      //   createATAIx, transferIx
-      //   convert to legacy:
-      //   WRITABLE_SIGNER = 3,
-      //   READONLY_SIGNER = 2,
-      //   WRITABLE = 1,
-      //   READONLY = 0,
       {
         programId: new PublicKey(createATAIx.programAddress),
         keys: createATAIx.accounts.map((meta) => ({
@@ -313,35 +278,6 @@ export async function proposalApprove({
   });
 }
 
-export async function proposalReject({
-  memo,
-  multisigPda,
-  memberAddress,
-  transactionIndex,
-}: {
-  memo?: string;
-  multisigPda: Address;
-  memberAddress: Address;
-  transactionIndex: bigint;
-}) {
-  const proposalPda = await getProposalPda({
-    multisigAddress: multisigPda,
-    transactionIndex,
-  });
-
-  const proposalApproveTransactionIx = createProposalRejectInstruction({
-    memo,
-    multisigPda,
-    proposalPda,
-    memberAddress,
-  });
-
-  return compileTransactionWithIx({
-    feePayer: memberAddress,
-    instructions: [proposalApproveTransactionIx],
-  });
-}
-
 export async function proposalCancel({
   memo,
   multisigPda,
@@ -372,10 +308,14 @@ export async function proposalCancel({
 }
 
 export async function vaultTransactionExecute({
+  message,
   multisigPda,
   memberAddress,
   transactionIndex,
+  ephemeralSignerBumps,
 }: {
+  message: VaultTransactionMessage;
+  ephemeralSignerBumps: any;
   multisigPda: Address;
   memberAddress: Address;
   transactionIndex: bigint;
@@ -390,11 +330,19 @@ export async function vaultTransactionExecute({
     multisigAddress: multisigPda,
   });
 
+  const vaultPda = await getVaultPda({
+    vaultIndex: 0,
+    multisigAddress: multisigPda,
+  });
+
   const vaultTransactionExecuteIx = createVaultTransactionExecuteInstruction({
+    message,
+    vaultPda,
     multisigPda,
     proposalPda,
     memberAddress,
     transactionPda,
+    ephemeralSignerBumps,
   });
 
   return compileTransactionWithIx({

@@ -1,7 +1,7 @@
 import { motion } from "motion/react";
 
 import { useWalletStore } from "~/state/wallet";
-import { useWalletTokens } from "~/state/totalBalance";
+import { useVaultTokens } from "~/state/totalBalance";
 
 import { Address } from "~/model/web3js";
 import { getRoundedCoin, getRoundedUSD } from "~/utils/amount";
@@ -18,7 +18,7 @@ export default function CoinsSection() {
 }
 
 function Coins({ address }: { address: Address }) {
-  const { coins } = useWalletTokens({ address });
+  const { coins } = useVaultTokens({ address });
 
   return (
     <div className="flex-1 flex flex-col gap-5 scroll-smooth overflow-y-auto grow pr-4">

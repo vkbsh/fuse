@@ -8,7 +8,7 @@ import SelectToken, { Token } from "~/components/SelectToken";
 
 import { useWalletStore } from "~/state/wallet";
 import { useWithdrawStore } from "~/state/withdraw";
-import { useWalletTokens, fetchTokenPrice } from "~/state/totalBalance";
+import { useVaultTokens, fetchTokenPrice } from "~/state/totalBalance";
 
 import { Address } from "~/model/web3js";
 import { getRoundedCoin, getRoundedSOL } from "~/utils/amount";
@@ -27,7 +27,7 @@ const EnterAmount = ({
   const { set, amount, token } = useWithdrawStore();
   const [value, setValue] = useState(amount || "0");
   const { currentMultisigWallet } = useWalletStore();
-  const { coins } = useWalletTokens({
+  const { coins } = useVaultTokens({
     address: address(currentMultisigWallet?.defaultVault as Address),
   });
 
@@ -121,7 +121,7 @@ const EnterAmount = ({
             />
           </div>
         </label>
-        <Button onClick={setMax} variant="bordered">
+        <Button onClick={setMax} size="md" variant="max">
           MAX
         </Button>
         {error && (

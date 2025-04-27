@@ -10,7 +10,7 @@ import { IconLogo } from "~/components/icons/IconLogo";
 
 import { useWalletStore } from "~/state/wallet";
 import { useWithdrawStore } from "~/state/withdraw";
-import { useWalletTokens } from "~/state/totalBalance";
+import { useVaultTokens } from "~/state/totalBalance";
 
 import { getRoundedUSD } from "~/utils/amount";
 import { abbreviateAddress } from "~/utils/address";
@@ -27,7 +27,7 @@ const ChooseWallet = ({
   const { currentMultisigWallet, history } = useWalletStore();
   const { toAddress, set } = useWithdrawStore();
   const [value, setValue] = useState<string | Address>(toAddress || ""); // TODO: remove initial value if no persisted value
-  const { totalAmount } = useWalletTokens({
+  const { totalAmount } = useVaultTokens({
     address: address(currentMultisigWallet?.defaultVault as Address),
   });
 
