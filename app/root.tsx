@@ -1,4 +1,5 @@
-import "~/styles/global.css";
+import "~/global.css";
+
 import { ReactNode } from "react";
 import {
   Links,
