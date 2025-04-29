@@ -1,9 +1,8 @@
-import { IInstruction } from "gill";
-import { parseTransferSolInstruction } from "gill/programs";
 import {
   parseTransferInstruction,
   parseCreateAssociatedTokenIdempotentInstruction,
 } from "@solana-program/token";
+import { parseTransferSolInstruction } from "gill/programs";
 
 import {
   TOKEN_PROGRAM_ADDRESS,
@@ -13,7 +12,6 @@ import {
 
 import { Address } from "~/model/web3js";
 import { fetchTokenMeta } from "~/state/totalBalance";
-import { TransactionInstruction } from "web3js1";
 
 const nativeToken = {
   decimals: 9,
@@ -26,11 +24,21 @@ const nativeToken = {
 
 type Message = {
   accountKeys: Address[];
-  instructions: Array<TransactionInstruction>;
+  instructions: Array<{
+    data: any;
+    programIdIndex: number;
+    accountIndexes: number[];
+  }>;
 };
 
 type Result = {
-  mint: any;
+  mint: {
+    name: string;
+    symbol: string;
+    logoURI: string;
+    decimals: number;
+    address: Address;
+  };
   amount: number;
   toAccount: Address;
   fromAccount: Address;
@@ -156,11 +164,18 @@ function convertFromLegacyInstruction({
   accountKeys,
   programAddress,
 }: {
-  data: Uint8Array;
+  data: any;
   accounts: number[];
   accountKeys: Address[];
   programAddress: Address;
-}): IInstruction {
+}): {
+  data: Uint8Array;
+  programAddress: Address;
+  accounts: Array<{
+    address: Address;
+    role: 0 | 1 | 2 | 3;
+  }>;
+} {
   return {
     data: new Uint8Array(data),
     programAddress,
