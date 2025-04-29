@@ -22,11 +22,11 @@ const ChooseWallet = ({
   onClose: () => void;
   nextStep: () => void;
 }) => {
-  const [error, setError] = useState<string | null>(null);
-  const [showHistory, setShowHistory] = useState(false);
-  const { currentMultisigWallet, history } = useWalletStore();
   const { toAddress, set } = useWithdrawStore();
-  const [value, setValue] = useState<string | Address>(toAddress || ""); // TODO: remove initial value if no persisted value
+  const [showHistory, setShowHistory] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { currentMultisigWallet, history } = useWalletStore();
+  const [value, setValue] = useState<string | Address>(toAddress || "");
   const { totalAmount } = useVaultTokens({
     address: address(currentMultisigWallet?.defaultVault as Address),
   });

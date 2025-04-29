@@ -47,7 +47,7 @@ describe("Transfer SOL", async () => {
     urlOrMoniker: RPC_URL,
   });
 
-  const [wallet] = await getWalletByMemberKey(rpc, memberSigner1.address);
+  const [wallet] = await getWalletByMemberKey(memberSigner1.address);
   const multisigAddress = wallet.address;
   const vaultAddress = wallet.defaultVault;
   const transactionIndex = wallet.account.transactionIndex;
@@ -134,7 +134,7 @@ describe("Transfer SOL", async () => {
     }
   });
   test("Execute VaultTransaction by Creator", async () => {
-    const wallets = await getWalletByMemberKey(rpc, memberSigner1.address);
+    const wallets = await getWalletByMemberKey(memberSigner1.address);
     const transactionIndex = wallets[0].account.transactionIndex;
 
     const proposalPda = await getProposalPda({
@@ -194,7 +194,7 @@ describe("Transfer SOL", async () => {
 //     urlOrMoniker: RPC_URL,
 //   });
 
-//   const wallets = await getWalletByMemberKey(rpc, memberSigner1.address);
+//   const wallets = await getWalletByMemberKey(memberSigner1.address);
 //   const multisigAddress = wallets[0].address;
 //   const vaultAddress = wallets[0].defaultVault;
 //   const transactionIndex = wallets[0].account.transactionIndex;
@@ -288,7 +288,7 @@ describe("Transfer SOL", async () => {
 //     }
 //   });
 //   test("Execute VaultTransaction by Creator", async () => {
-//     const wallets = await getWalletByMemberKey(rpc, memberSigner1.address);
+//     const wallets = await getWalletByMemberKey(memberSigner1.address);
 //     const transactionIndex = wallets[0].account.transactionIndex;
 
 //     const proposalPda = await getProposalPda({

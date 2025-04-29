@@ -13,14 +13,18 @@ import {
 import { IconClose } from "~/components/icons/IconClose";
 
 export default function Dialog({
+  isOpen,
   trigger,
   children,
+  onOpenChange,
 }: {
+  isOpen?: boolean;
   trigger: ReactNode;
   children: ReactNode;
+  onOpenChange?: (open: boolean) => void;
 }) {
   return (
-    <Root>
+    <Root open={isOpen} onOpenChange={onOpenChange}>
       <Trigger asChild>
         <span>{trigger}</span>
       </Trigger>

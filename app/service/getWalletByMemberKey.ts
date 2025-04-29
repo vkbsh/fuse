@@ -23,40 +23,40 @@ import { Wallet } from "~/model/wallet";
 import { Address } from "~/model/web3js";
 import { parseTransactionMessage } from "~/utils/parse-transaction";
 
+import { useRpcStore } from "~/state/rpc";
+
+const { rpc } = useRpcStore.getState();
+
 export async function getWalletByMemberKey(
-  rpc: Rpc<SolanaRpcApiMainnet>,
+  // rpc: Rpc<SolanaRpcApiMainnet>,
   keyAddress: Address,
 ): Promise<Wallet[]> {
   // The key must be the one of the first 6 multisig members: Paymaster (optionally), up to 2 Active Keys, up to 3 Recovery Keys.
   const [...wallets] = await Promise.all([
-    getWalletByKeyAndIndex(rpc, keyAddress, 0),
-    getWalletByKeyAndIndex(rpc, keyAddress, 1),
-    getWalletByKeyAndIndex(rpc, keyAddress, 2),
-    getWalletByKeyAndIndex(rpc, keyAddress, 3),
-    getWalletByKeyAndIndex(rpc, keyAddress, 4),
-    getWalletByKeyAndIndex(rpc, keyAddress, 5),
+    getWalletByKeyAndIndex(keyAddress, 0),
+    getWalletByKeyAndIndex(keyAddress, 1),
+    getWalletByKeyAndIndex(keyAddress, 2),
+    getWalletByKeyAndIndex(keyAddress, 3),
+    getWalletByKeyAndIndex(keyAddress, 4),
+    getWalletByKeyAndIndex(keyAddress, 5),
   ]);
 
   return wallets.flat();
 }
 
-export async function getActiveProposals(
-  rpc: Rpc<SolanaRpcApiMainnet>,
-  keyAddress: Address,
-): Promise<any[]> {
+export async function getActiveProposals(keyAddress: Address): Promise<any[]> {
   const [...accounts] = await Promise.all([
-    getProposalAccounts(rpc, keyAddress, 1), // (Active: 1) Ready to approve
-    getProposalAccounts(rpc, keyAddress, 2), // (Rejected: 2)
-    getProposalAccounts(rpc, keyAddress, 3), // (Approved: 3) Ready to execute
-    getProposalAccounts(rpc, keyAddress, 4), // (Executed: 4)
-    getProposalAccounts(rpc, keyAddress, 5), // (Calncelled: 4)
+    getProposalAccounts(keyAddress, 1), // (Active: 1) Ready to approve
+    getProposalAccounts(keyAddress, 2), // (Rejected: 2)
+    getProposalAccounts(keyAddress, 3), // (Approved: 3) Ready to execute
+    getProposalAccounts(keyAddress, 4), // (Executed: 4)
+    getProposalAccounts(keyAddress, 5), // (Calncelled: 4)
   ]);
 
   return accounts.flat();
 }
 
 export async function getProposalAccounts(
-  rpc: Rpc<SolanaRpcApiMainnet>,
   keyAddress: Address,
   index: 1 | 2 | 3 | 4 | 5,
 ): Promise<any> {
@@ -152,7 +152,6 @@ export async function getProposalAccounts(
 }
 
 async function getWalletByKeyAndIndex(
-  rpc: Rpc<SolanaRpcApiMainnet>,
   keyAddress: Address,
   index: number,
 ): Promise<Wallet[]> {
@@ -186,13 +185,14 @@ async function getWalletByKeyAndIndex(
         vaultIndex: 0,
         multisigAddress: wallet.pubkey,
       });
+      const data = getMultisigAccountCodec().decode(
+        parseBase64RpcAccount(wallet.pubkey, wallet.account).data,
+      );
 
       return {
-        address: wallet.pubkey,
         defaultVault,
-        account: getMultisigAccountCodec().decode(
-          parseBase64RpcAccount(wallet.pubkey, wallet.account).data,
-        ),
+        account: data,
+        address: wallet.pubkey,
       };
     }),
   );

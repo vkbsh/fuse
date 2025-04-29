@@ -12,14 +12,14 @@ import { IconLogo } from "~/components/icons/IconLogo";
 
 import { useWalletStore } from "~/state/wallet";
 import { useWithdrawStore } from "~/state/withdraw";
-
 import { abbreviateAddress } from "~/utils/address";
 import { getProposalPda } from "~/program/multisig/pda";
+import { getWalletByMemberKey } from "~/service/getWalletByMemberKey";
+
 import {
   address,
-  getBase64EncodedWireTransaction,
-  getSignatureFromTransaction,
   LAMPORTS_PER_SOL,
+  getBase64EncodedWireTransaction,
 } from "gill";
 import {
   compileTransactionWithIx,
@@ -32,8 +32,6 @@ import {
   createProposalCreateInstruction,
 } from "~/program/multisig/instruction";
 
-const Memo = z.string().max(140).optional();
-
 const Review = ({
   onClose,
   prevStep,
@@ -43,7 +41,8 @@ const Review = ({
 }) => {
   const wallets = useWallets();
   const { memo, toAddress, token, amount, set } = useWithdrawStore();
-  const { currentWallet, currentMultisigWallet, history } = useWalletStore();
+  const { currentWallet, history } = useWalletStore();
+  const currentMultisigWallet = getWalletByMemberKey(currentWallet?.address);
 
   const wallet = wallets
     .filter((w) => w.features.includes("solana:signAndSendTransaction"))

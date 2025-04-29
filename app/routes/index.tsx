@@ -1,5 +1,5 @@
-import { Suspense } from "react";
 import { motion } from "motion/react";
+import { Suspense, useState } from "react";
 import { MetaFunction } from "react-router";
 
 import Connect from "~/routes/connect";
@@ -9,11 +9,12 @@ import Balance from "~/components/Balance";
 import CoinSection from "~/components/CoinSectioin";
 import { IconLogo } from "~/components/icons/IconLogo";
 import WithdrawDialog from "~/components/WithdrawDialog";
-import DisconnectButton from "~/components/DisconnectButton";
+import DisconnectDialog from "~/components/DisconnectDialog";
 import TransactionSection from "~/components/TransactionSection";
 import SelectVaultAccount from "~/components/SelectVaultAccount";
 
 import { useWalletStore } from "~/state/wallet";
+import { ConnectWalletDialog } from "~/components/ConnectWalletDialog";
 
 export const meta: MetaFunction = () => {
   return [
@@ -24,6 +25,7 @@ export const meta: MetaFunction = () => {
 
 export default function Index() {
   const { currentMultisigWallet } = useWalletStore();
+  const [isOpenConnectWallet, setOpenConnectWallet] = useState(false);
 
   if (!currentMultisigWallet) {
     return (
@@ -50,7 +52,7 @@ export default function Index() {
           </div>
           <div className="flex items-center gap-8">
             <WithdrawDialog />
-            <DisconnectButton />
+            <DisconnectDialog onConnect={() => setOpenConnectWallet(true)} />
           </div>
         </header>
         <main className="flex-1 flex flex-col w-full h-full min-h-0 gap-10">
@@ -67,6 +69,10 @@ export default function Index() {
             </section>
           </div>
         </main>
+        <ConnectWalletDialog
+          isOpen={isOpenConnectWallet}
+          onOpenChange={setOpenConnectWallet}
+        />
       </motion.div>
     </Suspense>
   );

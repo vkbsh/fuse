@@ -14,12 +14,16 @@ import Dialog from "~/components/ui/Dialog";
 import { useWalletStore } from "~/state/wallet";
 
 export function ConnectWalletDialog({
+  isOpen,
   children,
+  onOpenChange,
 }: {
-  children: React.ReactNode;
+  isOpen?: boolean;
+  children?: React.ReactNode;
+  onOpenChange?: (open: boolean) => void;
 }) {
   return (
-    <Dialog trigger={children}>
+    <Dialog trigger={children} isOpen={isOpen} onOpenChange={onOpenChange}>
       <WalletOptions />
     </Dialog>
   );
@@ -80,6 +84,7 @@ function WalletOption({
     try {
       const existingAccounts = [...wallet.accounts];
       const nextAccounts = await connect();
+
       // Filter to accounts that support the features we need.
       const withSignAndSendTransaction = nextAccounts.filter(
         (nextAccount) =>

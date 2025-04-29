@@ -1,12 +1,10 @@
 import superjson from "superjson";
 import { create } from "zustand";
-import { Rpc, SolanaRpcApiMainnet } from "gill";
 import { persist, PersistStorage } from "zustand/middleware";
 import { UseQueryOptions, useSuspenseQuery } from "@tanstack/react-query";
 
 import { Wallet } from "~/model/wallet";
 import { Address } from "~/model/web3js";
-import { useRpcStore } from "~/state/rpc";
 import {
   getWalletByMemberKey,
   getActiveProposals,
@@ -14,7 +12,7 @@ import {
 
 const STORAGE_KEY = "fuse:wallet-store";
 
-export type CustomWallet = {
+export type LSWallet = {
   name: string;
   icon: string;
   address: Address;
@@ -46,19 +44,13 @@ const keys = {
   transactions: (keyAddress: string) => ["transactions", keyAddress] as const,
 };
 
-export function walletsByKeyQuery({
-  rpc,
-  keyAddress,
-}: {
-  keyAddress: Address;
-  rpc: Rpc<SolanaRpcApiMainnet>;
-}) {
+export function walletsByKeyQuery({ keyAddress }: { keyAddress: Address }) {
   return {
     queryKey: keys.walletsByKey(keyAddress),
     enabled: !!keyAddress,
     queryFn: async () => {
       return {
-        wallets: await getWalletByMemberKey(rpc, keyAddress),
+        wallets: await getWalletByMemberKey(keyAddress),
       };
     },
   } satisfies UseQueryOptions<WalletData>;
@@ -67,45 +59,35 @@ export function walletsByKeyQuery({
 export function useSuspenseWalletByKey(
   keyAddress: Address,
 ): WalletData | { wallets: [] } {
-  const { rpc } = useRpcStore();
-
-  const { data } = useSuspenseQuery(walletsByKeyQuery({ keyAddress, rpc }));
+  const { data } = useSuspenseQuery(walletsByKeyQuery({ keyAddress }));
 
   return data;
 }
 
-export function proposalByKeyQuery({
-  rpc,
-  keyAddress,
-}: {
-  keyAddress: Address;
-  rpc: Rpc<SolanaRpcApiMainnet>;
-}) {
+export function proposalByKeyQuery({ keyAddress }: { keyAddress: Address }) {
   return {
     queryKey: keys.transactions(keyAddress),
     queryFn: async () => {
       return {
-        transactions: await getActiveProposals(rpc, keyAddress),
+        transactions: await getActiveProposals(keyAddress),
       };
     },
   } satisfies UseQueryOptions<ProposalAccountData>;
 }
 
 export function useSuspenseProposalByKey(keyAddress: Address) {
-  const { rpc } = useRpcStore();
-
-  const { data } = useSuspenseQuery(proposalByKeyQuery({ keyAddress, rpc }));
+  const { data } = useSuspenseQuery(proposalByKeyQuery({ keyAddress }));
 
   return data;
 }
 
 type WalletStore = {
-  history: CustomWallet[] | null;
+  history: LSWallet[] | null;
   multisigWallets: Wallet[] | null;
-  currentWallet: CustomWallet | null;
+  currentWallet: LSWallet | null;
   currentMultisigWallet: Wallet | null;
-  removeWallet(): void;
-  addWallet(wallet: CustomWallet): void;
+  removeWallet(address: Address): void;
+  addWallet(wallet: LSWallet): void;
   saveMultisigWallets(wallets: Wallet[]): void;
   selectMultisigWallet(walletAddress: Address): void;
 };
@@ -145,16 +127,23 @@ export const useWalletStore = create<WalletStore>()(
             currentMultisigWallet: wallets[0],
           };
         }),
-      removeWallet: () =>
-        set(() => {
+      removeWallet: (address: Address) =>
+        set((state) => {
+          const newHistory =
+            state.history?.filter((w) => w.address !== address) || [];
+          if (state?.currentWallet?.address === address) {
+            return {
+              currentWallet: null,
+              history: newHistory,
+            };
+          }
+
           return {
-            currentWallet: null,
-            multisigWallets: null,
-            currentMultisigWallet: null,
+            history: newHistory,
           };
         }),
 
-      addWallet: (wallet: CustomWallet) =>
+      addWallet: (wallet: LSWallet) =>
         set((state) => {
           return {
             currentWallet: wallet,
