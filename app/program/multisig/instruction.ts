@@ -261,11 +261,11 @@ export function createProposalCancelInstruction({
 }
 
 export function createVaultTransactionAccountsCloseInstruction({
-  vault,
-  multisig,
-  proposal,
-  transaction,
-  rentCollector,
+  vaultPda,
+  multisigPda,
+  proposalPda,
+  transactionPda,
+  rentCollectorPda,
 }: {
   vaultPda: Address;
   multisigPda: Address;
@@ -278,10 +278,10 @@ export function createVaultTransactionAccountsCloseInstruction({
       instructionDiscriminator: discriminator.vaultTransactionCloseAccounts,
     }),
     accounts: [
-      [multisig, READONLY],
-      [proposal, WRITABLE],
-      [transaction, WRITABLE],
-      [rentCollector || vault, WRITABLE],
+      [multisigPda, READONLY],
+      [proposalPda, WRITABLE],
+      [transactionPda, WRITABLE],
+      [rentCollectorPda || vaultPda, WRITABLE],
       [SYSTEM_PROGRAM_ADDRESS, READONLY],
     ],
   });
