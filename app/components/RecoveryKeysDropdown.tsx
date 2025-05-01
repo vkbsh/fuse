@@ -13,6 +13,7 @@ import { IconDisconnect } from "~/components/icons/IconDisconnect";
 import { abbreviateAddress } from "~/utils/address";
 import { LSWallet, useWalletStore } from "~/state/wallet";
 import { useEffect } from "react";
+import { cn } from "~/utils/tw";
 
 export default function RecoveryKeysDropdown({
   onConnect,
@@ -89,9 +90,12 @@ function Account({ active, wallet }: { active: boolean; wallet: LSWallet }) {
       <div className="flex flex-row gap-2 items-center">
         <img src={icon} alt={name} className="rounded-full w-5 h-5" />
         <span className="text-sm">{abbreviateAddress(address)}</span>
-        {active && (
-          <span className="w-3 h-3 bg-status-success rounded-full ml-auto" />
-        )}
+
+        <span
+          className={cn("w-3 h-3 bg-transparent rounded-full ml-auto", {
+            "bg-status-success": active,
+          })}
+        />
       </div>
       <div className="flex flex-row gap-2">
         <Tooltip text="Copy">

@@ -26,6 +26,7 @@ import {
   createProposalCreateInstruction,
   createProposalApproveInstruction,
   createVaultTransactionExecuteInstruction,
+  createVaultTransactionAccountsCloseInstruction,
 } from "~/program/multisig/instruction";
 
 import {
@@ -348,5 +349,46 @@ export async function vaultTransactionExecute({
   return compileTransactionWithIx({
     feePayer: memberAddress,
     instructions: [vaultTransactionExecuteIx],
+  });
+}
+
+export async function vaultTransactionAccountsClose({
+  multisigPda,
+  transactionIndex,
+  rentCollectorPda,
+}: {
+  multisigPda: Address;
+  transactionIndex: bigint;
+  rentCollectorPda: Address;
+}) {
+  const vaultPda = await getVaultPda({
+    vaultIndex: 0,
+    multisigAddress: multisigPda,
+  });
+
+  const proposalPda = await getProposalPda({
+    transactionIndex,
+    multisigAddress: multisigPda,
+  });
+
+  const transactionPda = await getTransactionPda({
+    transactionIndex,
+    multisigAddress: multisigPda,
+  });
+
+  const vaultTransactionAccountsCloseIx =
+    createVaultTransactionAccountsCloseInstruction({
+      multisigPda,
+      vaultPda,
+      proposalPda,
+      transactionPda,
+      rentCollectorPda,
+    });
+
+  const feePayer = rentCollectorPda ?? vaultPda; // TODO: temp
+
+  return compileTransactionWithIx({
+    feePayer,
+    instructions: [vaultTransactionAccountsCloseIx],
   });
 }

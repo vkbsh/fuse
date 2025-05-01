@@ -28,12 +28,13 @@ import { Address } from "~/model/web3js";
 import { instructionFromLegacyInstruction } from "~/utils/instruction";
 
 const discriminator = {
-  vaultTransactionCreate: [48, 250, 78, 168, 208, 226, 218, 211],
   proposalCreate: [220, 60, 73, 224, 30, 108, 79, 159],
   proposalCancel: [27, 42, 127, 237, 38, 163, 84, 203],
   proposalApprove: [144, 37, 164, 136, 188, 216, 42, 248],
   proposalReject: [243, 62, 134, 156, 230, 106, 246, 135],
   vaultTransactionExecute: [194, 8, 161, 87, 153, 164, 25, 171],
+  vaultTransactionCreate: [48, 250, 78, 168, 208, 226, 218, 211],
+  vaultTransactionCloseAccounts: [196, 71, 187, 176, 2, 35, 170, 165],
 };
 
 const { READONLY, WRITABLE, READONLY_SIGNER, WRITABLE_SIGNER } = AccountRole;
@@ -255,6 +256,33 @@ export function createProposalCancelInstruction({
       [multisigPda, READONLY],
       [memberAddress, WRITABLE_SIGNER],
       [proposalPda, READONLY_SIGNER],
+    ],
+  });
+}
+
+export function createVaultTransactionAccountsCloseInstruction({
+  vault,
+  multisig,
+  proposal,
+  transaction,
+  rentCollector,
+}: {
+  vaultPda: Address;
+  multisigPda: Address;
+  proposalPda: Address;
+  transactionPda: Address;
+  rentCollectorPda: Address;
+}): IInstruction {
+  return createInstruction({
+    data: getVaultExecuteCodec().encode({
+      instructionDiscriminator: discriminator.vaultTransactionCloseAccounts,
+    }),
+    accounts: [
+      [multisig, READONLY],
+      [proposal, WRITABLE],
+      [transaction, WRITABLE],
+      [rentCollector || vault, WRITABLE],
+      [SYSTEM_PROGRAM_ADDRESS, READONLY],
     ],
   });
 }
