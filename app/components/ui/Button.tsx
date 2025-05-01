@@ -30,15 +30,20 @@ const Button = ({
   children,
   size = "md",
   variant = "primary",
+  className,
+  disabled,
   ...props
 }: {
   size?: Size;
   variant?: Variant;
+  disabled?: boolean;
   className?: string;
   onClick?: () => void;
   children: React.ReactNode;
 }) => {
-  const className = cn(base, sizes[size], variants[variant], props.className);
+  const clsName = cn(base, sizes[size], variants[variant], className, {
+    "opacity-50 cursor-not-allowed": disabled,
+  });
 
   return (
     <motion.button
@@ -47,7 +52,7 @@ const Button = ({
       }}
       {...props}
       onClick={onClick}
-      className={className}
+      className={clsName}
     >
       {children}
     </motion.button>

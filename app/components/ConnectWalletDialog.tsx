@@ -56,6 +56,7 @@ function WalletOptions() {
               onAccountSelect={(walletAccount) => {
                 if (walletAccount) {
                   addWallet({
+                    ...walletAccount,
                     name: wallet.name,
                     icon: wallet.icon,
                     address: address(walletAccount.address),

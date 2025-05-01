@@ -1,4 +1,7 @@
+import { isAddress } from "gill";
 import { motion } from "motion/react";
+import { useConnect, useWallets } from "@wallet-standard/react";
+import { getWallets, registerWallet } from "@wallet-standard/core";
 
 import Tooltip from "~/components/ui/Tooltip";
 import Dropdown from "~/components/ui/Dropdown";
@@ -9,8 +12,9 @@ import { IconDisconnect } from "~/components/icons/IconDisconnect";
 
 import { abbreviateAddress } from "~/utils/address";
 import { LSWallet, useWalletStore } from "~/state/wallet";
+import { useEffect } from "react";
 
-export default function DisconnectDropdown({
+export default function RecoveryKeysDropdown({
   onConnect,
 }: {
   onConnect: () => void;
@@ -22,17 +26,21 @@ export default function DisconnectDropdown({
       align="end"
       trigger={<IconDots />}
       items={[
-        ...(history || []).map((wallet) => {
-          if (!wallet?.address) return null;
+        ...(history || [])
+          .sort((a, b) => b.address.localeCompare(a.address))
+          .map((wallet) => {
+            const walletAddress = wallet?.address;
 
-          return (
-            <Account
-              wallet={wallet}
-              key={wallet?.address}
-              active={wallet?.address === currentWallet?.address}
-            />
-          );
-        }),
+            if (!walletAddress) return null;
+
+            return (
+              <Account
+                wallet={wallet}
+                key={walletAddress}
+                active={walletAddress === currentWallet?.address}
+              />
+            );
+          }),
         <motion.span
           onClick={onConnect}
           whileHover={{ opacity: 1 }}
@@ -47,13 +55,31 @@ export default function DisconnectDropdown({
 }
 
 function Account({ active, wallet }: { active: boolean; wallet: LSWallet }) {
-  const { removeWallet } = useWalletStore();
-  const { address, name, icon } = wallet || {};
+  const walletsExtension = useWallets();
+  const { removeWallet, addWallet } = useWalletStore();
+  const { address, name, icon } = wallet;
 
-  const connect: () => void = () => console.log("Connect account", address);
-  const dissconnect: () => void = () => removeWallet(address);
-  const copyClipboard: () => void = () =>
-    navigator.clipboard.writeText(address);
+  const walletExtension = walletsExtension
+    .filter((w) => w.features.includes("solana:signAndSendTransaction"))
+    .find((w) => w.name === name); // TODO: find a way to find by Address (same extension can have multiple accounts)
+
+  // const [, connect] = useConnect(walletExtension);
+  const [, connect] = useConnect(walletExtension);
+
+  const dissconnectHandler = () => removeWallet(address);
+  const copyClipboardHandler = () => navigator.clipboard.writeText(address);
+  const connectHandler = async () => {
+    const accounts = await connect({ silent: true });
+    const accountAddress = accounts[0]?.address;
+
+    if (isAddress(accountAddress)) {
+      addWallet({
+        name,
+        icon,
+        address: accountAddress,
+      });
+    }
+  };
 
   return (
     <motion.span
@@ -70,7 +96,7 @@ function Account({ active, wallet }: { active: boolean; wallet: LSWallet }) {
       <div className="flex flex-row gap-2">
         <Tooltip text="Copy">
           <motion.span
-            onClick={copyClipboard}
+            onClick={copyClipboardHandler}
             className="cursor-pointer ml-auto"
             whileHover={{ color: "var(--color-status-success)" }}
           >
@@ -79,7 +105,7 @@ function Account({ active, wallet }: { active: boolean; wallet: LSWallet }) {
         </Tooltip>
         <Tooltip text="Disconnect">
           <motion.span
-            onClick={dissconnect}
+            onClick={dissconnectHandler}
             className="cursor-pointer ml-auto"
             whileHover={{ color: "var(--color-status-error)" }}
           >
@@ -88,7 +114,7 @@ function Account({ active, wallet }: { active: boolean; wallet: LSWallet }) {
         </Tooltip>
         <Tooltip text="Connect">
           <motion.span
-            onClick={connect}
+            onClick={connectHandler}
             className="cursor-pointer ml-auto"
             whileHover={{ color: "var(--color-status-success)" }}
           >

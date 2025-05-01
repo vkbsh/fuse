@@ -1,28 +1,36 @@
-import { z } from "zod";
-
 import {
   useConnect,
   useWallets,
+  UiWalletAccount,
   getWalletFeature,
 } from "@wallet-standard/react";
-
-import Input from "~/components/ui/Input";
-import Button from "~/components/ui/Button";
-import { IconLogo } from "~/components/icons/IconLogo";
-
-import { useWalletStore } from "~/state/wallet";
-import { useWithdrawStore } from "~/state/withdraw";
-import { abbreviateAddress } from "~/utils/address";
-import { getProposalPda } from "~/program/multisig/pda";
-import { getWalletByMemberKey } from "~/service/getWalletByMemberKey";
 
 import {
   address,
   LAMPORTS_PER_SOL,
   getBase64EncodedWireTransaction,
+  TransactionSendingSigner,
+  signTransactionMessageWithSigners,
+  getSignatureFromTransaction,
+  Transaction,
+  TransactionSendingSignerConfig,
+  SignatureBytes,
+  getTransactionEncoder,
+  isTransactionSendingSigner,
+  signAndSendTransactionMessageWithSigners, // TODO: use as singer to set in setTransactionMessageFeePayerSigner
 } from "gill";
+
+import Input from "~/components/ui/Input";
+import Button from "~/components/ui/Button";
+import { IconLogo } from "~/components/icons/IconLogo";
+
+import { useWithdrawStore } from "~/state/withdraw";
+import { abbreviateAddress } from "~/utils/address";
+import { getProposalPda } from "~/program/multisig/pda";
+
 import {
   compileTransactionWithIx,
+  createMessageWithSigner,
   createTransferInnerMessage,
   createTransferTokenInnerMessage,
 } from "~/program/multisig/transaction";
@@ -32,6 +40,68 @@ import {
   createProposalCreateInstruction,
 } from "~/program/multisig/instruction";
 
+import { Address } from "~/model/web3js";
+import { useWalletStore, useSuspenseWalletByKey } from "~/state/wallet";
+import { IdentifierString, WalletAccount } from "@wallet-standard/core";
+import { getAbortablePromise } from "@solana/promises";
+
+// interface SolanaSignAndSendTransactionOutput {
+//   /** Transaction signature, as raw bytes. */
+//   readonly signature: Uint8Array;
+// }
+
+type SolanaTransactionCommitment = "processed" | "confirmed" | "finalized";
+
+type SolanaSignAndSendTransactionOptions = SolanaSignTransactionOptions & {
+  /** Desired commitment level. If provided, confirm the transaction after sending. */
+  readonly commitment?: SolanaTransactionCommitment;
+
+  /** Disable transaction verification at the RPC. */
+  readonly skipPreflight?: boolean;
+
+  /** Maximum number of times for the RPC node to retry sending the transaction to the leader. */
+  readonly maxRetries?: number;
+};
+
+type SolanaSignTransactionOptions = {
+  /** Preflight commitment level. */
+  readonly preflightCommitment?: SolanaTransactionCommitment;
+
+  /** The minimum slot that the request can be evaluated at. */
+  readonly minContextSlot?: number;
+};
+
+interface SolanaSignTransactionInput {
+  /** Account to use. */
+  readonly account: WalletAccount;
+
+  /** Serialized transaction, as raw bytes. */
+  readonly transaction: Uint8Array;
+
+  /** Chain to use. */
+  readonly chain?: IdentifierString;
+
+  /** TODO: docs */
+  readonly options?: SolanaSignTransactionOptions;
+}
+
+interface SolanaSignAndSendTransactionInput extends SolanaSignTransactionInput {
+  /** Chain to use. */
+  readonly chain: IdentifierString;
+
+  /** TODO: docs */
+  readonly options?: SolanaSignAndSendTransactionOptions;
+}
+
+type Input = Readonly<
+  Omit<SolanaSignAndSendTransactionInput, "account" | "chain" | "options"> & {
+    options?: Readonly<{
+      minContextSlot?: bigint;
+    }>;
+  }
+>;
+// type Output = SolanaSignAndSendTransactionOutput;
+
 const Review = ({
   onClose,
   prevStep,
@@ -40,9 +110,10 @@ const Review = ({
   prevStep: () => void;
 }) => {
   const wallets = useWallets();
-  const { memo, toAddress, token, amount, set } = useWithdrawStore();
   const { currentWallet, history } = useWalletStore();
-  const currentMultisigWallet = getWalletByMemberKey(currentWallet?.address);
+  const { memo, toAddress, token, amount, set } = useWithdrawStore();
+  const multisigWallet = useSuspenseWalletByKey(currentWallet?.address);
+  const currentMultisigWallet = multisigWallet?.wallets[0];
 
   const wallet = wallets
     .filter((w) => w.features.includes("solana:signAndSendTransaction"))
@@ -106,15 +177,84 @@ const Review = ({
     });
 
     const accounts = await connect({ silent: true });
+    const account = accounts[0];
 
     const { signAndSendTransaction } = getWalletFeature(
-      wallet,
+      account,
       "solana:signAndSendTransaction",
     );
 
+    // const createTransactionSendingSigner = (
+    //   uiWalletAccount: UiWalletAccount,
+    //   chain: string,
+    // ): TransactionSendingSigner<typeof uiWalletAccount.address> => {
+    //   // Create encoder once
+    //   const transactionEncoder = getTransactionEncoder();
+
+    //   // Get the signAndSendTransaction function from wallet
+    //   const signAndSendTransaction = async (inputWithOptions) => {
+    //     // This is where you'd call your wallet's signAndSendTransaction method
+    //     // Similar to what the hook does with the wallet standard
+    //     return await signAndSendTransaction({
+    //       account: uiWalletAccount,
+    //       chain,
+    //       transaction: inputWithOptions.transaction,
+    //       ...inputWithOptions.options,
+    //     });
+    //   };
+
+    //   return {
+    //     address: address(uiWalletAccount.address),
+    //     async signAndSendTransactions(transactions, config = {}) {
+    //       const { abortSignal, ...options } = config;
+    //       abortSignal?.throwIfAborted();
+
+    //       if (transactions.length > 1) {
+    //         throw Error("SOLANA_ERROR__SIGNER__WALLET_MULTISIGN_UNIMPLEMENTED");
+    //       }
+    //       if (transactions.length === 0) {
+    //         return [];
+    //       }
+
+    //       const [transaction] = transactions;
+    //       const wireTransactionBytes = transactionEncoder.encode(transaction);
+    //       const inputWithOptions = {
+    //         ...options,
+    //         transaction: wireTransactionBytes as Uint8Array,
+    //       };
+
+    //       const { signature } = await getAbortablePromise(
+    //         signAndSendTransaction(inputWithOptions),
+    //         abortSignal,
+    //       );
+
+    //       return Object.freeze([signature as SignatureBytes]);
+    //     },
+    //   };
+    // };
+
+    // const signer: TransactionSendingSigner = createTransactionSendingSigner(
+    //   account,
+    //   "solana:mainnet",
+    // );
+
+    // const testTxMessage = await createMessageWithSigner({
+    //   feePayer: signer,
+    //   instructions,
+    // });
+
+    // try {
+    //   const signedTransaction =
+    //     await signTransactionMessageWithSigners(testTxMessage);
+    //   const signature = getSignatureFromTransaction(signedTransaction);
+    //   console.log("signature", signature);
+    // } catch (error) {
+    //   console.log("Error", error);
+    // }
+
     try {
       const [{ signature }] = await signAndSendTransaction({
-        account: accounts[0],
+        account,
         chain: "solana:mainnet",
         transaction: Buffer.from(getBase64EncodedWireTransaction(tx), "base64"),
       });

@@ -28,7 +28,6 @@ import { useRpcStore } from "~/state/rpc";
 const { rpc } = useRpcStore.getState();
 
 export async function getWalletByMemberKey(
-  // rpc: Rpc<SolanaRpcApiMainnet>,
   keyAddress: Address,
 ): Promise<Wallet[]> {
   // The key must be the one of the first 6 multisig members: Paymaster (optionally), up to 2 Active Keys, up to 3 Recovery Keys.
@@ -135,6 +134,7 @@ export async function getProposalAccounts(
       }
 
       return {
+        // TODO: add address of Tx creator
         approved,
         rejected,
         cancelled,

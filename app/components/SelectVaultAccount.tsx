@@ -1,13 +1,14 @@
 import { motion } from "motion/react";
 import { address } from "gill";
-import { cn } from "~/utils/tw";
 
 import Dropdown from "~/components/ui/Dropdown";
 import { IconChevronDown } from "~/components/icons/IconChevronDown";
 
+import { cn } from "~/utils/tw";
+import { abbreviateAddress } from "~/utils/address";
+
 import { Address } from "~/model/web3js";
 import { useWalletStore } from "~/state/wallet";
-import { abbreviateAddress } from "~/utils/address";
 
 export default function SelectMultisigAccount() {
   const { currentMultisigWallet, multisigWallets, selectMultisigWallet } =

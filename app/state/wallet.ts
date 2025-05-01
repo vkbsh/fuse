@@ -106,6 +106,7 @@ const storage: PersistStorage<WalletStore> = {
   removeItem: (name) => localStorage.removeItem(name),
 };
 
+// TODO: Show history only for related Multisig account
 export const useWalletStore = create<WalletStore>()(
   persist(
     (set) => ({

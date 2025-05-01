@@ -7,7 +7,12 @@ import { abbreviateAddress } from "~/utils/address";
 import { useWalletStore } from "~/state/wallet";
 
 export type TransactionType = "send" | "receive";
-export type Status = "active" | "ready" | "executed" | "cancelled";
+export type Status =
+  | "Active"
+  | "Rejected"
+  | "Approved"
+  | "Executed"
+  | "Cancelled";
 
 export type Transaction = {
   message: {

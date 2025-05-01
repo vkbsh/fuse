@@ -49,7 +49,7 @@ function Transactions({ address }: { address: Address }) {
               }}
               className="cursor-pointer p-3 rounded-[20px]"
             >
-              <TransactionDialog address={data.address} status={data.status}>
+              <TransactionDialog {...data}>
                 <Transaction {...data} />
               </TransactionDialog>
             </motion.div>

@@ -9,9 +9,9 @@ import Balance from "~/components/Balance";
 import CoinSection from "~/components/CoinSectioin";
 import { IconLogo } from "~/components/icons/IconLogo";
 import WithdrawDialog from "~/components/WithdrawDialog";
-import DisconnectDialog from "~/components/DisconnectDialog";
 import TransactionSection from "~/components/TransactionSection";
 import SelectVaultAccount from "~/components/SelectVaultAccount";
+import RecoveryKeysDropdown from "~/components/RecoveryKeysDropdown";
 
 import { useWalletStore } from "~/state/wallet";
 import { ConnectWalletDialog } from "~/components/ConnectWalletDialog";
@@ -52,7 +52,9 @@ export default function Index() {
           </div>
           <div className="flex items-center gap-8">
             <WithdrawDialog />
-            <DisconnectDialog onConnect={() => setOpenConnectWallet(true)} />
+            <RecoveryKeysDropdown
+              onConnect={() => setOpenConnectWallet(true)}
+            />
           </div>
         </header>
         <main className="flex-1 flex flex-col w-full h-full min-h-0 gap-10">
