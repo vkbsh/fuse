@@ -1,10 +1,12 @@
 import { address } from "gill";
 import { motion } from "motion/react";
+import { useDebounce } from "@uidotdev/usehooks";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 
 import Input from "~/components/ui/Input";
 import Button from "~/components/ui/Button";
-import SelectToken, { Token } from "~/components/SelectToken";
+import SelectToken from "~/components/SelectToken";
 
 import { useWalletStore } from "~/state/wallet";
 import { useWithdrawStore } from "~/state/withdraw";
@@ -32,9 +34,18 @@ const EnterAmount = ({
   });
 
   const selectedToken = token || coins[0];
+  const debounceValue = useDebounce(value, 300);
 
-  const calculatedAmount = Number(value) * 200; // TODO: fetch price from Jupiter
-  const minAmount = 0.0001; // TODO: calculate correct min
+  const { data: calculatedAmount = 0 } = useQuery({
+    enabled: Number(debounceValue) > 0,
+    queryKey: ["tokenPrice", debounceValue],
+    queryFn: async () => {
+      const tokenPrice = await fetchTokenPrice(token?.mint as string);
+
+      return Number(debounceValue) * tokenPrice;
+    },
+  });
+
   const maxAmount =
     token?.symbol?.toLocaleLowerCase() === "sol"
       ? getRoundedSOL(selectedToken?.amount)
@@ -78,7 +89,8 @@ const EnterAmount = ({
     if (Number(value) > Number(selectedToken?.amount)) {
       return "Invalid amount (not enough balance)";
     }
-    if (Number(value) < minAmount) {
+    if (Number(value) < 0.0000000001) {
+      // TODO: check min amount
       return "Invalid amount (too small)";
     }
 
@@ -98,6 +110,8 @@ const EnterAmount = ({
   useEffect(() => {
     set("token", selectedToken);
   }, [selectedToken]);
+
+  console.log("calculatedAmount", calculatedAmount);
 
   return (
     <>
@@ -141,21 +155,21 @@ const EnterAmount = ({
           </motion.span>
         )}
       </div>
-      <div className="flex flex-row gap-2 items-center justify-between mt-2">
+      <div className="flex flex-row gap-2 items-center justify-between mt-2 text-white/60">
         <motion.span
           key={calculatedAmount}
           animate={{ opacity: [0, 1] }}
           transition={{
             duration: 0.3,
           }}
-          className="text-base text-white"
+          className="text-base"
         >
           ${calculatedAmount.toFixed(2)}{" "}
         </motion.span>
         <span>{maxAmount}</span>
       </div>
       <div className="flex flex-row gap-2 justify-center">
-        <Button size="md" onClick={prevStep} variant="secondary">
+        <Button size="md" onClick={prevStep} variant="cancel">
           Back
         </Button>
         <Button size="md" onClick={handleNextStep} variant="secondary">

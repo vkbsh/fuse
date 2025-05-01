@@ -18,18 +18,18 @@ export function ConnectWalletDialog({
   children,
   onOpenChange,
 }: {
-  isOpen?: boolean;
+  isOpen: boolean;
   children?: React.ReactNode;
-  onOpenChange?: (open: boolean) => void;
+  onOpenChange: (open: boolean) => void;
 }) {
   return (
     <Dialog trigger={children} isOpen={isOpen} onOpenChange={onOpenChange}>
-      <WalletOptions />
+      <WalletOptions close={() => onOpenChange(false)} />
     </Dialog>
   );
 }
 
-function WalletOptions() {
+function WalletOptions({ close }: { close: () => void }) {
   const wallets = useWallets();
   const { addWallet } = useWalletStore();
 
@@ -48,6 +48,7 @@ function WalletOptions() {
           )
           .map((wallet) => (
             <WalletOption
+              close={close}
               key={wallet.name}
               wallet={wallet}
               onError={(err) => {
@@ -71,11 +72,13 @@ function WalletOptions() {
 }
 
 function WalletOption({
+  close,
   wallet,
   onError,
   onAccountSelect,
 }: {
   wallet: UiWallet;
+  close: () => void;
   onError(err: unknown): void;
   onAccountSelect(account: UiWalletAccount | null): void;
 }) {
@@ -110,6 +113,8 @@ function WalletOption({
       }
     } catch (e) {
       onError(e);
+    } finally {
+      typeof close === "function" && close();
     }
   }, [connect, onAccountSelect, onError, wallet.accounts]);
 

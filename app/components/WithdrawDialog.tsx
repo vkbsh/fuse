@@ -10,11 +10,14 @@ import { IconCircleArrow } from "~/components/icons/IconCircleArrow";
 import { useWithdrawStore } from "~/state/withdraw";
 import { AnimatePresence, motion } from "motion/react";
 
-export default function WithdrawButton() {
+export default function WithdrawDialog() {
   const { reset } = useWithdrawStore();
+  const [isOpen, setOpen] = useState(false);
 
   return (
     <Dialog
+      isOpen={isOpen}
+      onOpenChange={setOpen}
       trigger={
         <Button size="sm" variant="bordered">
           <span className="rounded-full w-[16px] h-[16px] flex items-center justify-center">
@@ -24,12 +27,12 @@ export default function WithdrawButton() {
         </Button>
       }
     >
-      <Steps />
+      <Steps onClose={() => setOpen(false)} />
     </Dialog>
   );
 }
 
-function Steps() {
+function Steps({ onClose }: { onClose: () => void }) {
   const [currentStep, setCurrentStep] = useState(1);
   const nextStep = () => setCurrentStep((step) => (step < 3 ? step + 1 : step));
   const prevStep = () => setCurrentStep((step) => (step > 1 ? step - 1 : step));
@@ -47,11 +50,15 @@ function Steps() {
           exit={{ backdropFilter: "blur(10px)", opacity: 0, height: 300 }}
           className="flex flex-col gap-6"
         >
-          {currentStep === 1 && <ChooseWallet nextStep={nextStep} />}
+          {currentStep === 1 && (
+            <ChooseWallet onClose={onClose} nextStep={nextStep} />
+          )}
           {currentStep === 2 && (
             <EnterAmount prevStep={prevStep} nextStep={nextStep} />
           )}
-          {currentStep === 3 && <Review prevStep={prevStep} />}
+          {currentStep === 3 && (
+            <Review onClose={onClose} prevStep={prevStep} />
+          )}
         </motion.div>
       </AnimatePresence>
     </div>

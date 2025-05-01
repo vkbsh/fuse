@@ -313,7 +313,7 @@ const Review = ({
         />
       </div>
       <div className="flex flex-row gap-2 justify-center">
-        <Button size="md" onClick={prevStep} variant="secondary">
+        <Button size="md" onClick={prevStep} variant="cancel">
           Back
         </Button>
         <Button size="md" onClick={handleTx} variant="secondary">

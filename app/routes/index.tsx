@@ -71,11 +71,11 @@ export default function Index() {
             </section>
           </div>
         </main>
-        <ConnectWalletDialog
-          isOpen={isOpenConnectWallet}
-          onOpenChange={setOpenConnectWallet}
-        />
       </motion.div>
+      <ConnectWalletDialog
+        isOpen={isOpenConnectWallet}
+        onOpenChange={setOpenConnectWallet}
+      />
     </Suspense>
   );
 }

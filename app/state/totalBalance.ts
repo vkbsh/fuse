@@ -65,9 +65,9 @@ export function useVaultTokens({ address }: { address: Address }) {
       ata: coin.address,
       decimals: coin.decimals,
       name: query.data?.name || "",
-      symbol: query.data?.symbol || "",
-      logoURI: query.data?.logoURI || "",
-      amountUSD: (query.data?.price || 1) * amount,
+      symbol: query?.data?.symbol || "",
+      logoURI: query?.data?.logoURI || "",
+      amountUSD: (query?.data?.price || 1) * amount,
     };
   });
 

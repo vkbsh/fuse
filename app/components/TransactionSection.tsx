@@ -9,18 +9,29 @@ import { useSuspenseProposalByKey, useWalletStore } from "~/state/wallet";
 export type Status = "ready" | "executed" | "cancelled";
 
 export default function TransactionSection() {
-  const { currentMultisigWallet } = useWalletStore();
+  const { currentMultisigWallet, currentWallet } = useWalletStore();
   const multisigAddress = currentMultisigWallet?.address;
 
-  if (!multisigAddress) {
+  if (!multisigAddress || !currentWallet?.address) {
     return null;
   }
 
-  return <Transactions address={multisigAddress} />;
+  return (
+    <Transactions
+      multisigAddress={multisigAddress}
+      walletAddress={currentWallet?.address}
+    />
+  );
 }
 
-function Transactions({ address }: { address: Address }) {
-  const { transactions } = useSuspenseProposalByKey(address);
+function Transactions({
+  multisigAddress,
+  walletAddress,
+}: {
+  multisigAddress: Address;
+  walletAddress: Address;
+}) {
+  const { transactions } = useSuspenseProposalByKey(multisigAddress);
 
   return (
     <div className="flex flex-1 flex-col gap-0 overflow-y-auto scroll-smooth grow pr-4 -ml-4">
@@ -43,13 +54,17 @@ function Transactions({ address }: { address: Address }) {
               key={data.transactionIndex}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
+              transition={{
+                y: { delay: i * 0.05 },
+                opacity: { duration: 0.2 },
+              }}
               whileHover={{
                 backgroundColor: "var(--color-trn-hover)",
+                transition: { duration: 0.2 },
               }}
               className="cursor-pointer p-3 rounded-[20px]"
             >
-              <TransactionDialog {...data}>
+              <TransactionDialog currentWalletAddress={walletAddress} {...data}>
                 <Transaction {...data} />
               </TransactionDialog>
             </motion.div>

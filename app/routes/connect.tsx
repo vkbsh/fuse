@@ -1,4 +1,4 @@
-import { Suspense, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 
 import Button from "~/components/ui/Button";
@@ -10,6 +10,7 @@ import { useWalletStore, useSuspenseWalletByKey } from "~/state/wallet";
 
 export default function Connect() {
   const { currentWallet } = useWalletStore();
+  const [isOpenConnectWallet, setOpenConnectWallet] = useState(false);
 
   return (
     <motion.div
@@ -28,7 +29,10 @@ export default function Connect() {
             Security is in our DNA
           </h1>
 
-          <ConnectWalletDialog>
+          <ConnectWalletDialog
+            isOpen={isOpenConnectWallet}
+            onOpenChange={setOpenConnectWallet}
+          >
             <Button size="full">
               {currentWallet?.address
                 ? abbreviateAddress(currentWallet.address)
