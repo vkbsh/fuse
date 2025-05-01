@@ -1,6 +1,6 @@
 # Fuse - Web Client
 
-![Alt text](./public/images/SDNA-fuse.png)
+![Fuse](./public/images/SDNA-fuse.jpg)
 
 ## Templates/SPA
 
