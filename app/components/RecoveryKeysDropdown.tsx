@@ -12,13 +12,12 @@ import { IconDisconnect } from "~/components/icons/IconDisconnect";
 
 import { abbreviateAddress } from "~/utils/address";
 import { LSWallet, useWalletStore } from "~/state/wallet";
-import { useEffect } from "react";
 import { cn } from "~/utils/tw";
 
 export default function RecoveryKeysDropdown({
-  onConnect,
+  onClick,
 }: {
-  onConnect: () => void;
+  onClick: () => void;
 }) {
   const { currentWallet, history } = useWalletStore();
 
@@ -43,7 +42,7 @@ export default function RecoveryKeysDropdown({
             );
           }),
         <motion.span
-          onClick={onConnect}
+          onClick={onClick}
           whileHover={{ opacity: 1 }}
           className="cursor-pointer p-2 flex flex-row justify-between opacity-60"
         >

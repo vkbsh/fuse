@@ -111,16 +111,20 @@ const Review = ({
   onClose: () => void;
   prevStep: () => void;
 }) => {
-  const wallets = useWallets();
+  // const wallets = useWallets();
   const { currentWallet, history } = useWalletStore();
   const { memo, toAddress, token, amount, set } = useWithdrawStore();
   const multisigWallet = useSuspenseWalletByKey(currentWallet?.address);
   const currentMultisigWallet = multisigWallet?.wallets[0];
 
-  const wallet = wallets
-    .filter((w) => w.features.includes("solana:signAndSendTransaction"))
-    .find((w) => w.name === currentWallet?.name);
-  const [, connect] = useConnect(wallet);
+  const signAndSendTransaction = useWalletFeatureHandler(
+    "signAndSendTransaction",
+  );
+
+  // const wallet = wallets
+  //   .filter((w) => w.features.includes("solana:signAndSendTransaction"))
+  //   .find((w) => w.name === currentWallet?.name);
+  // const [, connect] = useConnect(wallet);
 
   const handleTx = async () => {
     const nextTxIndex = BigInt(
@@ -178,13 +182,13 @@ const Review = ({
       feePayer: address(currentWallet?.address),
     });
 
-    const accounts = await connect({ silent: true });
-    const account = accounts[0];
+    // const accounts = await connect({ silent: true });
+    // const account = accounts[0];
 
-    const { signAndSendTransaction } = getWalletFeature(
-      account,
-      "solana:signAndSendTransaction",
-    );
+    // const { signAndSendTransaction } = getWalletFeature(
+    //   account,
+    //   "solana:signAndSendTransaction",
+    // );
 
     // const createTransactionSendingSigner = (
     //   uiWalletAccount: UiWalletAccount,
@@ -254,17 +258,19 @@ const Review = ({
     //   console.log("Error", error);
     // }
 
-    try {
-      const [{ signature }] = await signAndSendTransaction({
-        account,
-        chain: "solana:mainnet",
-        transaction: Buffer.from(getBase64EncodedWireTransaction(tx), "base64"),
-      });
+    await signAndSendTransaction({ transaction: tx });
 
-      typeof onClose === "function" && onClose();
-    } catch (error) {
-      console.error(error);
-    }
+    // try {
+    //   const [{ signature }] = await signAndSendTransaction({
+    //     account,
+    //     chain: "solana:mainnet",
+    //     transaction: Buffer.from(getBase64EncodedWireTransaction(tx), "base64"),
+    //   });
+
+    //   typeof onClose === "function" && onClose();
+    // } catch (error) {
+    //   console.error(error);
+    // }
   };
 
   const fromHistory = history?.find((w) => w.address === toAddress);

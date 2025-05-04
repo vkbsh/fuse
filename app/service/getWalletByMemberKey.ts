@@ -52,7 +52,9 @@ export async function getActiveProposals(keyAddress: Address): Promise<any[]> {
     getProposalAccounts(keyAddress, 5), // (Calncelled: 4)
   ]);
 
-  return accounts.flat();
+  return accounts
+    .flat()
+    .sort((a, b) => Number(b?.transactionIndex) - Number(a?.transactionIndex));
 }
 
 export async function getProposalAccounts(
@@ -146,9 +148,16 @@ export async function getProposalAccounts(
     }),
   );
 
-  return transactions
-    .filter((data) => !!data)
-    .sort((a, b) => Number(b?.timestamp) - Number(a?.timestamp));
+  console.log("transactions", transactions.length);
+
+  console.log(
+    "transactions",
+    transactions.map((t) => ({
+      transactionIndex: Number(t?.transactionIndex),
+    })),
+  );
+
+  return transactions.filter((data) => !!data);
 }
 
 async function getWalletByKeyAndIndex(

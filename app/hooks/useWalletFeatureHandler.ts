@@ -1,20 +1,15 @@
 import {
-  getWalletFeature,
   useConnect,
   useWallets,
+  getWalletFeature,
 } from "@wallet-standard/react";
-import { getBase64EncodedWireTransaction } from "gill";
+import { getBase64EncodedWireTransaction, Transaction } from "gill";
 
 import { useWalletStore } from "~/state/wallet";
 
 type Feature = "signAndSendTransaction";
 
-export async function useWalletFeatureHandler(feature: Feature) {
-  // TODO: extend feature list
-  if (feature !== "signAndSendTransaction") {
-    throw new Error("Feature not supported");
-  }
-
+export function useWalletFeatureHandler(feature: Feature) {
   const wallets = useWallets();
   const { currentWallet } = useWalletStore();
 
@@ -24,7 +19,16 @@ export async function useWalletFeatureHandler(feature: Feature) {
 
   const [, connect] = useConnect(wallet);
 
-  const handlerSignAndSend = async (tx) => {
+  // TODO: extend feature list
+  if (feature !== "signAndSendTransaction") {
+    throw new Error("Feature not supported");
+  }
+
+  const handlerFeature = async ({
+    transaction,
+  }: {
+    transaction: Transaction;
+  }) => {
     const accounts = await connect({ silent: true });
     const account = accounts[0];
 
@@ -37,7 +41,10 @@ export async function useWalletFeatureHandler(feature: Feature) {
       const [{ signature }] = await signAndSendTransaction({
         account,
         chain: "solana:mainnet",
-        transaction: Buffer.from(getBase64EncodedWireTransaction(tx), "base64"),
+        transaction: Buffer.from(
+          getBase64EncodedWireTransaction(transaction),
+          "base64",
+        ),
       });
 
       return signature;
@@ -48,5 +55,5 @@ export async function useWalletFeatureHandler(feature: Feature) {
     }
   };
 
-  return handlerSignAndSend;
+  return handlerFeature;
 }

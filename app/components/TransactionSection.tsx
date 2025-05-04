@@ -64,7 +64,11 @@ function Transactions({
               }}
               className="cursor-pointer p-3 rounded-[20px]"
             >
-              <TransactionDialog currentWalletAddress={walletAddress} {...data}>
+              <TransactionDialog
+                currentWalletAddress={walletAddress}
+                currentMultisigWalletAddress={multisigAddress}
+                {...data}
+              >
                 <Transaction {...data} />
               </TransactionDialog>
             </motion.div>

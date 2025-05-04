@@ -145,14 +145,23 @@ export const useWalletStore = create<WalletStore>()(
         }),
 
       addWallet: (wallet: LSWallet) =>
+        // TODO: make unique by wallet name
+
         set((state) => {
+          const history = [
+            wallet,
+            ...(state.history
+              ?.filter((w) => w.address !== wallet.address)
+              ?.filter((w) => w.name !== wallet.name) || []),
+          ];
           return {
             currentWallet: wallet,
-            history: [
-              wallet,
-              ...(state.history?.filter((w) => w.address !== wallet.address) ||
-                []),
-            ],
+            history,
+            // history: [
+            //   wallet,
+            //     ...(state.history?.filter((w) => w.address !== wallet.address) ||
+            //       []),
+            // ],
           };
         }),
     }),

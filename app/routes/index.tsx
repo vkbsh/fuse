@@ -85,7 +85,7 @@ function RecoveryKeys() {
         isOpen={isOpenConnectWallet}
         onOpenChange={setOpenConnectWallet}
       />
-      <RecoveryKeysDropdown onConnect={() => setOpenConnectWallet(true)} />
+      <RecoveryKeysDropdown onClick={() => setOpenConnectWallet(true)} />
     </div>
   );
 }
