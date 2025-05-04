@@ -117,13 +117,13 @@ const ChooseWallet = ({
           placeholder="Enter wallet address"
           className="text-sm"
         />
+        {error && (
+          <span className="absolute text-xs -bottom-5 w-full text-red-500">
+            {error}
+          </span>
+        )}
       </div>
 
-      {error && (
-        <span className="absolute text-xs -bottom-5 w-full text-red-500">
-          {error}
-        </span>
-      )}
       <div className="flex flex-row gap-2 justify-center">
         <Button size="md" onClick={onClose} variant="cancel">
           Cancel

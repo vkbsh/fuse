@@ -86,7 +86,9 @@ export default function TransactionDialog({
                   <div className="flex flex-col">
                     {approved.map((address) => {
                       if (!address) return null;
-                      return <span>{abbreviateAddress(address)}</span>;
+                      return (
+                        <span key={address}>{abbreviateAddress(address)}</span>
+                      );
                     })}
                   </div>
                 </div>

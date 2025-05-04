@@ -15,8 +15,6 @@ import { useVaultTokens, fetchTokenPrice } from "~/state/totalBalance";
 import { Address } from "~/model/web3js";
 import { getRoundedCoin, getRoundedSOL } from "~/utils/amount";
 
-// TODO: add debaunce for calculatedAmount
-// TODO: validation for , in input value (now is NaN with , and number with .)
 const EnterAmount = ({
   nextStep,
   prevStep,

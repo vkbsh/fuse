@@ -2,7 +2,9 @@ import { motion } from "motion/react";
 import { Suspense, useState } from "react";
 import { MetaFunction } from "react-router";
 
-import Connect from "~/routes/connect";
+import { StandardEvents } from "@wallet-standard/features";
+
+import Connect from "~/routes/connect"; // TODO: move to components
 
 import Loading from "~/components/Loading";
 import Balance from "~/components/Balance";
@@ -25,7 +27,6 @@ export const meta: MetaFunction = () => {
 
 export default function Index() {
   const { currentMultisigWallet } = useWalletStore();
-  const [isOpenConnectWallet, setOpenConnectWallet] = useState(false);
 
   if (!currentMultisigWallet) {
     return (
@@ -52,9 +53,7 @@ export default function Index() {
           </div>
           <div className="flex items-center gap-8">
             <WithdrawDialog />
-            <RecoveryKeysDropdown
-              onConnect={() => setOpenConnectWallet(true)}
-            />
+            <RecoveryKeys />
           </div>
         </header>
         <main className="flex-1 flex flex-col w-full h-full min-h-0 gap-10">
@@ -72,10 +71,21 @@ export default function Index() {
           </div>
         </main>
       </motion.div>
+    </Suspense>
+  );
+}
+
+// TODO: move to components
+function RecoveryKeys() {
+  const [isOpenConnectWallet, setOpenConnectWallet] = useState(false);
+
+  return (
+    <div>
       <ConnectWalletDialog
         isOpen={isOpenConnectWallet}
         onOpenChange={setOpenConnectWallet}
       />
-    </Suspense>
+      <RecoveryKeysDropdown onConnect={() => setOpenConnectWallet(true)} />
+    </div>
   );
 }

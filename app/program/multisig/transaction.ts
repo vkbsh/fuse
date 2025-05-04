@@ -155,7 +155,7 @@ export async function createTransferTokenInnerMessage({
   });
 
   const transferIx = getTransferInstruction({
-    amount: amount,
+    amount,
     destination: address(toAta),
     authority: address(authority),
     source: address(fromToken.ata),
@@ -378,8 +378,8 @@ export async function vaultTransactionAccountsClose({
 
   const vaultTransactionAccountsCloseIx =
     createVaultTransactionAccountsCloseInstruction({
-      multisigPda,
       vaultPda,
+      multisigPda,
       proposalPda,
       transactionPda,
       rentCollectorPda,

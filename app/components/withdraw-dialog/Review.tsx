@@ -45,6 +45,8 @@ import { useWalletStore, useSuspenseWalletByKey } from "~/state/wallet";
 import { IdentifierString, WalletAccount } from "@wallet-standard/core";
 import { getAbortablePromise } from "@solana/promises";
 
+import { useWalletFeatureHandler } from "~/hooks/useWalletFeatureHandler";
+
 // interface SolanaSignAndSendTransactionOutput {
 //   /** Transaction signature, as raw bytes. */
 //   readonly signature: Uint8Array;

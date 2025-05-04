@@ -2,8 +2,8 @@ import { motion } from "motion/react";
 
 import Transaction from "~/components/Transaction";
 import TransactionDialog from "~/components/TransactionDialog";
-import { Address } from "~/model/web3js";
 
+import { Address } from "~/model/web3js";
 import { useSuspenseProposalByKey, useWalletStore } from "~/state/wallet";
 
 export type Status = "ready" | "executed" | "cancelled";
@@ -25,11 +25,11 @@ export default function TransactionSection() {
 }
 
 function Transactions({
-  multisigAddress,
   walletAddress,
+  multisigAddress,
 }: {
-  multisigAddress: Address;
   walletAddress: Address;
+  multisigAddress: Address;
 }) {
   const { transactions } = useSuspenseProposalByKey(multisigAddress);
 
