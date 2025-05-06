@@ -23,7 +23,7 @@ function Coins({ address }: { address: Address }) {
   return (
     <div className="flex-1 flex flex-col gap-5 scroll-smooth overflow-y-auto grow pr-4">
       {coins.map((coin, i) => {
-        if (!coin) {
+        if (!coin || !coin.amount) {
           return null;
         }
 

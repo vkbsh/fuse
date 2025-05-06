@@ -1,4 +1,4 @@
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 
 import { useSuspenseBalance } from "~/state/balance";
 import { Address } from "~/model/web3js";
@@ -22,7 +22,7 @@ export function useVaultTokens({ address }: { address: Address }) {
   }
 
   // merge native and spl tokens
-  const coins = [
+  let coins = [
     ...(Object.values(balanceData.balance.spl) || []),
     {
       address,
@@ -36,18 +36,41 @@ export function useVaultTokens({ address }: { address: Address }) {
     return { totalAmount: 0, coins: [] };
   }
 
-  const results = useQueries({
+  coins = coins.filter((c) => Number(c.amount) > 0);
+
+  const resultsTokenMeta = useQueries({
     queries: coins.map((coin) => ({
       enabled: !!coin,
       queryKey: ["tokenMeta", coin.mint],
+      staleTime: 1000 * 60 * 60 * 24 * 7, // 1 week
+      cacheTime: 1000 * 60 * 60 * 24 * 7, // 1 week
+      gcTime: 1000 * 60 * 60 * 24 * 7, // 1 week
+      refetchOnMount: false,
+      refetchOnWindowFocus: false,
       queryFn: async () => {
-        const [meta, price] = await Promise.all([
-          fetchTokenMeta(coin?.mint),
-          fetchTokenPrice(coin?.mint),
-        ]);
-        return { ...meta, price };
+        const [meta] = await Promise.all([fetchTokenMeta(coin?.mint)]);
+        return meta;
       },
     })),
+  });
+
+  const resultsTokenPrice = useQueries({
+    queries: coins.map((coin) => ({
+      enabled: !!coin,
+      queryKey: ["tokenPrice", coin.mint],
+      staleTime: 1000 * 60, // 1 min
+      cacheTime: 1000 * 60, // 1 min
+      gcTime: 1000 * 60 * 60 * 24 * 7, // 1 min
+      queryFn: async () => {
+        const [price] = await Promise.all([fetchTokenPrice(coin?.mint)]);
+        return { price };
+      },
+    })),
+  });
+
+  const results = resultsTokenMeta.map((query, index) => {
+    const price = resultsTokenPrice[index].data?.price;
+    return { ...query.data, price };
   });
 
   const tokens = results.map((query, index) => {

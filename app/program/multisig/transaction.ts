@@ -18,6 +18,7 @@ import {
   setTransactionMessageFeePayerSigner,
   appendTransactionMessageInstructions,
   setTransactionMessageLifetimeUsingBlockhash,
+  TransactionSendingSigner,
 } from "gill";
 
 import {
@@ -44,8 +45,8 @@ export async function createMessageWithSigner({
   feePayer,
   instructions,
 }: {
-  feePayer: TransactionSigner;
   instructions: IInstruction[];
+  feePayer: TransactionSendingSigner;
 }) {
   const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
 

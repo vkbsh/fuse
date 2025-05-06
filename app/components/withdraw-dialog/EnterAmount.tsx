@@ -109,8 +109,6 @@ const EnterAmount = ({
     set("token", selectedToken);
   }, [selectedToken]);
 
-  console.log("calculatedAmount", calculatedAmount);
-
   return (
     <>
       <h3 className="text-center font-bold text-xl">Enter Amount</h3>

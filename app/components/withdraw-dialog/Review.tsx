@@ -1,24 +1,12 @@
 import {
-  useConnect,
-  useWallets,
-  UiWalletAccount,
-  getWalletFeature,
-} from "@wallet-standard/react";
-
-import {
   address,
   LAMPORTS_PER_SOL,
-  getBase64EncodedWireTransaction,
-  TransactionSendingSigner,
-  signTransactionMessageWithSigners,
-  getSignatureFromTransaction,
-  Transaction,
-  TransactionSendingSignerConfig,
-  SignatureBytes,
-  getTransactionEncoder,
-  isTransactionSendingSigner,
-  signAndSendTransactionMessageWithSigners, // TODO: use as singer to set in setTransactionMessageFeePayerSigner
+  getBase58Decoder,
+  signAndSendTransactionMessageWithSigners,
 } from "gill";
+
+import { UiWalletAccount } from "@wallet-standard/react";
+import { useWalletAccountTransactionSendingSigner } from "@solana/react";
 
 import Input from "~/components/ui/Input";
 import Button from "~/components/ui/Button";
@@ -29,87 +17,27 @@ import { abbreviateAddress } from "~/utils/address";
 import { getProposalPda } from "~/program/multisig/pda";
 
 import {
-  compileTransactionWithIx,
   createMessageWithSigner,
   createTransferInnerMessage,
   createTransferTokenInnerMessage,
 } from "~/program/multisig/transaction";
+
 import {
   createVaultInstruction,
   createProposalApproveInstruction,
   createProposalCreateInstruction,
 } from "~/program/multisig/instruction";
 
-import { Address } from "~/model/web3js";
 import { useWalletStore, useSuspenseWalletByKey } from "~/state/wallet";
-import { IdentifierString, WalletAccount } from "@wallet-standard/core";
-import { getAbortablePromise } from "@solana/promises";
-
-import { useWalletFeatureHandler } from "~/hooks/useWalletFeatureHandler";
-
-// interface SolanaSignAndSendTransactionOutput {
-//   /** Transaction signature, as raw bytes. */
-//   readonly signature: Uint8Array;
-// }
-
-type SolanaTransactionCommitment = "processed" | "confirmed" | "finalized";
-
-type SolanaSignAndSendTransactionOptions = SolanaSignTransactionOptions & {
-  /** Desired commitment level. If provided, confirm the transaction after sending. */
-  readonly commitment?: SolanaTransactionCommitment;
-
-  /** Disable transaction verification at the RPC. */
-  readonly skipPreflight?: boolean;
-
-  /** Maximum number of times for the RPC node to retry sending the transaction to the leader. */
-  readonly maxRetries?: number;
-};
-
-type SolanaSignTransactionOptions = {
-  /** Preflight commitment level. */
-  readonly preflightCommitment?: SolanaTransactionCommitment;
-
-  /** The minimum slot that the request can be evaluated at. */
-  readonly minContextSlot?: number;
-};
-
-interface SolanaSignTransactionInput {
-  /** Account to use. */
-  readonly account: WalletAccount;
-
-  /** Serialized transaction, as raw bytes. */
-  readonly transaction: Uint8Array;
-
-  /** Chain to use. */
-  readonly chain?: IdentifierString;
-
-  /** TODO: docs */
-  readonly options?: SolanaSignTransactionOptions;
-}
-
-interface SolanaSignAndSendTransactionInput extends SolanaSignTransactionInput {
-  /** Chain to use. */
-  readonly chain: IdentifierString;
-
-  /** TODO: docs */
-  readonly options?: SolanaSignAndSendTransactionOptions;
-}
-
-type Input = Readonly<
-  Omit<SolanaSignAndSendTransactionInput, "account" | "chain" | "options"> & {
-    options?: Readonly<{
-      minContextSlot?: bigint;
-    }>;
-  }
->;
-// type Output = SolanaSignAndSendTransactionOutput;
 
 const Review = ({
   onClose,
   prevStep,
+  walletAccount,
 }: {
   onClose: () => void;
   prevStep: () => void;
+  walletAccount: UiWalletAccount;
 }) => {
   // const wallets = useWallets();
   const { currentWallet, history } = useWalletStore();
@@ -117,14 +45,10 @@ const Review = ({
   const multisigWallet = useSuspenseWalletByKey(currentWallet?.address);
   const currentMultisigWallet = multisigWallet?.wallets[0];
 
-  const signAndSendTransaction = useWalletFeatureHandler(
-    "signAndSendTransaction",
+  const signer = useWalletAccountTransactionSendingSigner(
+    walletAccount,
+    "solana:mainnet",
   );
-
-  // const wallet = wallets
-  //   .filter((w) => w.features.includes("solana:signAndSendTransaction"))
-  //   .find((w) => w.name === currentWallet?.name);
-  // const [, connect] = useConnect(wallet);
 
   const handleTx = async () => {
     const nextTxIndex = BigInt(
@@ -154,123 +78,42 @@ const Review = ({
       });
     }
 
-    const instructions = [
-      createVaultInstruction({
-        vaultIndex: 0,
-        ephemeralSigners: 0,
-        transactionIndex: nextTxIndex,
-        transactionMessage: transferMessage,
-        creator: address(currentWallet?.address),
-        multisigPda: address(currentMultisigWallet.address),
-      }),
-      createProposalCreateInstruction({
-        transactionIndex: nextTxIndex,
-        proposalPda: address(proposalPda),
-        creator: address(currentWallet?.address),
-        multisigPda: address(currentMultisigWallet.address),
-      }),
-      createProposalApproveInstruction({
-        proposalPda,
-        memo: "auto approve",
-        memberAddress: address(currentWallet?.address),
-        multisigPda: address(currentMultisigWallet.address),
-      }),
-    ];
-
-    const tx = await compileTransactionWithIx({
-      instructions,
-      feePayer: address(currentWallet?.address),
+    const message = await createMessageWithSigner({
+      feePayer: signer,
+      instructions: [
+        createVaultInstruction({
+          vaultIndex: 0,
+          ephemeralSigners: 0,
+          transactionIndex: nextTxIndex,
+          transactionMessage: transferMessage,
+          creator: address(currentWallet?.address),
+          multisigPda: address(currentMultisigWallet.address),
+        }),
+        createProposalCreateInstruction({
+          transactionIndex: nextTxIndex,
+          proposalPda: address(proposalPda),
+          creator: address(currentWallet?.address),
+          multisigPda: address(currentMultisigWallet.address),
+        }),
+        createProposalApproveInstruction({
+          proposalPda,
+          memo: "auto approve",
+          memberAddress: address(currentWallet?.address),
+          multisigPda: address(currentMultisigWallet.address),
+        }),
+      ],
     });
 
-    // const accounts = await connect({ silent: true });
-    // const account = accounts[0];
-
-    // const { signAndSendTransaction } = getWalletFeature(
-    //   account,
-    //   "solana:signAndSendTransaction",
-    // );
-
-    // const createTransactionSendingSigner = (
-    //   uiWalletAccount: UiWalletAccount,
-    //   chain: string,
-    // ): TransactionSendingSigner<typeof uiWalletAccount.address> => {
-    //   // Create encoder once
-    //   const transactionEncoder = getTransactionEncoder();
-
-    //   // Get the signAndSendTransaction function from wallet
-    //   const signAndSendTransaction = async (inputWithOptions) => {
-    //     // This is where you'd call your wallet's signAndSendTransaction method
-    //     // Similar to what the hook does with the wallet standard
-    //     return await signAndSendTransaction({
-    //       account: uiWalletAccount,
-    //       chain,
-    //       transaction: inputWithOptions.transaction,
-    //       ...inputWithOptions.options,
-    //     });
-    //   };
-
-    //   return {
-    //     address: address(uiWalletAccount.address),
-    //     async signAndSendTransactions(transactions, config = {}) {
-    //       const { abortSignal, ...options } = config;
-    //       abortSignal?.throwIfAborted();
-
-    //       if (transactions.length > 1) {
-    //         throw Error("SOLANA_ERROR__SIGNER__WALLET_MULTISIGN_UNIMPLEMENTED");
-    //       }
-    //       if (transactions.length === 0) {
-    //         return [];
-    //       }
-
-    //       const [transaction] = transactions;
-    //       const wireTransactionBytes = transactionEncoder.encode(transaction);
-    //       const inputWithOptions = {
-    //         ...options,
-    //         transaction: wireTransactionBytes as Uint8Array,
-    //       };
-
-    //       const { signature } = await getAbortablePromise(
-    //         signAndSendTransaction(inputWithOptions),
-    //         abortSignal,
-    //       );
-
-    //       return Object.freeze([signature as SignatureBytes]);
-    //     },
-    //   };
-    // };
-
-    // const signer: TransactionSendingSigner = createTransactionSendingSigner(
-    //   account,
-    //   "solana:mainnet",
-    // );
-
-    // const testTxMessage = await createMessageWithSigner({
-    //   feePayer: signer,
-    //   instructions,
-    // });
-
-    // try {
-    //   const signedTransaction =
-    //     await signTransactionMessageWithSigners(testTxMessage);
-    //   const signature = getSignatureFromTransaction(signedTransaction);
-    //   console.log("signature", signature);
-    // } catch (error) {
-    //   console.log("Error", error);
-    // }
-
-    await signAndSendTransaction({ transaction: tx });
-
-    // try {
-    //   const [{ signature }] = await signAndSendTransaction({
-    //     account,
-    //     chain: "solana:mainnet",
-    //     transaction: Buffer.from(getBase64EncodedWireTransaction(tx), "base64"),
-    //   });
-
-    //   typeof onClose === "function" && onClose();
-    // } catch (error) {
-    //   console.error(error);
-    // }
+    try {
+      const signatureBytes =
+        await signAndSendTransactionMessageWithSigners(message);
+      const base58Signature = getBase58Decoder().decode(signatureBytes);
+      console.log("Signature [Initiate, Proposal, Approve]: ", base58Signature);
+    } catch (error) {
+      console.log("Error [Initiate, Proposal, Approve]:", error);
+    } finally {
+      typeof onClose === "function" && onClose();
+    }
   };
 
   const fromHistory = history?.find((w) => w.address === toAddress);

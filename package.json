@@ -20,7 +20,6 @@
     "@react-router/node": "^7.0.0",
     "@solana-program/token": "^0.4.1",
     "@solana-program/token-2022": "^0.3.4",
-    "@solana/kit": "^2.1.0",
     "@solana/promises": "^2.1.0",
     "@solana/react": "^2.1.0",
     "@sqds/multisig": "^2.1.3",

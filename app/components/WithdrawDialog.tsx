@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { UiWalletAccount } from "@wallet-standard/react";
 
 import Button from "~/components/ui/Button";
 import Dialog from "~/components/ui/Dialog";
@@ -8,10 +10,13 @@ import ChooseWallet from "~/components/withdraw-dialog/ChooseWallet";
 import { IconCircleArrow } from "~/components/icons/IconCircleArrow";
 
 import { useWithdrawStore } from "~/state/withdraw";
-import { AnimatePresence, motion } from "motion/react";
 import { useWalletStore } from "~/state/wallet";
 
-export default function WithdrawDialog() {
+export default function WithdrawDialog({
+  walletAccount,
+}: {
+  walletAccount: UiWalletAccount;
+}) {
   const { reset } = useWithdrawStore();
   const [isOpen, setOpen] = useState(false);
   const { currentMultisigWallet, currentWallet } = useWalletStore();
@@ -59,12 +64,18 @@ export default function WithdrawDialog() {
         </Button>
       }
     >
-      <Steps onClose={() => setOpen(false)} />
+      <Steps walletAccount={walletAccount} onClose={() => setOpen(false)} />
     </Dialog>
   );
 }
 
-function Steps({ onClose }: { onClose: () => void }) {
+function Steps({
+  onClose,
+  walletAccount,
+}: {
+  onClose: () => void;
+  walletAccount: UiWalletAccount;
+}) {
   const [currentStep, setCurrentStep] = useState(1);
   const nextStep = () => setCurrentStep((step) => (step < 3 ? step + 1 : step));
   const prevStep = () => setCurrentStep((step) => (step > 1 ? step - 1 : step));
@@ -77,7 +88,13 @@ function Steps({ onClose }: { onClose: () => void }) {
       {currentStep === 2 && (
         <EnterAmount prevStep={prevStep} nextStep={nextStep} />
       )}
-      {currentStep === 3 && <Review onClose={onClose} prevStep={prevStep} />}
+      {currentStep === 3 && (
+        <Review
+          onClose={onClose}
+          prevStep={prevStep}
+          walletAccount={walletAccount}
+        />
+      )}
     </div>
   );
 }

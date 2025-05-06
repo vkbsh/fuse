@@ -1,4 +1,5 @@
 import { motion } from "motion/react";
+import { UiWalletAccount } from "@wallet-standard/react";
 
 import Transaction from "~/components/Transaction";
 import TransactionDialog from "~/components/TransactionDialog";
@@ -8,7 +9,11 @@ import { useSuspenseProposalByKey, useWalletStore } from "~/state/wallet";
 
 export type Status = "ready" | "executed" | "cancelled";
 
-export default function TransactionSection() {
+export default function TransactionSection({
+  walletAccount,
+}: {
+  walletAccount: UiWalletAccount;
+}) {
   const { currentMultisigWallet, currentWallet } = useWalletStore();
   const multisigAddress = currentMultisigWallet?.address;
 
@@ -18,7 +23,9 @@ export default function TransactionSection() {
 
   return (
     <Transactions
+      walletAccount={walletAccount}
       multisigAddress={multisigAddress}
+      rentCollectorAddress={currentMultisigWallet.account.rentCollector}
       walletAddress={currentWallet?.address}
     />
   );
@@ -26,10 +33,14 @@ export default function TransactionSection() {
 
 function Transactions({
   walletAddress,
+  walletAccount,
   multisigAddress,
+  rentCollectorAddress,
 }: {
   walletAddress: Address;
   multisigAddress: Address;
+  rentCollectorAddress: Address;
+  walletAccount: UiWalletAccount;
 }) {
   const { transactions } = useSuspenseProposalByKey(multisigAddress);
 
@@ -65,7 +76,9 @@ function Transactions({
               className="cursor-pointer p-3 rounded-[20px]"
             >
               <TransactionDialog
+                walletAccount={walletAccount}
                 currentWalletAddress={walletAddress}
+                rentCollectorAddress={rentCollectorAddress}
                 currentMultisigWalletAddress={multisigAddress}
                 {...data}
               >

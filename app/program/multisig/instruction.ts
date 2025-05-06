@@ -271,7 +271,7 @@ export function createVaultTransactionAccountsCloseInstruction({
   multisigPda: Address;
   proposalPda: Address;
   transactionPda: Address;
-  rentCollectorPda?: Address;
+  rentCollectorPda: Address;
 }): IInstruction {
   return createInstruction({
     data: getVaultExecuteCodec().encode({
@@ -281,9 +281,9 @@ export function createVaultTransactionAccountsCloseInstruction({
       [multisigPda, READONLY],
       [proposalPda, WRITABLE],
       [transactionPda, WRITABLE],
-      [rentCollectorPda || vaultPda, WRITABLE],
-      // [SYSTEM_PROGRAM_ADDRESS, READONLY],
-      [SQUADS_PROGRAM_ID, READONLY],
+      [rentCollectorPda, WRITABLE],
+      // [SQUADS_PROGRAM_ID, READONLY],
+      [SYSTEM_PROGRAM_ADDRESS, READONLY],
     ],
   });
 }

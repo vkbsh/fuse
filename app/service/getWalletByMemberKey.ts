@@ -148,15 +148,6 @@ export async function getProposalAccounts(
     }),
   );
 
-  console.log("transactions", transactions.length);
-
-  console.log(
-    "transactions",
-    transactions.map((t) => ({
-      transactionIndex: Number(t?.transactionIndex),
-    })),
-  );
-
   return transactions.filter((data) => !!data);
 }
 

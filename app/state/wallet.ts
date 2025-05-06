@@ -9,6 +9,7 @@ import {
   getWalletByMemberKey,
   getActiveProposals,
 } from "~/service/getWalletByMemberKey";
+import { UiWalletAccount } from "@wallet-standard/react";
 
 const STORAGE_KEY = "fuse:wallet-store";
 
@@ -83,6 +84,7 @@ export function useSuspenseProposalByKey(keyAddress: Address) {
 
 type WalletStore = {
   history: LSWallet[] | null;
+  currentAccount: UiWalletAccount | null;
   multisigWallets: Wallet[] | null;
   currentWallet: LSWallet | null;
   currentMultisigWallet: Wallet | null;
@@ -113,6 +115,7 @@ export const useWalletStore = create<WalletStore>()(
       history: [],
       multisigWallets: null,
       currentWallet: null,
+      currentAccount: null,
       currentMultisigWallet: null,
       selectMultisigWallet: (address: Address) =>
         set((state) => {
@@ -145,23 +148,19 @@ export const useWalletStore = create<WalletStore>()(
         }),
 
       addWallet: (wallet: LSWallet) =>
-        // TODO: make unique by wallet name
-
         set((state) => {
+          console.log("setting current wallet");
+
           const history = [
             wallet,
             ...(state.history
               ?.filter((w) => w.address !== wallet.address)
               ?.filter((w) => w.name !== wallet.name) || []),
           ];
+
           return {
-            currentWallet: wallet,
             history,
-            // history: [
-            //   wallet,
-            //     ...(state.history?.filter((w) => w.address !== wallet.address) ||
-            //       []),
-            // ],
+            currentWallet: wallet,
           };
         }),
     }),

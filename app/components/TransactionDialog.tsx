@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { address, parseBase64RpcAccount } from "gill";
+import {
+  address,
+  getBase58Decoder,
+  parseBase64RpcAccount,
+  signAndSendTransactionMessageWithSigners,
+} from "gill";
+import { UiWalletAccount } from "@wallet-standard/react";
+import { useWalletAccountTransactionSendingSigner } from "@solana/react";
 
 import Button from "~/components/ui/Button";
 import Dialog from "~/components/ui/Dialog";
@@ -20,23 +27,23 @@ import {
 } from "~/program/multisig/pda";
 
 import { getVaultTransactionCodec } from "~/program/multisig/codec";
-import { compileTransactionWithIx } from "~/program/multisig/transaction";
+import { createMessageWithSigner } from "~/program/multisig/transaction";
 
 import { cn } from "~/utils/tw";
 import { Address } from "~/model/web3js";
 import { useRpcStore } from "~/state/rpc";
 import { abbreviateAddress } from "~/utils/address";
-import { useWalletFeatureHandler } from "~/hooks/useWalletFeatureHandler";
 
 import { Status } from "./Transaction";
-import { getVaultTransactionAccountsCloseInstruction } from "~/generated/instructions";
 
 type Props = {
   status: Status;
   approved: Address[];
   transactionIndex: number;
   children: React.ReactNode;
+  rentCollectorAddress: Address;
   currentWalletAddress: Address;
+  walletAccount: UiWalletAccount;
   currentMultisigWalletAddress: Address;
 };
 
@@ -44,25 +51,26 @@ export default function TransactionDialog({
   status,
   children,
   approved,
+  walletAccount,
   transactionIndex,
+  rentCollectorAddress,
   currentWalletAddress,
   currentMultisigWalletAddress,
 }: Props) {
+  const { rpc } = useRpcStore();
   const [isOpen, setOpen] = useState(false);
-  const createdByAddress = approved[0] || "";
-  const executedByAddress = approved[0] || "";
+  const createdByAddress = approved[0] || ""; // TODO: Get Initiated Address
+  const executedByAddress = approved[0] || ""; // TODO: Get Executed Address
   const isExecuted = status === "Executed";
   const isAllApproved = approved.length === 2;
   const isApproveDisabled = approved.some((a) => a === currentWalletAddress);
-  const { rpc } = useRpcStore();
-  const signAndSendTransaction = useWalletFeatureHandler(
-    "signAndSendTransaction",
+
+  const feePayer = useWalletAccountTransactionSendingSigner(
+    walletAccount,
+    "solana:mainnet",
   );
 
   // TODO: Add tx execute/*cancel loading state + animation
-
-  // TODO: Get Initiated Address
-  // TODO: Get Executed Address
 
   const closeHandler = () => {
     console.log("Close Tx modal");
@@ -80,21 +88,30 @@ export default function TransactionDialog({
       multisigAddress: currentMultisigWalletAddress,
     });
 
-    const tx = await compileTransactionWithIx({
+    console.log("transactionIndex", transactionIndex);
+
+    const message = await createMessageWithSigner({
+      feePayer,
       instructions: [
         createProposalApproveInstruction({
           proposalPda,
-          memo: "approve by a Member",
+          memo: "Approved by a Member",
           memberAddress: address(currentWalletAddress),
           multisigPda: address(currentMultisigWalletAddress),
         }),
       ],
-      feePayer: address(currentWalletAddress),
     });
 
-    await signAndSendTransaction({ transaction: tx });
-
-    setOpen(false);
+    try {
+      const signatureBytes =
+        await signAndSendTransactionMessageWithSigners(message);
+      const base58Signature = getBase58Decoder().decode(signatureBytes);
+      console.log("Signature [Approve]: ", base58Signature);
+    } catch (error) {
+      console.log("Error [Approve]:", error);
+    } finally {
+      setOpen(false);
+    }
   };
 
   const executeHandler = async () => {
@@ -121,7 +138,8 @@ export default function TransactionDialog({
       parseBase64RpcAccount(transactionPda, transactionPdaInfo.value).data,
     );
 
-    const tx = await compileTransactionWithIx({
+    const message = await createMessageWithSigner({
+      feePayer,
       instructions: [
         createVaultTransactionExecuteInstruction({
           vaultPda,
@@ -132,21 +150,26 @@ export default function TransactionDialog({
           memberAddress: address(currentWalletAddress),
           ephemeralSignerBumps: vaultTransaction.ephemeralSignerBumps,
         }),
-        // TODO: Ask for closing accounts after execution
-        // createVaultTransactionAccountsCloseInstruction({
-        //   vaultPda,
-        //   proposalPda,
-        //   transactionPda,
-        //   multisigPda: currentMultisigWalletAddress,
-        //   rentCollectorPda: address(currentWalletAddress),
-        // }),
+        createVaultTransactionAccountsCloseInstruction({
+          vaultPda,
+          proposalPda,
+          transactionPda,
+          multisigPda: currentMultisigWalletAddress,
+          rentCollectorPda: address(rentCollectorAddress),
+        }),
       ],
-      feePayer: address(currentWalletAddress),
     });
 
-    await signAndSendTransaction({ transaction: tx });
-
-    setOpen(false);
+    try {
+      const signatureBytes =
+        await signAndSendTransactionMessageWithSigners(message);
+      const base58Signature = getBase58Decoder().decode(signatureBytes);
+      console.log("Signature [Execute, Close Accounts]: ", base58Signature);
+    } catch (error) {
+      console.log("Error [Execute, Close Accounts]:", error);
+    } finally {
+      setOpen(false);
+    }
   };
 
   return (

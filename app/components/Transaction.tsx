@@ -6,7 +6,6 @@ import { Address } from "~/model/web3js";
 import { abbreviateAddress } from "~/utils/address";
 import { useWalletStore } from "~/state/wallet";
 
-export type TransactionType = "send" | "receive";
 export type Status =
   | "Active"
   | "Rejected"
@@ -29,17 +28,6 @@ export type Transaction = {
   timestamp: number;
 };
 
-const getIconByType = (type: TransactionType) => {
-  switch (type) {
-    case "send":
-      return <IconArrowUp />;
-    case "receive":
-      return <IconArrowDown />;
-    default:
-      return <span className="w-4 h-4 bg-black rounded-full" />;
-  }
-};
-
 export default function Transaction({
   message,
   status,
@@ -48,8 +36,8 @@ export default function Transaction({
   // TODO: Add custom status names
 
   const statusColor = cn({
-    // "": status === "Ready",
-    "text-status-primary": status === "Active",
+    "": status === "Approved",
+    "text-status-primary": ["Active", "Approved"].includes(status),
     "text-status-success": status === "Executed",
     "text-status-error": status === "Cancelled",
   });
@@ -105,7 +93,7 @@ export default function Transaction({
             "w-18 font-semibold text-sm text-right capitalize",
           )}
         >
-          {status}
+          {status === "Approved" ? "Ready" : status}
         </span>
       </div>
     </div>
