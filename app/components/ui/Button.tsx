@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { forwardRef } from "react";
 import { motion } from "motion/react";
 
 import { cn } from "~/utils/tw";
@@ -12,7 +12,8 @@ const variants: { [key in Variant]: string } = {
   primary: "bg-black text-white",
   secondary: "bg-white text-black",
   cancel: "bg-white/20 text-white border border-white/20",
-  bordered: "bg-black text-white ring-3 ring-[#BFBFBF] font-medium text-sm",
+  bordered:
+    "bg-black text-white ring-3 ring-[#BFBFBF] font-medium text-sm w-[126px]",
   max: "bg-white/30 text-white border-4 border-black/20 font-extrabold text-base",
 };
 
@@ -26,38 +27,44 @@ const sizes: { [k in Size]: string } = {
 const base =
   "font-bold flex items-center justify-center rounded-full gap-2 px-6 py-4 cursor-pointer";
 
-const Button = ({
-  onClick,
-  children,
-  size = "md",
-  variant = "primary",
-  className,
-  disabled,
-  ...props
-}: {
-  size?: Size;
-  variant?: Variant;
-  disabled?: boolean;
-  className?: string;
-  onClick?: () => void;
-  children: React.ReactNode;
-}) => {
-  const clsName = cn(base, sizes[size], variants[variant], className, {
-    "opacity-50 cursor-not-allowed": disabled,
-  });
+const Button = forwardRef(
+  (
+    {
+      onClick,
+      children,
+      size = "md",
+      variant = "primary",
+      className,
+      disabled,
+      ...props
+    }: {
+      size?: Size;
+      variant?: Variant;
+      disabled?: boolean;
+      className?: string;
+      onClick?: () => void;
+      children: React.ReactNode;
+    },
+    ref: React.Ref<HTMLButtonElement>,
+  ) => {
+    const clsName = cn(base, sizes[size], variants[variant], className, {
+      "opacity-50 cursor-not-allowed": disabled,
+    });
 
-  return (
-    <motion.button
-      whileHover={{
-        scale: 1.02,
-      }}
-      {...props}
-      onClick={onClick}
-      className={clsName}
-    >
-      {children}
-    </motion.button>
-  );
-};
+    return (
+      <motion.button
+        ref={ref}
+        whileHover={{
+          scale: 1.02,
+        }}
+        {...props}
+        onClick={onClick}
+        className={clsName}
+      >
+        {children}
+      </motion.button>
+    );
+  },
+);
 
 export default Button;

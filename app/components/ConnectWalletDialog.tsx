@@ -6,34 +6,38 @@ import {
   uiWalletAccountsAreSame,
 } from "@wallet-standard/react";
 import { address } from "gill";
-import { useCallback } from "react";
+import { forwardRef, useCallback } from "react";
 import { motion } from "motion/react";
 
 import Dialog from "~/components/ui/Dialog";
-
-import { useWalletStore } from "~/state/wallet";
+import { LSWallet } from "~/state/wallet";
 
 export function ConnectWalletDialog({
   isOpen,
   children,
+  setWallet,
   onOpenChange,
 }: {
   isOpen: boolean;
   children?: React.ReactNode;
   onOpenChange: (open: boolean) => void;
+  setWallet: (wallet: (UiWalletAccount & LSWallet) | null) => void;
 }) {
   return (
-    <Dialog trigger={children} isOpen={isOpen} onOpenChange={onOpenChange}>
-      <WalletOptions close={() => onOpenChange(false)} />
+    <Dialog isOpen={isOpen} onOpenChange={onOpenChange} trigger={children}>
+      <WalletOptions setWallet={setWallet} close={() => onOpenChange(false)} />
     </Dialog>
   );
 }
 
-function WalletOptions({ close }: { close: () => void }) {
+function WalletOptions({
+  close,
+  setWallet,
+}: {
+  close: () => void;
+  setWallet: (wallet: (UiWalletAccount & LSWallet) | null) => void;
+}) {
   const wallets = useWallets();
-  const { addWallet } = useWalletStore();
-
-  // TODO: add message for no wallets found
 
   return (
     <div className="flex flex-col gap-6 w-80 p-8 m-auto bg-black text-white rounded-[40px]">
@@ -48,21 +52,22 @@ function WalletOptions({ close }: { close: () => void }) {
           )
           .map((wallet) => (
             <WalletOption
-              close={close}
               key={wallet.name}
               wallet={wallet}
               onError={(err) => {
                 console.error(err);
+                close();
               }}
               onAccountSelect={(walletAccount) => {
                 if (walletAccount) {
-                  addWallet({
-                    ...walletAccount,
+                  setWallet({
                     name: wallet.name,
                     icon: wallet.icon,
                     address: address(walletAccount.address),
                   });
                 }
+
+                close();
               }}
             />
           ))}
@@ -72,13 +77,11 @@ function WalletOptions({ close }: { close: () => void }) {
 }
 
 function WalletOption({
-  close,
   wallet,
   onError,
   onAccountSelect,
 }: {
   wallet: UiWallet;
-  close: () => void;
   onError(err: unknown): void;
   onAccountSelect(account: UiWalletAccount | null): void;
 }) {
@@ -113,8 +116,6 @@ function WalletOption({
       }
     } catch (e) {
       onError(e);
-    } finally {
-      typeof close === "function" && close();
     }
   }, [connect, onAccountSelect, onError, wallet.accounts]);
 

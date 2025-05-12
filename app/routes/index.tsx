@@ -1,21 +1,23 @@
-import { motion } from "motion/react";
 import { MetaFunction } from "react-router";
-import { Suspense, useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
+import {
+  UiWallet,
+  useConnect,
+  useWallets,
+  UiWalletAccount,
+} from "@wallet-standard/react";
 
-import Connect from "~/routes/connect"; // TODO: move to components
-import Loading from "~/components/Loading";
+import Toast from "~/components/ui/Toast";
+import Connect from "~/components/Connect";
 import Balance from "~/components/Balance";
 import CoinSection from "~/components/CoinSectioin";
-import { IconLogo } from "~/components/icons/IconLogo";
-import WithdrawDialog from "~/components/WithdrawDialog";
+import VaultAccount from "~/components/VaultAccount";
+import WithdrawButton from "~/components/WithdrawButton";
 import TransactionSection from "~/components/TransactionSection";
-import SelectVaultAccount from "~/components/SelectVaultAccount";
 import RecoveryKeysDropdown from "~/components/RecoveryKeysDropdown";
 import { ConnectWalletDialog } from "~/components/ConnectWalletDialog";
 
-import { useWalletStore } from "~/state/wallet";
-import { useConnect, useWallets } from "@wallet-standard/react";
-import { address } from "gill";
+import { LSWallet, useWalletStore } from "~/state/wallet";
 
 export const meta: MetaFunction = () => {
   return [
@@ -28,105 +30,121 @@ export default function Index() {
   const { currentMultisigWallet, currentWallet } = useWalletStore();
 
   if (!currentMultisigWallet || !currentWallet) {
-    return (
-      <Suspense fallback={<Loading />}>
-        <Connect />
-      </Suspense>
-    );
+    return <Connect />;
   }
 
-  return <Main />;
+  return <Main currentWallet={currentWallet} />;
 }
 
-function Main() {
+function Main({ currentWallet }: { currentWallet: LSWallet }) {
   const wallets = useWallets();
-  const { currentWallet, addWallet } = useWalletStore();
-
-  // Try to find the wallet from LocalStorage
   const wallet = wallets
     .filter((w) => w.features.includes("solana:signAndSendTransaction"))
     .find((w) => w.name === currentWallet?.name);
 
-  const [, connect] = useConnect(wallet);
+  return wallet ? <TestRerender wallet={wallet} /> : null;
+}
+
+const TestRerender = ({ wallet }: { wallet: UiWallet }) => {
   const account = wallet?.accounts[0];
 
+  if (account) {
+    return <WithAccount account={account} />;
+  }
+
+  return <ShouldConnect wallet={wallet} />;
+};
+
+const ShouldConnect = ({ wallet }: { wallet: UiWallet }) => {
+  const [, connect] = useConnect(wallet);
+  const { currentMultisigWallet, selectWallet, removeWallet } =
+    useWalletStore();
+
   useEffect(() => {
-    const tryConnectAndAddWallet = async () => {
-      let currentAccount = account;
+    const tryConnectWallet = async () => {
+      const [account] = await connect({ silent: true });
+      const members = currentMultisigWallet?.account?.members || [];
+      const isMember = members.some((m) => m.key === account.address);
 
-      if (!currentAccount) {
-        const accounts = await connect({ silent: true });
-        currentAccount = accounts[0];
-      }
-
-      if (wallet && currentAccount) {
-        // TODO: Add related wallet to multisig
-        addWallet({
-          name: wallet.name,
-          icon: wallet.icon,
-          address: address(currentAccount.address),
-        });
+      if (account && isMember) {
+        selectWallet(wallet.name);
+      } else {
+        // TODO: Show toast
+        removeWallet(wallet.name);
       }
     };
 
-    tryConnectAndAddWallet();
-  }, [account]);
+    tryConnectWallet();
+  }, []);
 
+  return null;
+};
+
+const WithAccount = memo(({ account }: { account: UiWalletAccount }) => {
   if (!account) {
     return null;
   }
 
   return (
-    <Suspense fallback={<Loading />}>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="h-screen w-full max-w-[1280px] m-auto p-6 flex flex-col gap-10 "
-      >
-        <header className="h-[42px] flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <span className="w-[42px] h-[42px] rounded-full bg-[#EBEBEB] flex items-center justify-center text-black">
-              <IconLogo />
-            </span>
-            <SelectVaultAccount />
-          </div>
-          <div className="flex items-center gap-8">
-            <WithdrawDialog walletAccount={account} />
-            <RecoveryKeys />
-          </div>
-        </header>
-        <main className="flex-1 flex flex-col w-full h-full min-h-0 gap-10">
+    <div className="h-screen w-full max-w-[1280px] m-auto p-6 flex flex-col gap-10 ">
+      <header className="h-[42px] flex items-center justify-between">
+        <VaultAccount />
+        <RecoveryKeys />
+      </header>
+      <main className="flex-1 flex flex-col w-full h-full min-h-0 gap-10">
+        <div className="flex flex-col">
           <Balance />
-          <div className="flex-1 flex w-full h-full min-h-0 gap-10">
-            <section className="w-full h-full flex flex-col gap-4">
-              <h3 className="font-semibold text-xl">Coins</h3>
-              <CoinSection />
-            </section>
-            <span className="w-px bg-black opacity-20" />
-            <section className="w-full h-full flex flex-col gap-2">
-              <h3 className="font-semibold text-xl">Transactions</h3>
-              <TransactionSection walletAccount={account} />
-            </section>
-          </div>
-        </main>
-      </motion.div>
-    </Suspense>
+          <WithdrawButton walletAccount={account} />
+        </div>
+        <div className="flex flex-1 w-full h-full min-h-0 justify-between ">
+          <CoinSection />
+          <div className="w-px bg-black/20 mx-10" />
+          <TransactionSection walletAccount={account} />
+        </div>
+      </main>
+    </div>
   );
-}
+});
 
 function RecoveryKeys() {
+  const { currentMultisigWallet, saveWallet, selectWallet } = useWalletStore();
+  const [extensionWallet, setExtensionWallet] = useState<null | LSWallet>(null);
   const [isOpenConnectWallet, setOpenConnectWallet] = useState(false);
 
-  // TODO: prevent connecting account not related to current multisig wallet
+  const memberKeys = currentMultisigWallet?.account?.members;
+  const isMemberKey = memberKeys?.some(
+    (m) => m.key === extensionWallet?.address,
+  );
+
+  useEffect(() => {
+    if (extensionWallet && isMemberKey) {
+      saveWallet({
+        name: extensionWallet.name,
+        icon: extensionWallet.icon,
+        address: extensionWallet.address,
+      });
+
+      selectWallet(extensionWallet.name);
+    }
+  }, [extensionWallet, isMemberKey]);
 
   return (
-    <div>
+    <>
       <ConnectWalletDialog
         isOpen={isOpenConnectWallet}
+        setWallet={setExtensionWallet}
         onOpenChange={setOpenConnectWallet}
       />
       <RecoveryKeysDropdown onClick={() => setOpenConnectWallet(true)} />
-    </div>
+      {extensionWallet && !isMemberKey ? (
+        <Toast
+          close="Close"
+          action="View"
+          title="Connected"
+          actionAltText="View"
+          description="You have successfully connected to your Fuse account"
+        />
+      ) : null}
+    </>
   );
 }

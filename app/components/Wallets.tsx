@@ -1,21 +1,18 @@
 import { ErrorBoundary } from "react-error-boundary";
-import { Suspense } from "react";
-import { useSuspenseWalletByKey } from "~/state/wallet";
+import { useWalletByKey } from "~/state/wallet";
 import { Address } from "~/model/web3js";
 import { Wallet } from "~/model/wallet";
 
 export function Wallets({ keyAddress }: { keyAddress: Address }) {
   return (
     <ErrorBoundary fallback={null}>
-      <Suspense fallback={"Loading wallets..."}>
-        <WalletsInner keyAddress={keyAddress} />
-      </Suspense>
+      <WalletsInner keyAddress={keyAddress} />
     </ErrorBoundary>
   );
 }
 
 function WalletsInner({ keyAddress }: { keyAddress: Address }) {
-  const { wallets } = useSuspenseWalletByKey(keyAddress);
+  const { wallets } = useWalletByKey(keyAddress);
 
   return (
     <div>

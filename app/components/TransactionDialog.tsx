@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { forwardRef, useState } from "react";
 import {
   address,
   getBase58Decoder,
@@ -173,7 +173,11 @@ export default function TransactionDialog({
   };
 
   return (
-    <Dialog isOpen={isOpen} trigger={children} onOpenChange={setOpen}>
+    <Dialog
+      isOpen={isOpen}
+      onOpenChange={setOpen}
+      trigger={<TransactionDialogButton>{children}</TransactionDialogButton>}
+    >
       <div className="flex flex-col gap-8 w-[516px] p-8 m-auto bg-black text-white rounded-[40px]">
         {children}
         <div className="px-2 py-4 pt-3 pb-5">
@@ -273,3 +277,21 @@ export default function TransactionDialog({
     </Dialog>
   );
 }
+
+export const TransactionDialogButton = forwardRef(
+  (
+    {
+      children,
+      ...props
+    }: {
+      children: React.ReactNode;
+    },
+    ref: React.Ref<HTMLButtonElement>,
+  ) => {
+    return (
+      <button ref={ref} {...props}>
+        {children}
+      </button>
+    );
+  },
+);

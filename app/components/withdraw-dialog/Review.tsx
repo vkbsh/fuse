@@ -28,7 +28,7 @@ import {
   createProposalCreateInstruction,
 } from "~/program/multisig/instruction";
 
-import { useWalletStore, useSuspenseWalletByKey } from "~/state/wallet";
+import { useWalletStore, useWalletByKey } from "~/state/wallet";
 
 const Review = ({
   onClose,
@@ -42,7 +42,7 @@ const Review = ({
   // const wallets = useWallets();
   const { currentWallet, history } = useWalletStore();
   const { memo, toAddress, token, amount, set } = useWithdrawStore();
-  const multisigWallet = useSuspenseWalletByKey(currentWallet?.address);
+  const multisigWallet = useWalletByKey(currentWallet?.address);
   const currentMultisigWallet = multisigWallet?.wallets[0];
 
   const signer = useWalletAccountTransactionSendingSigner(
@@ -127,7 +127,9 @@ const Review = ({
           <span className="flex w-8 h-8 rounded-full bg-white justify-center text-black">
             <IconLogo />
           </span>
-          <span>{abbreviateAddress(currentMultisigWallet?.defaultVault)}</span>
+          <span>
+            {abbreviateAddress(currentMultisigWallet?.defaultVault || "")}
+          </span>
         </span>
       </div>
       <div className="h-14 border border-white rounded-[20px] px-4 py-2.5 flex flex-row gap-2 items-center justify-between">
@@ -151,7 +153,7 @@ const Review = ({
               <span className="w-6 h-6 rounded-full bg-black" />
             )}
           </span>
-          <span>{abbreviateAddress(toAddress)}</span>
+          <span>{abbreviateAddress(toAddress || "")}</span>
         </span>
       </div>
       <div className="h-14 border border-white rounded-[20px] px-4 py-2.5 flex flex-row gap-2 items-center justify-between">

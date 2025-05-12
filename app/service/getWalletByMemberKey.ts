@@ -1,9 +1,4 @@
-import {
-  Rpc,
-  getBase64Codec,
-  SolanaRpcApiMainnet,
-  parseBase64RpcAccount,
-} from "gill";
+import { getBase64Codec, parseBase64RpcAccount } from "gill";
 
 import {
   getMultisigAccountCodec,

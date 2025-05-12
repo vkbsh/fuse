@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
 import { UiWalletAccount } from "@wallet-standard/react";
 
 import Button from "~/components/ui/Button";
@@ -21,24 +20,11 @@ export default function WithdrawDialog({
   const [isOpen, setOpen] = useState(false);
   const { currentMultisigWallet, currentWallet } = useWalletStore();
 
-  // Initiate only: mask = 1
-  // Vote only: mask = 2
-  // Execute only: mask = 4
-  // Initiate + Vote: mask = 3
-  // Initiate + Execute: mask = 5
-  // Vote + Execute: mask = 6
-  // All permissions: mask = 7
   const isDisabled = currentMultisigWallet?.account?.members.some(
-    (m) =>
-      m.key === currentWallet?.address &&
-      m.permissions.mask !== 1 &&
-      m.permissions.mask !== 3 &&
-      m.permissions.mask !== 5 &&
-      m.permissions.mask !== 7,
+    (m) => m.key === currentWallet?.address && m.permissions.mask !== 7,
   );
 
   // TODO: Add Tooltip with required permissions
-  // TODO: show list of accounts from currentMultisigWallet?.account?.members
 
   if (isDisabled) {
     return (

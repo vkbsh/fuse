@@ -6,7 +6,6 @@ import {
   Title,
   Portal,
   Trigger,
-  Overlay,
   Content,
 } from "@radix-ui/react-dialog";
 
@@ -25,9 +24,11 @@ export default function Dialog({
 }) {
   return (
     <Root open={isOpen} onOpenChange={onOpenChange}>
-      <Trigger asChild>
-        <span onClick={() => onOpenChange?.(!isOpen)}>{trigger}</span>
-      </Trigger>
+      {trigger && (
+        <Trigger asChild className="cursor-pointer max-w-max">
+          {trigger}
+        </Trigger>
+      )}
       <Portal key="dialog-portal" forceMount>
         <AnimatePresence>
           {isOpen && (
@@ -36,7 +37,7 @@ export default function Dialog({
               initial={{ backdropFilter: "blur(0px)" }}
               animate={{
                 backdropFilter: "blur(10px)",
-                transition: { duration: 6 },
+                transition: { duration: 1 },
               }}
               exit={{
                 backdropFilter: "blur(0px)",
@@ -62,7 +63,7 @@ export default function Dialog({
                 <Content aria-describedby={undefined}>
                   <Title className="hidden" />
                   {children}
-                  <Close asChild>
+                  <Close>
                     <motion.button
                       animate={{
                         y: [-16, 0],

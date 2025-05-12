@@ -18,44 +18,46 @@ type Props = {
   onSelect: (token: Token) => void;
 };
 export default function SelectToken({ items, selected, onSelect }: Props) {
-  const itemsComponent = items.map((item, i) => {
-    const amount =
-      item.symbol.toLocaleLowerCase() === "sol"
-        ? getRoundedSOL(item.amount)
-        : getRoundedCoin(item.amount);
-    const name = item.name === "Wrapped SOL" ? "Solana" : item.name;
+  const itemsComponent = items
+    .filter((item) => item.amount > 0)
+    .map((item, i) => {
+      const amount =
+        item.symbol.toLocaleLowerCase() === "sol"
+          ? getRoundedSOL(item.amount)
+          : getRoundedCoin(item.amount);
+      const name = item.name === "Wrapped SOL" ? "Solana" : item.name;
 
-    return (
-      <motion.div
-        key={i}
-        whileHover={{
-          color: "var(--color-select-text-hover)",
-          backgroundColor: "var(--color-select-bg-hover)",
-          borderColor: "var(--color-select-border-hover)",
-        }}
-        onClick={() => onSelect(item)}
-        className="flex items-center cursor-pointer w-[279px] h-[46px] p-4 rounded-[14px] text-white border border-transparent"
-      >
-        <div className="flex flex-row items-center justify-between  w-full">
-          <div className="flex flex-row items-center gap-2">
-            <img
-              src={item.logoURI}
-              alt={item.name}
-              className="w-7 h-7 rounded-full  
+      return (
+        <motion.div
+          key={i}
+          whileHover={{
+            color: "var(--color-select-text-hover)",
+            backgroundColor: "var(--color-select-bg-hover)",
+            borderColor: "var(--color-select-border-hover)",
+          }}
+          onClick={() => onSelect(item)}
+          className="flex items-center cursor-pointer w-[279px] h-[46px] p-4 rounded-[14px] text-white border border-transparent"
+        >
+          <div className="flex flex-row items-center justify-between  w-full">
+            <div className="flex flex-row items-center gap-2">
+              <img
+                src={item.logoURI}
+                alt={item.name}
+                className="w-7 h-7 rounded-full  
 
               "
-            />
-            <span className="font-semibold text-base max-w-26 truncate">
-              {name}
+              />
+              <span className="font-semibold text-base max-w-26 truncate">
+                {name}
+              </span>
+            </div>
+            <span className="uppercase font-medium text-sm truncate">
+              {amount} {item.symbol}
             </span>
           </div>
-          <span className="uppercase font-medium text-sm truncate">
-            {amount} {item.symbol}
-          </span>
-        </div>
-      </motion.div>
-    );
-  });
+        </motion.div>
+      );
+    });
 
   return (
     <Dropdown

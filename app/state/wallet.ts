@@ -1,15 +1,15 @@
-import superjson from "superjson";
 import { create } from "zustand";
+import superjson from "superjson";
+import { useQuery, UseQueryOptions } from "@tanstack/react-query";
+import { UiWalletAccount } from "@wallet-standard/react";
 import { persist, PersistStorage } from "zustand/middleware";
-import { UseQueryOptions, useSuspenseQuery } from "@tanstack/react-query";
 
 import { Wallet } from "~/model/wallet";
 import { Address } from "~/model/web3js";
 import {
-  getWalletByMemberKey,
   getActiveProposals,
+  getWalletByMemberKey,
 } from "~/service/getWalletByMemberKey";
-import { UiWalletAccount } from "@wallet-standard/react";
 
 const STORAGE_KEY = "fuse:wallet-store";
 
@@ -57,10 +57,10 @@ export function walletsByKeyQuery({ keyAddress }: { keyAddress: Address }) {
   } satisfies UseQueryOptions<WalletData>;
 }
 
-export function useSuspenseWalletByKey(
+export function useWalletByKey(
   keyAddress: Address,
 ): WalletData | { wallets: [] } {
-  const { data } = useSuspenseQuery(walletsByKeyQuery({ keyAddress }));
+  const { data } = useQuery(walletsByKeyQuery({ keyAddress }));
 
   return data;
 }
@@ -73,23 +73,24 @@ export function proposalByKeyQuery({ keyAddress }: { keyAddress: Address }) {
         transactions: await getActiveProposals(keyAddress),
       };
     },
-  } satisfies UseQueryOptions<ProposalAccountData>;
+  };
 }
 
 export function useSuspenseProposalByKey(keyAddress: Address) {
-  const { data } = useSuspenseQuery(proposalByKeyQuery({ keyAddress }));
+  const data = useQuery(proposalByKeyQuery({ keyAddress }));
 
   return data;
 }
 
 type WalletStore = {
   history: LSWallet[] | null;
-  currentAccount: UiWalletAccount | null;
-  multisigWallets: Wallet[] | null;
   currentWallet: LSWallet | null;
+  multisigWallets: Wallet[] | null;
   currentMultisigWallet: Wallet | null;
-  removeWallet(address: Address): void;
-  addWallet(wallet: LSWallet): void;
+  currentAccount: UiWalletAccount | null;
+  removeWallet(name: string): void;
+  selectWallet(name: string): void;
+  saveWallet(wallet: LSWallet): void;
   saveMultisigWallets(wallets: Wallet[]): void;
   selectMultisigWallet(walletAddress: Address): void;
 };
@@ -108,7 +109,6 @@ const storage: PersistStorage<WalletStore> = {
   removeItem: (name) => localStorage.removeItem(name),
 };
 
-// TODO: Show history only for related Multisig account
 export const useWalletStore = create<WalletStore>()(
   persist(
     (set) => ({
@@ -131,14 +131,19 @@ export const useWalletStore = create<WalletStore>()(
             currentMultisigWallet: wallets[0],
           };
         }),
-      removeWallet: (address: Address) =>
+      removeWallet: (name: string) =>
         set((state) => {
           const newHistory =
-            state.history?.filter((w) => w.address !== address) || [];
-          if (state?.currentWallet?.address === address) {
+            state.history?.filter((w) => w.name !== name) || [];
+
+          if (state?.currentWallet?.name === name) {
             return {
-              currentWallet: null,
               history: newHistory,
+              currentWallet: newHistory[0] || null,
+              currentMultisigWallet: newHistory.length
+                ? state.currentMultisigWallet
+                : null,
+              multisigWallets: newHistory.length ? state.multisigWallets : null,
             };
           }
 
@@ -147,19 +152,22 @@ export const useWalletStore = create<WalletStore>()(
           };
         }),
 
-      addWallet: (wallet: LSWallet) =>
+      saveWallet: (wallet: LSWallet) =>
         set((state) => {
-          console.log("setting current wallet");
-
           const history = [
             wallet,
-            ...(state.history
-              ?.filter((w) => w.address !== wallet.address)
-              ?.filter((w) => w.name !== wallet.name) || []),
+            ...(state.history?.filter((w) => w.name !== wallet.name) || []),
           ];
 
           return {
             history,
+          };
+        }),
+      selectWallet: (name: string) =>
+        set((state) => {
+          const wallet = state.history?.find((w) => w.name === name);
+
+          return {
             currentWallet: wallet,
           };
         }),

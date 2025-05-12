@@ -10,14 +10,30 @@ import {
   ScrollRestoration,
 } from "react-router";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-
-import Loading from "./components/Loading";
+import { persistQueryClient } from "@tanstack/react-query-persist-client";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 
 export const queryClient = new QueryClient();
 
 export const links: LinksFunction = () => [
   { rel: "icon", href: "/favicon.png" },
 ];
+
+const persister = createSyncStoragePersister({
+  storage: typeof window !== "undefined" ? window.localStorage : undefined,
+});
+
+persistQueryClient({
+  queryClient,
+  persister,
+  dehydrateOptions: {
+    shouldDehydrateQuery: (query) => {
+      const key = query.queryKey[0];
+
+      return typeof key === "string" && ["tokenMetaAndPrice"].includes(key);
+    },
+  },
+});
 
 export function Layout({ children }: { children: ReactNode }) {
   return (
@@ -43,8 +59,4 @@ export default function App() {
       <Outlet />
     </QueryClientProvider>
   );
-}
-
-export function HydrateFallback() {
-  return <Loading />;
 }

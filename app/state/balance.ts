@@ -1,5 +1,5 @@
 import { Address, Rpc, SolanaRpcApiMainnet } from "gill";
-import { UseQueryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, UseQueryOptions } from "@tanstack/react-query";
 
 import { Balance } from "~/model/balance";
 import { getBalance } from "~/service/getBalance";
@@ -34,7 +34,7 @@ export function balanceQuery({
   } satisfies UseQueryOptions<BalanceData>;
 }
 
-export function useSuspenseBalance({
+export function useBalanceQuery({
   address,
   refetchInterval,
 }: {
@@ -43,9 +43,7 @@ export function useSuspenseBalance({
 }) {
   const { rpc } = useRpcStore();
 
-  const { data } = useSuspenseQuery(
-    balanceQuery({ address, rpc, refetchInterval }),
-  );
+  const { data } = useQuery(balanceQuery({ address, rpc, refetchInterval }));
 
   return data;
 }

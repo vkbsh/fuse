@@ -1,31 +1,53 @@
-import { memo } from "react";
+import { motion } from "motion/react";
 
 import { useWalletStore } from "~/state/wallet";
 import { useVaultTokens } from "~/state/totalBalance";
 
 import { Address } from "~/model/web3js";
 import { getRoundedUSD } from "~/utils/amount";
+import { BalanceData, useBalanceQuery } from "~/state/balance";
 
 export default function Balance() {
   const { currentMultisigWallet } = useWalletStore();
-  const vaultAddress = currentMultisigWallet?.defaultVault;
 
   return (
     <section className="flex flex-col">
       <span className="font-medium text-sm opacity-40">Total Balance</span>
-      {vaultAddress && <MemoizedTotalAmount address={vaultAddress} />}
+      {currentMultisigWallet?.defaultVault && (
+        <TotalBalance address={currentMultisigWallet.defaultVault} />
+      )}
     </section>
   );
 }
 
-function TotalAmount({ address }: { address: Address }) {
-  const { totalAmount } = useVaultTokens({ address });
+function TotalBalance({ address }: { address: Address }) {
+  const balanceData = useBalanceQuery({ address });
 
-  return (
-    <span className="text-[45px] font-bold">
-      ${typeof totalAmount === "number" ? getRoundedUSD(totalAmount) : "-"}
-    </span>
-  );
+  if (!balanceData) {
+    return 0;
+  }
+
+  return <TotalAmount address={address} balanceData={balanceData} />;
 }
 
-const MemoizedTotalAmount = memo(TotalAmount);
+function TotalAmount({
+  address,
+  balanceData,
+}: {
+  address: Address;
+  balanceData: BalanceData;
+}) {
+  const { totalAmount } = useVaultTokens({ address, balanceData });
+
+  return (
+    <motion.span
+      key={totalAmount}
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="text-[45px] font-bold"
+    >
+      ${typeof totalAmount === "number" ? getRoundedUSD(totalAmount) : "-"}
+    </motion.span>
+  );
+}

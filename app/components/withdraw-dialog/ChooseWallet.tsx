@@ -15,6 +15,7 @@ import { useVaultTokens } from "~/state/totalBalance";
 
 import { getRoundedUSD } from "~/utils/amount";
 import { abbreviateAddress } from "~/utils/address";
+import { useBalanceQuery } from "~/state/balance";
 
 const ChooseWallet = ({
   onClose,
@@ -23,25 +24,24 @@ const ChooseWallet = ({
   onClose: () => void;
   nextStep: () => void;
 }) => {
-  const { toAddress, set } = useWithdrawStore();
-  const [showHistory, setShowHistory] = useState(false);
+  const { toAddress, set, token } = useWithdrawStore();
   const [error, setError] = useState<string | null>(null);
   const { currentMultisigWallet, history } = useWalletStore();
   const [value, setValue] = useState<string | Address>(toAddress || "");
+  const balanceData = useBalanceQuery({
+    address: address(currentMultisigWallet?.defaultVault as Address),
+  });
   const { totalAmount } = useVaultTokens({
     address: address(currentMultisigWallet?.defaultVault as Address),
+    balanceData,
   });
 
   const handleFocus = () => {
     setError("");
-    setShowHistory(true);
-  };
-
-  const handleBlur = () => {
-    // setShowHistory(false);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError("");
     setValue(e.target.value);
   };
 
@@ -64,15 +64,25 @@ const ChooseWallet = ({
           <span className="font-semibold opacity-40">From</span>
           <span className="flex flex-row items-center gap-3">
             <span className="flex w-8 h-8 rounded-full justify-center items-center text-black bg-white">
-              <IconLogo />
+              {token ? (
+                <img
+                  src={token.logoURI}
+                  alt={token.name}
+                  className="w-6 h-6 rounded-full"
+                />
+              ) : (
+                <IconLogo />
+              )}
             </span>
             <span className="font-semibold text-base">
-              {abbreviateAddress(currentMultisigWallet?.defaultVault)}
+              {token
+                ? abbreviateAddress(token.ata)
+                : abbreviateAddress(currentMultisigWallet?.defaultVault)}
             </span>
           </span>
         </div>
         <span className="font-semibold text-base">
-          ${getRoundedUSD(totalAmount)}
+          ${getRoundedUSD(token ? token.amountUSD : totalAmount)}
         </span>
       </div>
       <div className="bg-white/20 relative h-14 border border-white/30 rounded-[20px] px-4 py-2.5 flex flex-row gap-2 items-center">
@@ -111,7 +121,6 @@ const ChooseWallet = ({
         <Input
           value={value}
           tabIndex={-1}
-          onBlur={handleBlur}
           onFocus={handleFocus}
           onChange={handleChange}
           placeholder="Enter wallet address"

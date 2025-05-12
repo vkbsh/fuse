@@ -1,24 +1,17 @@
 import { useEffect, useState } from "react";
-import { motion } from "motion/react";
 
 import Button from "~/components/ui/Button";
 import { ConnectWalletDialog } from "~/components/ConnectWalletDialog";
 
-import { Address } from "~/model/web3js";
 import { abbreviateAddress } from "~/utils/address";
-import { useWalletStore, useSuspenseWalletByKey } from "~/state/wallet";
+import { LSWallet, useWalletByKey, useWalletStore } from "~/state/wallet";
 
 export default function Connect() {
-  const { currentWallet } = useWalletStore();
   const [isOpenConnectWallet, setOpenConnectWallet] = useState(false);
+  const [extensionWallet, setExtensionWallet] = useState<null | LSWallet>(null);
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="h-full flex items-center justify-center"
-    >
+    <div className="h-full flex items-center justify-center">
       <div className="flex flex-col gap-6 m-auto">
         <div className="max-w-[800px] w-full ">
           <img src="/images/SDNA-fuse.png" alt="Fuse" />
@@ -31,37 +24,49 @@ export default function Connect() {
 
           <ConnectWalletDialog
             isOpen={isOpenConnectWallet}
+            setWallet={setExtensionWallet}
             onOpenChange={setOpenConnectWallet}
           >
             <Button size="full">
-              {currentWallet?.address
-                ? abbreviateAddress(currentWallet.address)
+              {extensionWallet?.address
+                ? abbreviateAddress(extensionWallet.address)
                 : "Log in with Fuse 2FA"}
             </Button>
           </ConnectWalletDialog>
 
-          {currentWallet && (
-            <MultisigWallets address={currentWallet?.address} />
-          )}
+          {extensionWallet && <MultisigWallets wallet={extensionWallet} />}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
-function MultisigWallets({ address }: { readonly address: Address }) {
-  const multisig = useSuspenseWalletByKey(address);
-  const { currentWallet, saveMultisigWallets } = useWalletStore();
+function MultisigWallets({ wallet }: { wallet: LSWallet }) {
+  const multisig = useWalletByKey(wallet.address);
 
-  const noMultisigFound = currentWallet && !multisig?.wallets?.length;
+  const { saveMultisigWallets, saveWallet, selectWallet } = useWalletStore();
+  const hasMultisigWallets = multisig?.wallets?.length;
 
   useEffect(() => {
-    if (multisig?.wallets.length > 0) {
+    if (hasMultisigWallets) {
+      saveWallet({
+        name: wallet.name,
+        icon: wallet.icon,
+        address: wallet.address,
+      });
+
+      selectWallet(wallet.name);
       saveMultisigWallets(multisig.wallets);
     }
   }, [multisig?.wallets]);
 
-  return noMultisigFound ? (
-    <span className="text-status-error">No multisig wallets found</span>
+  if (!multisig) {
+    return null;
+  }
+
+  return !hasMultisigWallets ? (
+    <span className="absolute -bottom-8 text-status-error">
+      No multisig wallets found
+    </span>
   ) : null;
 }

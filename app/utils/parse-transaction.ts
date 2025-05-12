@@ -197,3 +197,13 @@ function isSystemProgram(programAddress: Address): boolean {
 function isAssociatedTokenProgram(programAddress: Address): boolean {
   return programAddress === ASSOCIATED_TOKEN_PROGRAM_ADDRESS;
 }
+
+export enum MemberPermissions {
+  Initiate = 1,
+  Vote = 2,
+  InitiateVote = 3,
+  Execute = 4,
+  InitiateExecute = 5,
+  VoteExecute = 6,
+  All = 7,
+}

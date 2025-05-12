@@ -9,6 +9,7 @@ import Button from "~/components/ui/Button";
 import SelectToken from "~/components/SelectToken";
 
 import { useWalletStore } from "~/state/wallet";
+import { useBalanceQuery } from "~/state/balance";
 import { useWithdrawStore } from "~/state/withdraw";
 import { useVaultTokens, fetchTokenPrice } from "~/state/totalBalance";
 
@@ -27,8 +28,12 @@ const EnterAmount = ({
   const { set, amount, token } = useWithdrawStore();
   const [value, setValue] = useState(amount || "0");
   const { currentMultisigWallet } = useWalletStore();
+  const balanceData = useBalanceQuery({
+    address: address(currentMultisigWallet?.defaultVault as Address),
+  });
   const { coins } = useVaultTokens({
     address: address(currentMultisigWallet?.defaultVault as Address),
+    balanceData,
   });
 
   const selectedToken = token || coins[0];
