@@ -12,7 +12,7 @@ import { IconChevronDown } from "~/components/ui/icons/IconChevronDown";
 import { Address } from "~/model/web3js";
 import { abbreviateAddress } from "~/utils/address";
 import { LSWallet, useWalletStore } from "~/state/wallet";
-import { MemberPermissions } from "~/utils/parse-transaction";
+import { MemberPermissions } from "~/program/multisig/utils/parse-transaction";
 import {
   getWalletByName,
   SOLANA_SIGN_AND_SEND_TRANSACTION,

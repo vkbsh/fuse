@@ -1,5 +1,14 @@
 import * as multisig from "@sqds/multisig";
-import { IInstruction, ReadonlyUint8Array } from "gill";
+import {
+  AccountRole,
+  IAccountMeta,
+  IInstruction,
+  getAddressDecoder,
+  ReadonlyUint8Array,
+  upgradeRoleToSigner,
+  upgradeRoleToWritable,
+} from "gill";
+
 import {
   Signer,
   Keypair,
@@ -10,7 +19,6 @@ import {
 
 import { Address } from "~/model/web3js";
 import { useRpcStore } from "~/state/rpc";
-import { instructionFromLegacyInstruction } from "~/utils/instruction";
 
 const { RPC_URL } = useRpcStore.getState();
 const connection = new Connection(RPC_URL, "confirmed");
@@ -35,6 +43,69 @@ const connection = new Connection(RPC_URL, "confirmed");
 //   instructions: CompiledMsInstruction[];
 //   addressTableLookups: MessageAddressTableLookup[];
 // };
+
+import { TransactionInstruction } from "@solana/web3.js";
+
+export function instructionFromLegacyInstruction(
+  legacyInstruction: TransactionInstruction,
+): IInstruction {
+  return {
+    programAddress: addressFromLegacyPublicKey(legacyInstruction.programId),
+    accounts: legacyInstruction.keys.map((meta) => {
+      let role = AccountRole.READONLY;
+      if (meta.isWritable) {
+        role = upgradeRoleToWritable(role);
+      }
+      if (meta.isSigner) {
+        role = upgradeRoleToSigner(role);
+      }
+
+      return {
+        address: addressFromLegacyPublicKey(meta.pubkey),
+        role,
+      } satisfies IAccountMeta;
+    }),
+    data: legacyInstruction.data,
+  };
+}
+
+export async function createVaultMessageSignerWithProposalApprove({}) {
+  const message = await createMessageWithSigner({
+    feePayer: creator,
+    instructions: [
+      createVaultInstruction({
+        vaultIndex: 0,
+        transactionIndex,
+        ephemeralSigners: 0,
+        creator: creator.address,
+        multisigPda: multisigAddress,
+        transactionMessage: transferMessage,
+      }),
+      createProposalCreateInstruction({
+        transactionIndex,
+        creator: creator.address,
+        proposalPda: proposalPda,
+        multisigPda: multisigAddress,
+      }),
+      createProposalApproveInstruction({
+        proposalPda,
+        memo: "approve from test by the creator",
+        memberAddress: creator.address,
+        multisigPda: multisigAddress,
+      }),
+    ],
+  });
+}
+
+export function abbreviateAddress(address: Address) {
+  return `${address.slice(0, 4)}...${address.slice(-4)}`;
+}
+
+export function addressFromLegacyPublicKey(
+  legacyPublicKey: PublicKey,
+): Address {
+  return getAddressDecoder().decode(legacyPublicKey.toBytes());
+}
 
 export const { Permission, Permissions } = multisig.types;
 

@@ -13,7 +13,7 @@ import {
 } from "gill";
 
 const VITE_RPC_URL = import.meta.env.VITE_RPC_URL;
-const IS_TEST_ENV = import.meta.env.DEV;
+const IS_TEST_MODE = import.meta.env.MODE === "test";
 
 type RpcState = {
   RPC_URL: string;
@@ -27,7 +27,7 @@ type RpcState = {
 };
 
 export const useRpcStore = create<RpcState>((set) => {
-  let RPC_URL = IS_TEST_ENV ? "http://localhost:8899" : VITE_RPC_URL;
+  let RPC_URL = IS_TEST_MODE ? "http://localhost:8899" : VITE_RPC_URL;
 
   if (!RPC_URL) {
     console.warn("You might want to set VITE_RPC_URL in your .env file.");

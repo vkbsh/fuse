@@ -16,7 +16,7 @@ import { getTransactionPda, getVaultPda } from "~/program/multisig/pda";
 
 import { Wallet } from "~/model/wallet";
 import { Address } from "~/model/web3js";
-import { parseTransactionMessage } from "~/utils/parse-transaction";
+import { parseTransactionMessage } from "~/program/multisig/utils/parse-transaction";
 
 import { useRpcStore } from "~/state/rpc";
 
