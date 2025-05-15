@@ -2,7 +2,6 @@ import { describe, test, assert, beforeAll } from "vitest";
 
 import {
   address,
-  lamports,
   LAMPORTS_PER_SOL,
   parseBase64RpcAccount,
   createKeyPairFromBytes,
@@ -44,6 +43,11 @@ import { getVaultTransactionCodec } from "~/program/multisig/codec";
 import { useRpcStore } from "~/state/rpc";
 
 import { airdrop, getBalance, getMockToken } from "./_setup";
+import {
+  createTransferSolMessage,
+  createTransferTokenMessage,
+} from "~/program/multisig/utils/message";
+import { Address } from "~/model/web3js";
 
 describe("Interacting with the Multisig Program", async () => {
   const { rpc, sendAndConfirmTransaction } = useRpcStore.getState();
@@ -106,38 +110,13 @@ describe("Interacting with the Multisig Program", async () => {
 
   describe("Transfer SOL", async () => {
     test("Create VaultTransaction with: [TransferSOL, ProposalCreate, ProposalApprove]", async () => {
-      const amount = 0.07;
-      const transferMessage = await createTransferInnerMessage({
-        payer: vaultPda,
-        fromAddress: vaultPda,
+      const message = await createTransferSolMessage({
+        creator,
+        amount: 0.07,
+        transactionIndex,
         toAddress: creator.address,
-        lamports: Math.round(amount * LAMPORTS_PER_SOL),
-      });
-
-      const message = await createMessageWithSigner({
-        feePayer: creator,
-        instructions: [
-          createVaultInstruction({
-            vaultIndex: 0,
-            transactionIndex,
-            ephemeralSigners: 0,
-            creator: creator.address,
-            multisigPda: multisigAddress,
-            transactionMessage: transferMessage,
-          }),
-          createProposalCreateInstruction({
-            transactionIndex,
-            creator: creator.address,
-            proposalPda: proposalPda,
-            multisigPda: multisigAddress,
-          }),
-          createProposalApproveInstruction({
-            proposalPda,
-            memo: "approve from test by the creator",
-            memberAddress: creator.address,
-            multisigPda: multisigAddress,
-          }),
-        ],
+        multisigPda: multisigAddress,
+        memo: "approve from test by the creator",
       });
 
       try {
@@ -219,7 +198,7 @@ describe("Interacting with the Multisig Program", async () => {
   });
 
   describe("Transfer Token", async () => {
-    let fromToken;
+    let fromToken: { decimals: number; mint: Address; ata: Address };
     const transactionIndex = 2n;
 
     const proposalPda = await getProposalPda({
@@ -242,41 +221,20 @@ describe("Interacting with the Multisig Program", async () => {
     test("Create VaultTransaction with: [TransferToken, ProposalCreate, ProposalApprove]", async () => {
       const amount = 0.07357;
 
-      const transferMessage = await createTransferTokenInnerMessage({
+      const message = await createTransferTokenMessage({
+        creator,
+        amount,
         fromToken,
+        transactionIndex,
         authority: vaultPda,
         toAddress: creator.address,
-        amount: amount * 10 ** fromToken.decimals,
-      });
-
-      const tx = await createMessageWithSigner({
-        instructions: [
-          createVaultInstruction({
-            vaultIndex: 0,
-            ephemeralSigners: 0,
-            creator: creator.address,
-            multisigPda: multisigAddress,
-            transactionIndex: transactionIndex,
-            transactionMessage: transferMessage,
-          }),
-          createProposalCreateInstruction({
-            proposalPda,
-            creator: creator.address,
-            multisigPda: multisigAddress,
-            transactionIndex: transactionIndex,
-          }),
-          createProposalApproveInstruction({
-            proposalPda,
-            memo: "approve from test by the creator",
-            memberAddress: creator.address,
-            multisigPda: multisigAddress,
-          }),
-        ],
-        feePayer: creator,
+        multisigPda: multisigAddress,
+        memo: "approve from test by the creator",
       });
 
       try {
-        const signedTransaction = await signTransactionMessageWithSigners(tx);
+        const signedTransaction =
+          await signTransactionMessageWithSigners(message);
         await sendAndConfirmTransaction(signedTransaction);
         assert.equal(1, 1);
       } catch (error) {

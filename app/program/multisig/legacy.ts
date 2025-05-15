@@ -15,6 +15,7 @@ import {
   PublicKey,
   Connection,
   TransactionMessage,
+  TransactionInstruction,
 } from "web3js1";
 
 import { Address } from "~/model/web3js";
@@ -44,8 +45,6 @@ const connection = new Connection(RPC_URL, "confirmed");
 //   addressTableLookups: MessageAddressTableLookup[];
 // };
 
-import { TransactionInstruction } from "@solana/web3.js";
-
 export function instructionFromLegacyInstruction(
   legacyInstruction: TransactionInstruction,
 ): IInstruction {
@@ -67,34 +66,6 @@ export function instructionFromLegacyInstruction(
     }),
     data: legacyInstruction.data,
   };
-}
-
-export async function createVaultMessageSignerWithProposalApprove({}) {
-  const message = await createMessageWithSigner({
-    feePayer: creator,
-    instructions: [
-      createVaultInstruction({
-        vaultIndex: 0,
-        transactionIndex,
-        ephemeralSigners: 0,
-        creator: creator.address,
-        multisigPda: multisigAddress,
-        transactionMessage: transferMessage,
-      }),
-      createProposalCreateInstruction({
-        transactionIndex,
-        creator: creator.address,
-        proposalPda: proposalPda,
-        multisigPda: multisigAddress,
-      }),
-      createProposalApproveInstruction({
-        proposalPda,
-        memo: "approve from test by the creator",
-        memberAddress: creator.address,
-        multisigPda: multisigAddress,
-      }),
-    ],
-  });
 }
 
 export function abbreviateAddress(address: Address) {

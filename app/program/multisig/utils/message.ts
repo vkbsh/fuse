@@ -13,7 +13,7 @@ import {
 
 import { createVaultInstruction } from "~/program/multisig/legacy";
 import { getProposalPda, getVaultPda } from "~/program/multisig/pda";
-import { TransactionMessage } from "web3js1";
+import { Signer, TransactionMessage } from "web3js1";
 
 export async function createTransferSolMessage({
   amount,
@@ -27,7 +27,7 @@ export async function createTransferSolMessage({
   toAddress: Address;
   multisigPda: Address;
   transactionIndex: bigint;
-  creator: TransactionSendingSigner;
+  creator: TransactionSendingSigner | Signer;
   memo?: string;
 }) {
   const vaultPda = await getVaultPda({
@@ -94,7 +94,7 @@ export async function createTransferMessageWithProposalApprove({
   multisigPda: Address;
   transactionIndex: bigint;
   transferMessage: TransactionMessage;
-  creator: TransactionSendingSigner;
+  creator: TransactionSendingSigner | Signer;
   memo?: string;
 }) {
   const proposalPda = await getProposalPda({
