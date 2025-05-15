@@ -24,7 +24,7 @@ export default function Tooltip({
         <Portal forceMount>
           <AnimatePresence>
             {open && (
-              <Content>
+              <Content className="z-20">
                 <motion.div
                   initial={{ opacity: 0, y: -15 }}
                   animate={{ opacity: 1, y: -10 }}

@@ -26,6 +26,7 @@ export async function getBalance(
       .send()
       .then(({ value: accounts }) => accounts),
     rpc
+      // TODO: check if this is needed
       .getTokenAccountsByOwner(
         vault,
         {

@@ -21,8 +21,11 @@ export default function CoinsSection() {
 
 function Coins({ address }: { address: Address }) {
   const { set } = useWithdrawStore();
-  const balanceData = useBalanceQuery({ address });
-  const { coins } = useVaultTokens({ address, balanceData });
+  const { data, isLoading } = useBalanceQuery({ address });
+
+  const { coins } = useVaultTokens({ address, balanceData: data });
+
+  // TODO: Add loading state
 
   return (
     <section className="w-full h-full flex flex-col gap-4">

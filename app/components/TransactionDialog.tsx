@@ -10,21 +10,21 @@ import { useWalletAccountTransactionSendingSigner } from "@solana/react";
 
 import Button from "~/components/ui/Button";
 import Dialog from "~/components/ui/Dialog";
-import { IconSquareDot } from "~/components/icons/IconSquareDot";
-import { IconCircleDot } from "~/components/icons/IconCircleDot";
-import { IconCirclePlus } from "~/components/icons/IconCirclePlus";
-
-import {
-  createProposalApproveInstruction,
-  createVaultTransactionAccountsCloseInstruction,
-  createVaultTransactionExecuteInstruction,
-} from "~/program/multisig/instruction";
+import { IconSquareDot } from "~/components/ui/icons/IconSquareDot";
+import { IconCircleDot } from "~/components/ui/icons/IconCircleDot";
+import { IconCirclePlus } from "~/components/ui/icons/IconCirclePlus";
 
 import {
   getVaultPda,
   getProposalPda,
   getTransactionPda,
 } from "~/program/multisig/pda";
+
+import {
+  createProposalApproveInstruction,
+  createVaultTransactionExecuteInstruction,
+  createVaultTransactionAccountsCloseInstruction,
+} from "~/program/multisig/instruction";
 
 import { getVaultTransactionCodec } from "~/program/multisig/codec";
 import { createMessageWithSigner } from "~/program/multisig/transaction";
@@ -87,8 +87,6 @@ export default function TransactionDialog({
       transactionIndex: BigInt(transactionIndex),
       multisigAddress: currentMultisigWalletAddress,
     });
-
-    console.log("transactionIndex", transactionIndex);
 
     const message = await createMessageWithSigner({
       feePayer,

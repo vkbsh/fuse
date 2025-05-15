@@ -1,5 +1,4 @@
 import { PublicKey, SystemProgram, TransactionMessage } from "web3js1";
-import { VaultTransactionMessage } from "~/generated";
 
 import {
   getTransferInstruction,
@@ -12,17 +11,15 @@ import {
   address,
   IInstruction,
   compileTransaction,
-  TransactionSigner,
   createTransactionMessage,
+  TransactionSendingSigner,
   setTransactionMessageFeePayer,
   setTransactionMessageFeePayerSigner,
   appendTransactionMessageInstructions,
   setTransactionMessageLifetimeUsingBlockhash,
-  TransactionSendingSigner,
 } from "gill";
 
 import {
-  createVaultInstruction,
   createProposalCancelInstruction,
   createProposalCreateInstruction,
   createProposalApproveInstruction,
@@ -35,6 +32,8 @@ import {
   getProposalPda,
   getTransactionPda,
 } from "~/program/multisig/pda";
+
+import { createVaultInstruction } from "~/program/multisig/legacy";
 
 import { Address } from "~/model/web3js";
 import { useRpcStore } from "~/state/rpc";
@@ -316,7 +315,7 @@ export async function vaultTransactionExecute({
   transactionIndex,
   ephemeralSignerBumps,
 }: {
-  message: VaultTransactionMessage;
+  message: TransactionMessage;
   ephemeralSignerBumps: any;
   multisigPda: Address;
   memberAddress: Address;
@@ -386,7 +385,7 @@ export async function vaultTransactionAccountsClose({
       rentCollectorPda,
     });
 
-  const feePayer = rentCollectorPda ?? vaultPda; // TODO: temp
+  const feePayer = rentCollectorPda ?? vaultPda;
 
   return compileTransactionWithIx({
     feePayer,

@@ -1,5 +1,4 @@
 import { ReactNode } from "react";
-import { AnimatePresence, motion } from "motion/react";
 import {
   Root,
   Close,
@@ -8,8 +7,9 @@ import {
   Trigger,
   Content,
 } from "@radix-ui/react-dialog";
+import { AnimatePresence, motion } from "motion/react";
 
-import { IconClose } from "~/components/icons/IconClose";
+import { IconClose } from "~/components/ui/icons/IconClose";
 
 export default function Dialog({
   isOpen,
@@ -56,6 +56,7 @@ export default function Dialog({
                   opacity: 1,
                 }}
                 exit={{
+                  y: -32,
                   opacity: 0,
                 }}
                 className="absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%] z-20 overflow-visible drop-shadow-2xl"

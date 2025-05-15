@@ -28,7 +28,7 @@ const EnterAmount = ({
   const { set, amount, token } = useWithdrawStore();
   const [value, setValue] = useState(amount || "0");
   const { currentMultisigWallet } = useWalletStore();
-  const balanceData = useBalanceQuery({
+  const { data: balanceData } = useBalanceQuery({
     address: address(currentMultisigWallet?.defaultVault as Address),
   });
   const { coins } = useVaultTokens({
@@ -37,7 +37,7 @@ const EnterAmount = ({
   });
 
   const selectedToken = token || coins[0];
-  const debounceValue = useDebounce(value, 300);
+  const debounceValue = useDebounce(value, 700);
 
   const { data: calculatedAmount = 0 } = useQuery({
     enabled: Number(debounceValue) > 0,
@@ -159,13 +159,21 @@ const EnterAmount = ({
       <div className="flex flex-row gap-2 items-center justify-between mt-2 text-white/60">
         <motion.span
           key={calculatedAmount}
-          animate={{ opacity: [0, 1] }}
-          transition={{
-            duration: 0.3,
+          initial={{
+            scale: 0.9,
+            opacity: 0.8,
           }}
-          className="text-base"
+          animate={{
+            scale: 1,
+            opacity: 1,
+            filter: !calculatedAmount ? "blur(2px)" : "blur(0px)",
+          }}
+          transition={{
+            duration: 0.6,
+          }}
+          className="text-base flex"
         >
-          ${calculatedAmount.toFixed(2)}{" "}
+          ${calculatedAmount?.toFixed(2)}{" "}
         </motion.span>
         <span>{maxAmount}</span>
       </div>

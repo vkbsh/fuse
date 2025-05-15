@@ -11,9 +11,9 @@ import { useWalletStore, proposalByKeyQuery } from "~/state/wallet";
 export type Status = "ready" | "executed" | "cancelled";
 
 export default function TransactionSection({
-  walletAccount,
+  account,
 }: {
-  walletAccount: UiWalletAccount;
+  account: UiWalletAccount;
 }) {
   const { currentMultisigWallet, currentWallet } = useWalletStore();
   const multisigAddress = currentMultisigWallet?.address;
@@ -24,9 +24,9 @@ export default function TransactionSection({
 
   return (
     <Transactions
-      walletAccount={walletAccount}
+      walletAccount={account}
       multisigAddress={multisigAddress}
-      walletAddress={currentWallet?.address}
+      walletAddress={currentWallet.address}
       rentCollectorAddress={currentMultisigWallet.account.rentCollector}
     />
   );

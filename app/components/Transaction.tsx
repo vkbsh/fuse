@@ -1,7 +1,7 @@
 import { cn } from "~/utils/tw";
 
-import { IconArrowUp } from "~/components/icons/IconArrowUp";
-import { IconArrowDown } from "~/components/icons/IconArrowDown";
+import { IconArrowUp } from "~/components/ui/icons/IconArrowUp";
+import { IconArrowDown } from "~/components/ui/icons/IconArrowDown";
 import { Address } from "~/model/web3js";
 import { abbreviateAddress } from "~/utils/address";
 import { useWalletStore } from "~/state/wallet";

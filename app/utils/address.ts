@@ -1,4 +1,4 @@
-import { PublicKey } from "web3js1";
+import { PublicKey } from "@solana/web3.js";
 import { getAddressDecoder } from "gill";
 import { Address } from "~/model/web3js";
 

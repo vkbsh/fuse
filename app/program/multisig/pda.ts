@@ -1,10 +1,10 @@
 import {
+  getU8Codec,
   getU64Codec,
   getU8Encoder,
   getUtf8Encoder,
   getAddressEncoder,
   getProgramDerivedAddress,
-  getU8Codec,
 } from "gill";
 
 import { Address } from "~/model/web3js";
@@ -80,7 +80,7 @@ export async function getProposalPda({
   ]);
 }
 
-export async function getEphemeralSignerPda({
+export function getEphemeralSignerPda({
   transactionPda,
   ephemeralSignerIndex,
 }: {

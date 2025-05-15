@@ -6,15 +6,15 @@ import Dialog from "~/components/ui/Dialog";
 import Review from "~/components/withdraw-dialog/Review";
 import EnterAmount from "~/components/withdraw-dialog/EnterAmount";
 import ChooseWallet from "~/components/withdraw-dialog/ChooseWallet";
-import { IconCircleArrow } from "~/components/icons/IconCircleArrow";
+import { IconCircleArrow } from "~/components/ui/icons/IconCircleArrow";
 
 import { useWithdrawStore } from "~/state/withdraw";
 import { useWalletStore } from "~/state/wallet";
 
 export default function WithdrawDialog({
-  walletAccount,
+  account,
 }: {
-  walletAccount: UiWalletAccount;
+  account: UiWalletAccount;
 }) {
   const { reset } = useWithdrawStore();
   const [isOpen, setOpen] = useState(false);
@@ -50,7 +50,7 @@ export default function WithdrawDialog({
         </Button>
       }
     >
-      <Steps walletAccount={walletAccount} onClose={() => setOpen(false)} />
+      <Steps walletAccount={account} onClose={() => setOpen(false)} />
     </Dialog>
   );
 }

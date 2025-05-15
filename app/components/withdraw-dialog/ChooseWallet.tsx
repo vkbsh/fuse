@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 import Input from "~/components/ui/Input";
 import Button from "~/components/ui/Button";
 
-import { IconLogo } from "~/components/icons/IconLogo";
+import { IconLogo } from "~/components/ui/icons/IconLogo";
 import Dropdown from "~/components/ui/Dropdown";
 
 import { Address } from "~/model/web3js";
@@ -101,7 +101,6 @@ const ChooseWallet = ({
                   key={w.address}
                   onClick={() => {
                     setValue(w.address);
-                    setShowHistory(false);
                   }}
                   className="flex flex-row items-center gap-2 p-2 cursor-pointer hover:bg-primary"
                 >

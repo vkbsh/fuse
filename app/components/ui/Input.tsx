@@ -2,7 +2,11 @@ import { cn } from "~/utils/tw";
 
 const Input = ({ ...props }) => {
   return (
-    <input {...props} className={cn("outline-0 w-full", props.className)} />
+    <input
+      {...props}
+      autoComplete="off"
+      className={cn("outline-0 w-full", props.className)}
+    />
   );
 };
 

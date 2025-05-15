@@ -1,11 +1,7 @@
+import { address } from "gill";
 import { MetaFunction } from "react-router";
-import { memo, useEffect, useState } from "react";
-import {
-  UiWallet,
-  useConnect,
-  useWallets,
-  UiWalletAccount,
-} from "@wallet-standard/react";
+import { useEffect, useState } from "react";
+import { UiWallet, useConnect, UiWalletAccount } from "@wallet-standard/react";
 
 import Toast from "~/components/ui/Toast";
 import Connect from "~/components/Connect";
@@ -14,10 +10,12 @@ import CoinSection from "~/components/CoinSectioin";
 import VaultAccount from "~/components/VaultAccount";
 import WithdrawButton from "~/components/WithdrawButton";
 import TransactionSection from "~/components/TransactionSection";
-import RecoveryKeysDropdown from "~/components/RecoveryKeysDropdown";
+import MemberKeysDropdown from "~/components/MemberKeysDropdown";
 import { ConnectWalletDialog } from "~/components/ConnectWalletDialog";
 
+import { Address } from "~/model/web3js";
 import { LSWallet, useWalletStore } from "~/state/wallet";
+import { getWalletByName } from "~/service/getWallets";
 
 export const meta: MetaFunction = () => {
   return [
@@ -37,84 +35,84 @@ export default function Index() {
 }
 
 function Main({ currentWallet }: { currentWallet: LSWallet }) {
-  const wallets = useWallets();
-  const wallet = wallets
-    .filter((w) => w.features.includes("solana:signAndSendTransaction"))
-    .find((w) => w.name === currentWallet?.name);
+  const wallet = getWalletByName(currentWallet.name);
 
-  return wallet ? <TestRerender wallet={wallet} /> : null;
+  return wallet ? <WithWallet wallet={wallet} /> : <Connect />;
 }
 
-const TestRerender = ({ wallet }: { wallet: UiWallet }) => {
+const WithWallet = ({ wallet }: { wallet: UiWallet }) => {
   const account = wallet?.accounts[0];
 
   if (account) {
-    return <WithAccount account={account} />;
+    return <WithAccount wallet={wallet} account={account} />;
   }
 
-  return <ShouldConnect wallet={wallet} />;
+  return <WithConnect wallet={wallet} />;
 };
 
-const ShouldConnect = ({ wallet }: { wallet: UiWallet }) => {
+const WithConnect = ({ wallet }: { wallet: UiWallet }) => {
   const [, connect] = useConnect(wallet);
-  const { currentMultisigWallet, selectWallet, removeWallet } =
-    useWalletStore();
 
   useEffect(() => {
-    const tryConnectWallet = async () => {
-      const [account] = await connect({ silent: true });
-      const members = currentMultisigWallet?.account?.members || [];
-      const isMember = members.some((m) => m.key === account.address);
-
-      if (account && isMember) {
-        selectWallet(wallet.name);
-      } else {
-        // TODO: Show toast
-        removeWallet(wallet.name);
-      }
-    };
-
-    tryConnectWallet();
+    connect({ silent: true });
   }, []);
 
   return null;
 };
 
-const WithAccount = memo(({ account }: { account: UiWalletAccount }) => {
-  if (!account) {
-    return null;
-  }
+const WithAccount = ({
+  wallet,
+  account,
+}: {
+  wallet: UiWallet;
+  account: UiWalletAccount;
+}) => {
+  const { currentMultisigWallet, saveWallet, selectWallet } = useWalletStore();
+
+  useEffect(() => {
+    saveWallet({
+      name: wallet.name,
+      icon: wallet.icon,
+      address: address(account.address),
+    });
+    selectWallet(wallet.name);
+  }, [account.address]);
 
   return (
     <div className="h-screen w-full max-w-[1280px] m-auto p-6 flex flex-col gap-10 ">
       <header className="h-[42px] flex items-center justify-between">
         <VaultAccount />
-        <RecoveryKeys />
+        <MemberKeys account={account} />
       </header>
       <main className="flex-1 flex flex-col w-full h-full min-h-0 gap-10">
         <div className="flex flex-col">
-          <Balance />
-          <WithdrawButton walletAccount={account} />
+          <Balance
+            vaultAddress={currentMultisigWallet?.defaultVault as Address}
+          />
+          <WithdrawButton account={account} />
         </div>
         <div className="flex flex-1 w-full h-full min-h-0 justify-between ">
           <CoinSection />
           <div className="w-px bg-black/20 mx-10" />
-          <TransactionSection walletAccount={account} />
+          <TransactionSection account={account} />
         </div>
       </main>
+      <Toast />
     </div>
   );
-});
+};
 
-function RecoveryKeys() {
-  const { currentMultisigWallet, saveWallet, selectWallet } = useWalletStore();
-  const [extensionWallet, setExtensionWallet] = useState<null | LSWallet>(null);
+function MemberKeys({ account }: { account: UiWalletAccount }) {
   const [isOpenConnectWallet, setOpenConnectWallet] = useState(false);
+  const [extensionWallet, setExtensionWallet] = useState<null | LSWallet>(null);
+  const { currentMultisigWallet, saveWallet, selectWallet } = useWalletStore();
 
   const memberKeys = currentMultisigWallet?.account?.members;
   const isMemberKey = memberKeys?.some(
     (m) => m.key === extensionWallet?.address,
   );
+
+  // TODO: use account?
 
   useEffect(() => {
     if (extensionWallet && isMemberKey) {
@@ -126,7 +124,7 @@ function RecoveryKeys() {
 
       selectWallet(extensionWallet.name);
     }
-  }, [extensionWallet, isMemberKey]);
+  }, [account.address, extensionWallet, isMemberKey]);
 
   return (
     <>
@@ -135,16 +133,9 @@ function RecoveryKeys() {
         setWallet={setExtensionWallet}
         onOpenChange={setOpenConnectWallet}
       />
-      <RecoveryKeysDropdown onClick={() => setOpenConnectWallet(true)} />
-      {extensionWallet && !isMemberKey ? (
-        <Toast
-          close="Close"
-          action="View"
-          title="Connected"
-          actionAltText="View"
-          description="You have successfully connected to your Fuse account"
-        />
-      ) : null}
+      <div>
+        <MemberKeysDropdown onClick={() => setOpenConnectWallet(true)} />
+      </div>
     </>
   );
 }

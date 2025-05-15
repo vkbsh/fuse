@@ -1,6 +1,6 @@
 import { useWalletStore } from "~/state/wallet";
 import { abbreviateAddress } from "~/utils/address";
-import { IconLogo } from "~/components/icons/IconLogo";
+import { IconLogo } from "~/components/ui/icons/IconLogo";
 
 export default function VaultAccount() {
   const { currentMultisigWallet } = useWalletStore();

@@ -1,13 +1,10 @@
-import * as multisig from "@sqds/multisig";
-import { AccountMeta, PublicKey } from "web3js1";
-import { VaultTransactionMessage } from "~/generated";
+import { AccountMeta, PublicKey } from "@solana/web3.js";
 
 import {
-  IInstruction,
   AccountRole,
-  ReadonlyUint8Array,
+  IInstruction,
   isWritableRole,
-  TransactionMessage,
+  ReadonlyUint8Array,
 } from "gill";
 
 import {
@@ -25,7 +22,7 @@ import {
 import { getEphemeralSignerPda } from "~/program/multisig/pda";
 
 import { Address } from "~/model/web3js";
-import { instructionFromLegacyInstruction } from "~/utils/instruction";
+import { VaultTransactionMessage } from "./legacy";
 
 const discriminator = {
   proposalCreate: [220, 60, 73, 224, 30, 108, 79, 159],
@@ -53,41 +50,9 @@ export function createInstruction({
   };
 }
 
-export function createVaultInstruction({
-  memo,
-  creator,
-  vaultIndex,
-  multisigPda,
-  ephemeralSigners,
-  transactionIndex,
-  transactionMessage,
-}: {
-  memo?: string;
-  creator: Address;
-  vaultIndex: number;
-  multisigPda: Address;
-  transactionIndex: bigint;
-  ephemeralSigners: number;
-  transactionMessage: TransactionMessage;
-}): IInstruction {
-  const createVaultTransactionIx = multisig.instructions.vaultTransactionCreate(
-    {
-      memo,
-      vaultIndex,
-      ephemeralSigners,
-      transactionIndex,
-      // @ts-ignore (incompatible types sqds/multisig/web3 and fuse/web3js1)
-      transactionMessage,
-      creator: new PublicKey(creator),
-      multisigPda: new PublicKey(multisigPda),
-    },
-  );
-  return instructionFromLegacyInstruction(createVaultTransactionIx);
-}
-
 export function isStaticWritableIndex(
-  message: VaultTransactionMessage,
   index: number,
+  message: VaultTransactionMessage,
 ): boolean {
   const numAccountKeys = message.accountKeys.length;
   const { numSigners, numWritableSigners, numWritableNonSigners } = message;
@@ -109,7 +74,7 @@ export function isSignerIndex(message: VaultTransactionMessage, index: number) {
 
 function convertRoles(
   accountMetas: AccountMeta[],
-): Array<[Address, AccountRole]> {
+): Array<[PublicKey, AccountRole]> {
   return accountMetas.map((meta) => {
     let role = READONLY;
     if (meta.isWritable) {
@@ -136,8 +101,8 @@ export function createVaultTransactionExecuteInstruction({
   proposalPda: Address;
   memberAddress: Address;
   transactionPda: Address;
-  ephemeralSignerBumps: any;
   message: VaultTransactionMessage;
+  ephemeralSignerBumps: ReadonlyUint8Array;
 }) {
   const accountMetas: AccountMeta[] = [];
 
@@ -154,11 +119,11 @@ export function createVaultTransactionExecuteInstruction({
   for (const [accountIndex, accountKey] of message.accountKeys.entries()) {
     accountMetas.push({
       pubkey: accountKey,
-      isWritable: isStaticWritableIndex(message, accountIndex),
+      isWritable: isStaticWritableIndex(accountIndex, message),
       // NOTE: vaultPda and ephemeralSignerPdas cannot be marked as signers,
       // because they are PDAs and hence won't have their signatures on the transaction.
       isSigner:
-        isSignerIndex(message, accountIndex) &&
+        isSignerIndex(accountIndex, message) &&
         !(accountKey === vaultPda) &&
         !ephemeralSignerPdas.find((k) => accountKey.equals(k)),
     });
@@ -204,7 +169,7 @@ export function createProposalCreateInstruction({
       [multisigPda, READONLY],
       [proposalPda, WRITABLE],
       [creator, READONLY_SIGNER],
-      [creator, WRITABLE_SIGNER], // TODO: rentPaymentAccount
+      [creator, WRITABLE_SIGNER],
       [SYSTEM_PROGRAM_ADDRESS, READONLY],
     ],
   });
@@ -261,13 +226,11 @@ export function createProposalCancelInstruction({
 }
 
 export function createVaultTransactionAccountsCloseInstruction({
-  vaultPda,
   multisigPda,
   proposalPda,
   transactionPda,
   rentCollectorPda,
 }: {
-  vaultPda: Address;
   multisigPda: Address;
   proposalPda: Address;
   transactionPda: Address;

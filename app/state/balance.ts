@@ -43,7 +43,7 @@ export function useBalanceQuery({
 }) {
   const { rpc } = useRpcStore();
 
-  const { data } = useQuery(balanceQuery({ address, rpc, refetchInterval }));
+  const res = useQuery(balanceQuery({ address, rpc, refetchInterval }));
 
-  return data;
+  return res;
 }

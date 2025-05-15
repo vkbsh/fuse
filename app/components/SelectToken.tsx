@@ -1,7 +1,7 @@
 import { motion } from "motion/react";
 
 import Dropdown from "~/components/ui/Dropdown";
-import { IconChevronDown } from "~/components/icons/IconChevronDown";
+import { IconChevronDown } from "~/components/ui/icons/IconChevronDown";
 
 import { getRoundedSOL, getRoundedCoin } from "~/utils/amount";
 

@@ -2,17 +2,30 @@
 
 ![Fuse](./public/images/SDNA-fuse.jpg)
 
-## Templates/SPA
-
-This template leverages [Remix SPA Mode](https://remix.run/docs/en/main/guides/spa-mode) to build your app as a Single-Page Application using [Client Data](https://remix.run/docs/en/main/guides/client-data) for all of your data loads and mutations.
-
 ## Deployment
 
 This template is deployed to the following providers:
 
-- [![AWS (Amazon)](https://img.shields.io/badge/AWS-232F3E?logo=amazon-aws&logoColor=white)](https://console.aws.amazon.com/)
-- [![Azure (Microsoft)](https://img.shields.io/badge/Azure-0078D4?logo=microsoft-azure&logoColor=white)](https://portal.azure.com/)
-- [![GCP (Google)](https://img.shields.io/badge/GCP-4285F4?logo=google-cloud&logoColor=white)](https://console.cloud.google.com/)
-- [![Vercel](https://img.shields.io/badge/Vercel-000?logo=vercel&logoColor=white)](https://vercel.com/import)
-- [![Heroku](https://img.shields.io/badge/Heroku-430098?logo=heroku&logoColor=white)](https://dashboard.heroku.com/new)
-- [![DigitalOcean](https://img.shields.io/badge/DigitalOcean-0080FF?logo=digitalocean&logoColor=white)](https://cloud.digitalocean.com/apps)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvkbsh%2Ffuse)
+
+## Testing
+
+### Start a local validator
+
+To run the tests, you need to have a local validator running. You can install the Solana CLI from the following [link](https://docs.solana.com/cli/install-solana-cli-tools).
+
+Once you have the Solana CLI installed, you can start a local validator by running the following command:
+
+`Note: You will also have to clone the program config account from mainnet.`
+
+```bash
+solana-test-validator --url m --clone-upgradeable-program SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf -c BSTq9w3kZwNwpBXJEvTZz2G9ZTNyKBvoSeXMvwb4cNZr -c Fy3YMJCvwbAXUgUM5b91ucUVA3jYzwWLHL3MwBqKsh8n
+```
+
+### Run tests
+
+To run the tests, run the following command:
+
+```bash
+npm test
+```

@@ -5,7 +5,7 @@ import {
   upgradeRoleToSigner,
   upgradeRoleToWritable,
 } from "gill";
-import { TransactionInstruction } from "web3js1";
+import { TransactionInstruction } from "@solana/web3.js";
 import { addressFromLegacyPublicKey } from "./address";
 
 export function instructionFromLegacyInstruction(

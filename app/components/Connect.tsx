@@ -21,7 +21,6 @@ export default function Connect() {
           <h1 className="font-semibold text-5xl text-center">
             Security is in our DNA
           </h1>
-
           <ConnectWalletDialog
             isOpen={isOpenConnectWallet}
             setWallet={setExtensionWallet}
@@ -33,7 +32,6 @@ export default function Connect() {
                 : "Log in with Fuse 2FA"}
             </Button>
           </ConnectWalletDialog>
-
           {extensionWallet && <MultisigWallets wallet={extensionWallet} />}
         </div>
       </div>
@@ -43,7 +41,6 @@ export default function Connect() {
 
 function MultisigWallets({ wallet }: { wallet: LSWallet }) {
   const multisig = useWalletByKey(wallet.address);
-
   const { saveMultisigWallets, saveWallet, selectWallet } = useWalletStore();
   const hasMultisigWallets = multisig?.wallets?.length;
 

@@ -1,3 +1,6 @@
+import { useCallback } from "react";
+import { address } from "gill";
+import { motion } from "motion/react";
 import {
   UiWallet,
   useConnect,
@@ -5,12 +8,11 @@ import {
   UiWalletAccount,
   uiWalletAccountsAreSame,
 } from "@wallet-standard/react";
-import { address } from "gill";
-import { forwardRef, useCallback } from "react";
-import { motion } from "motion/react";
 
 import Dialog from "~/components/ui/Dialog";
+
 import { LSWallet } from "~/state/wallet";
+import { SOLANA_SIGN_AND_SEND_TRANSACTION } from "~/service/getWallets";
 
 export function ConnectWalletDialog({
   isOpen,
@@ -21,7 +23,7 @@ export function ConnectWalletDialog({
   isOpen: boolean;
   children?: React.ReactNode;
   onOpenChange: (open: boolean) => void;
-  setWallet: (wallet: (UiWalletAccount & LSWallet) | null) => void;
+  setWallet: (wallet: LSWallet | null) => void;
 }) {
   return (
     <Dialog isOpen={isOpen} onOpenChange={onOpenChange} trigger={children}>
@@ -35,7 +37,7 @@ function WalletOptions({
   setWallet,
 }: {
   close: () => void;
-  setWallet: (wallet: (UiWalletAccount & LSWallet) | null) => void;
+  setWallet: (wallet: LSWallet | null) => void;
 }) {
   const wallets = useWallets();
 
@@ -45,10 +47,8 @@ function WalletOptions({
       <hr className=" opacity-20" />
       <div className="flex flex-col gap-6">
         {wallets
-          .filter(
-            (wallet) =>
-              wallet.chains.includes("solana:mainnet") &&
-              wallet.features.includes("solana:signAndSendTransaction"),
+          .filter((wallet) =>
+            wallet.features.includes(SOLANA_SIGN_AND_SEND_TRANSACTION),
           )
           .map((wallet) => (
             <WalletOption
@@ -93,10 +93,8 @@ function WalletOption({
       const nextAccounts = await connect();
 
       // Filter to accounts that support the features we need.
-      const withSignAndSendTransaction = nextAccounts.filter(
-        (nextAccount) =>
-          nextAccount.features.includes("solana:signAndSendTransaction") &&
-          nextAccount.chains.includes("solana:mainnet"),
+      const withSignAndSendTransaction = nextAccounts.filter((nextAccount) =>
+        nextAccount.features.includes(SOLANA_SIGN_AND_SEND_TRANSACTION),
       );
 
       // Try to choose the first never-before-seen account.
@@ -106,21 +104,21 @@ function WalletOption({
             uiWalletAccountsAreSame(nextAccount, existingAccount),
           )
         ) {
-          onAccountSelect(nextAccount);
-          return;
+          return onAccountSelect(nextAccount);
         }
       }
       // Failing that, choose the first account in the list.
       if (withSignAndSendTransaction[0]) {
-        onAccountSelect(withSignAndSendTransaction[0]);
+        return onAccountSelect(withSignAndSendTransaction[0]);
       }
     } catch (e) {
       onError(e);
     }
-  }, [connect, onAccountSelect, onError, wallet.accounts]);
+  }, [wallet.accounts]);
 
   if (isConnecting) {
     return (
+      // TODO: make it animated
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

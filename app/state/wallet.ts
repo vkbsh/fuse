@@ -1,8 +1,7 @@
 import { create } from "zustand";
 import superjson from "superjson";
-import { useQuery, UseQueryOptions } from "@tanstack/react-query";
-import { UiWalletAccount } from "@wallet-standard/react";
 import { persist, PersistStorage } from "zustand/middleware";
+import { useQuery, UseQueryOptions } from "@tanstack/react-query";
 
 import { Wallet } from "~/model/wallet";
 import { Address } from "~/model/web3js";
@@ -87,10 +86,10 @@ type WalletStore = {
   currentWallet: LSWallet | null;
   multisigWallets: Wallet[] | null;
   currentMultisigWallet: Wallet | null;
-  currentAccount: UiWalletAccount | null;
   removeWallet(name: string): void;
   selectWallet(name: string): void;
   saveWallet(wallet: LSWallet): void;
+  updateHistory(wallets: LSWallet[]): void;
   saveMultisigWallets(wallets: Wallet[]): void;
   selectMultisigWallet(walletAddress: Address): void;
 };
@@ -115,7 +114,6 @@ export const useWalletStore = create<WalletStore>()(
       history: [],
       multisigWallets: null,
       currentWallet: null,
-      currentAccount: null,
       currentMultisigWallet: null,
       selectMultisigWallet: (address: Address) =>
         set((state) => {
@@ -169,6 +167,12 @@ export const useWalletStore = create<WalletStore>()(
 
           return {
             currentWallet: wallet,
+          };
+        }),
+      updateHistory: (wallets: LSWallet[]) =>
+        set((state) => {
+          return {
+            history: wallets,
           };
         }),
     }),

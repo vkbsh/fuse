@@ -10,7 +10,7 @@ import { useWalletAccountTransactionSendingSigner } from "@solana/react";
 
 import Input from "~/components/ui/Input";
 import Button from "~/components/ui/Button";
-import { IconLogo } from "~/components/icons/IconLogo";
+import { IconLogo } from "~/components/ui/icons/IconLogo";
 
 import { useWithdrawStore } from "~/state/withdraw";
 import { abbreviateAddress } from "~/utils/address";
@@ -23,10 +23,11 @@ import {
 } from "~/program/multisig/transaction";
 
 import {
-  createVaultInstruction,
   createProposalApproveInstruction,
   createProposalCreateInstruction,
 } from "~/program/multisig/instruction";
+
+import { createVaultInstruction } from "~/program/multisig/legacy";
 
 import { useWalletStore, useWalletByKey } from "~/state/wallet";
 
