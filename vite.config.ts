@@ -3,6 +3,7 @@ import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import tailwindcss from "@tailwindcss/vite";
+import preload from "vite-plugin-preload";
 
 export default defineConfig({
   plugins: [
@@ -13,5 +14,6 @@ export default defineConfig({
     reactRouter(),
     tsconfigPaths(),
     tailwindcss(),
+    preload(),
   ],
 });

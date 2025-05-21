@@ -1,8 +1,8 @@
+import { parseTransferSolInstruction } from "gill/programs";
 import {
   parseTransferInstruction,
   parseCreateAssociatedTokenIdempotentInstruction,
 } from "@solana-program/token";
-import { parseTransferSolInstruction } from "gill/programs";
 
 import {
   TOKEN_PROGRAM_ADDRESS,
@@ -11,7 +11,8 @@ import {
 } from "~/program/multisig/address";
 
 import { Address } from "~/model/web3js";
-import { fetchTokenMeta } from "~/state/totalBalance";
+import { fetchTokenMeta } from "~/service/token";
+import { LAMPORTS_PER_SOL } from "gill";
 
 const nativeToken = {
   decimals: 9,
@@ -31,14 +32,16 @@ type Message = {
   }>;
 };
 
+export type Mint = {
+  name: string;
+  symbol: string;
+  logoURI: string;
+  decimals: number;
+  address: Address;
+};
+
 type Result = {
-  mint: {
-    name: string;
-    symbol: string;
-    logoURI: string;
-    decimals: number;
-    address: Address;
-  };
+  mint: Mint;
   amount: number;
   toAccount: Address;
   fromAccount: Address;
@@ -50,13 +53,14 @@ export async function parseTransactionMessage(
   const instructions = message?.instructions || [];
   const accountKeys = message?.accountKeys || [];
   let decoded = null;
+  let result = null;
 
   if (instructions.length === 0) {
     return decoded;
   }
 
   // List of 2 instructions might contain:
-  // [Create ATA, Transfer Token]
+  // ['Create ATA Instruction', 'Transfer Token Instruction']
   if (instructions.length > 1) {
     const createATAIx = instructions[0]; // Maybe Create ATA
     const transferTokenIx = instructions[1]; // Maybe Transfer Token
@@ -108,9 +112,22 @@ export async function parseTransactionMessage(
               ? await fetchTokenMeta(mintAddress)
               : {};
 
-            decoded.accounts.source.address = ata;
-            decoded.accounts.destination.address = toAccount;
-            decoded.mint = mintInfo;
+            // decoded.accounts.source.address = ata;
+            // decoded.accounts.destination.address = toAccount;
+            // decoded.mint = mintInfo;
+
+            result = {
+              ...decoded,
+              accounts: {
+                source: {
+                  address: ata,
+                },
+                destination: {
+                  address: toAccount,
+                },
+              },
+              mint: mintInfo,
+            };
           } catch (error) {
             console.log("error", error);
           }
@@ -118,6 +135,33 @@ export async function parseTransactionMessage(
       } catch (error) {
         console.log("error", error);
       }
+    }
+  }
+
+  // [Transfer Token]
+  if (
+    instructions.length === 1 &&
+    isTokenProgram(accountKeys[instructions[0].programIdIndex])
+  ) {
+    const ix = instructions[0];
+    const programAddress = accountKeys[ix.programIdIndex];
+
+    const customIx = convertFromLegacyInstruction({
+      data: ix.data,
+      accounts: ix.accountIndexes,
+      accountKeys,
+      programAddress,
+    });
+
+    try {
+      decoded = parseTransferInstruction(customIx);
+      if (decoded) {
+        result = {
+          ...decoded,
+        };
+      }
+    } catch (error) {
+      console.log("error", error);
     }
   }
 
@@ -138,23 +182,29 @@ export async function parseTransactionMessage(
 
     try {
       decoded = parseTransferSolInstruction(customIx);
-      decoded.mint = nativeToken;
+
+      if (decoded) {
+        result = {
+          ...decoded,
+          mint: nativeToken,
+        };
+      }
     } catch (error) {
       console.log("error", error);
     }
   }
 
-  if (!decoded) {
+  if (!result) {
     return null;
   }
 
   return {
-    mint: decoded?.mint,
-    fromAccount: decoded?.accounts?.source?.address as Address,
-    toAccount: decoded?.accounts?.destination?.address as Address,
+    mint: result.mint,
+    fromAccount: result?.accounts?.source?.address as Address,
+    toAccount: result?.accounts?.destination?.address as Address,
     amount: isTokenProgram(decoded?.programAddress)
-      ? Number(decoded?.data?.amount) / 10 ** decoded?.mint?.decimals
-      : Number(decoded?.data?.amount) / 10 ** 9,
+      ? Number(result?.data?.amount) / 10 ** result?.mint?.decimals
+      : Number(result?.data?.amount) / LAMPORTS_PER_SOL,
   };
 }
 

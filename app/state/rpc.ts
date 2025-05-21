@@ -2,11 +2,9 @@ import { create } from "zustand";
 import {
   Rpc,
   SolanaRpcApi,
-  RpcSubscriptions,
   RpcFromTransport,
   ModifiedClusterUrl,
   createSolanaClient,
-  SolanaRpcSubscriptionsApi,
   SolanaRpcApiFromTransport,
   RpcTransportFromClusterUrl,
   SendAndConfirmTransactionWithBlockhashLifetimeFunction,
@@ -22,7 +20,6 @@ type RpcState = {
     RpcTransportFromClusterUrl<ModifiedClusterUrl>
   >;
   setRpc: (rpc: Rpc<SolanaRpcApi>) => void;
-  rpcSubscriptions: RpcSubscriptions<SolanaRpcSubscriptionsApi>;
   sendAndConfirmTransaction: SendAndConfirmTransactionWithBlockhashLifetimeFunction;
 };
 
@@ -34,15 +31,13 @@ export const useRpcStore = create<RpcState>((set) => {
     RPC_URL = "https://api.mainnet-beta.solana.com";
   }
 
-  const { rpc, rpcSubscriptions, sendAndConfirmTransaction } =
-    createSolanaClient({
-      urlOrMoniker: RPC_URL,
-    });
+  const { rpc, sendAndConfirmTransaction } = createSolanaClient({
+    urlOrMoniker: RPC_URL,
+  });
 
   return {
     rpc,
     RPC_URL,
-    rpcSubscriptions,
     sendAndConfirmTransaction,
     setRpc: (rpc: Rpc<SolanaRpcApi>) => set({ rpc }),
   };

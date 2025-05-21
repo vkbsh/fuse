@@ -1,6 +1,3 @@
-import "~/global.css";
-
-import { ReactNode } from "react";
 import {
   Links,
   Meta,
@@ -9,31 +6,61 @@ import {
   LinksFunction,
   ScrollRestoration,
 } from "react-router";
-import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-import { persistQueryClient } from "@tanstack/react-query-persist-client";
+import { ReactNode, useEffect, useState } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  persistQueryClient,
+  persistQueryClientSave,
+} from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 
-export const queryClient = new QueryClient();
+import "./global.css";
 
 export const links: LinksFunction = () => [
   { rel: "icon", href: "/favicon.png" },
 ];
 
-const persister = createSyncStoragePersister({
-  storage: typeof window !== "undefined" ? window.localStorage : undefined,
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 60 * 24, // 24 hours
+
+      refetchOnMount: false,
+      refetchInterval: false,
+      refetchOnWindowFocus: false,
+    },
+  },
 });
 
 persistQueryClient({
   queryClient,
-  persister,
+  persister: createSyncStoragePersister({
+    key: "fuse:query-client",
+    storage: typeof window === "undefined" ? null : window.localStorage,
+  }),
   dehydrateOptions: {
     shouldDehydrateQuery: (query) => {
-      const key = query.queryKey[0];
+      return true;
 
-      return typeof key === "string" && ["tokenMetaAndPrice"].includes(key);
+      return [
+        "balance",
+        "tokenMeta",
+        "tokenPrice",
+        "transaction",
+        "multisigAccount",
+        "multisigWalletsByKey",
+      ].includes(query.queryKey[0] as string);
     },
   },
 });
+
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Outlet />
+    </QueryClientProvider>
+  );
+}
 
 export function Layout({ children }: { children: ReactNode }) {
   return (
@@ -50,13 +77,5 @@ export function Layout({ children }: { children: ReactNode }) {
         <Scripts />
       </body>
     </html>
-  );
-}
-
-export default function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <Outlet />
-    </QueryClientProvider>
   );
 }

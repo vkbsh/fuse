@@ -1,9 +1,9 @@
 import { z } from "zod";
 import {
-  isLamports,
-  Lamports as LamportsType,
   isAddress,
+  isLamports,
   Address as AddressType,
+  Lamports as LamportsType,
 } from "gill";
 
 export const Lamports = z.custom<LamportsType>((value: unknown) => {

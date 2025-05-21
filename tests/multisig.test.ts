@@ -2,7 +2,6 @@ import { describe, test, assert, beforeAll } from "vitest";
 
 import {
   address,
-  LAMPORTS_PER_SOL,
   parseBase64RpcAccount,
   createKeyPairFromBytes,
   createSignerFromKeyPair,
@@ -15,40 +14,38 @@ import {
   getTransactionPda,
 } from "~/program/multisig/pda";
 
-import {
-  createMessageWithSigner,
-  createTransferInnerMessage,
-  createTransferTokenInnerMessage,
-} from "~/program/multisig/transaction";
+import { createMessageWithSigner } from "~/program/multisig/transaction";
 
 import {
-  createProposalCreateInstruction,
   createProposalApproveInstruction,
   createVaultTransactionExecuteInstruction,
-  createVaultTransactionAccountsCloseInstruction,
 } from "~/program/multisig/instruction";
 
 import {
-  Permission,
-  Permissions,
-  createMultisig,
-  getMultisigPda,
-  getMultisigInfo,
-  generateLegacyKeyPair,
-  createVaultInstruction,
-} from "~/program/multisig/legacy";
+  createTransferSolMessage,
+  createTransferTokenMessage,
+  createMessageExecuteAndCloseAccounts,
+} from "~/program/multisig/utils/message";
+
+import { Permission, Permissions } from "~/program/multisig/legacy";
 
 import { getVaultTransactionCodec } from "~/program/multisig/codec";
 
 import { useRpcStore } from "~/state/rpc";
 
-import { airdrop, getBalance, getMockToken } from "./_setup";
 import {
-  createTransferSolMessage,
-  createTransferTokenMessage,
-} from "~/program/multisig/utils/message";
-import { Address } from "~/model/web3js";
+  airdrop,
+  getBalance,
+  getMockToken,
+  createMultisig,
+  getMultisigPda,
+  getMultisigInfo,
+  generateLegacyKeyPair,
+} from "./_setup";
 
+import { Address } from "~/model/web3js";
+// TODO: Add correct assertions
+// TODO: Use rpc.getAccountInfo, getBalance, etc.  to retrieve accounts and check balances
 describe("Interacting with the Multisig Program", async () => {
   const { rpc, sendAndConfirmTransaction } = useRpcStore.getState();
 
@@ -73,16 +70,6 @@ describe("Interacting with the Multisig Program", async () => {
     multisigAddress,
   });
   let transactionIndex = 1n;
-
-  const proposalPda = await getProposalPda({
-    multisigAddress,
-    transactionIndex,
-  });
-
-  const transactionPda = await getTransactionPda({
-    multisigAddress,
-    transactionIndex,
-  });
 
   beforeAll(async () => {
     await Promise.all(
@@ -111,7 +98,8 @@ describe("Interacting with the Multisig Program", async () => {
   describe("Transfer SOL", async () => {
     test("Create VaultTransaction with: [TransferSOL, ProposalCreate, ProposalApprove]", async () => {
       const message = await createTransferSolMessage({
-        creator,
+        feePayer: creator,
+        creator: creator.address,
         amount: 0.07,
         transactionIndex,
         toAddress: creator.address,
@@ -136,9 +124,9 @@ describe("Interacting with the Multisig Program", async () => {
         const tx = await createMessageWithSigner({
           feePayer: secondMember,
           instructions: [
-            createProposalApproveInstruction({
-              proposalPda,
+            await createProposalApproveInstruction({
               multisigPda: multisigAddress,
+              transactionIndex: transactionIndex,
               memberAddress: secondMember.address,
               memo: "approve from test by a member",
             }),
@@ -158,37 +146,17 @@ describe("Interacting with the Multisig Program", async () => {
         multisigPda,
       });
 
-      const transactionPdaInfo = await rpc
-        .getAccountInfo(transactionPda, { encoding: "base64" })
-        .send();
-
-      const vaultTransaction = getVaultTransactionCodec().decode(
-        parseBase64RpcAccount(transactionPda, transactionPdaInfo.value).data,
-      );
-
       try {
-        const tx = await createMessageWithSigner({
+        const message = await createMessageExecuteAndCloseAccounts({
           feePayer: creator,
-          instructions: [
-            createVaultTransactionExecuteInstruction({
-              vaultPda,
-              proposalPda,
-              transactionPda,
-              multisigPda: multisigAddress,
-              memberAddress: creator.address,
-              message: vaultTransaction.message,
-              ephemeralSignerBumps: vaultTransaction.ephemeralSignerBumps,
-            }),
-            createVaultTransactionAccountsCloseInstruction({
-              proposalPda,
-              transactionPda,
-              multisigPda: multisigAddress,
-              rentCollectorPda: rentCollector,
-            }),
-          ],
+          transactionIndex,
+          multisigPda: multisigAddress,
+          memberAddress: creator.address,
+          rentCollectorPda: address(String(rentCollector)),
         });
 
-        const signedTransaction = await signTransactionMessageWithSigners(tx);
+        const signedTransaction =
+          await signTransactionMessageWithSigners(message);
         await sendAndConfirmTransaction(signedTransaction);
         assert.equal(1, 1);
       } catch (error) {
@@ -222,7 +190,8 @@ describe("Interacting with the Multisig Program", async () => {
       const amount = 0.07357;
 
       const message = await createTransferTokenMessage({
-        creator,
+        feePayer: creator,
+        creator: creator.address,
         amount,
         fromToken,
         transactionIndex,
@@ -245,15 +214,15 @@ describe("Interacting with the Multisig Program", async () => {
     test("Approve VaultTransaction by a Member", async () => {
       try {
         const tx = await createMessageWithSigner({
+          feePayer: secondMember,
           instructions: [
-            createProposalApproveInstruction({
-              proposalPda,
+            await createProposalApproveInstruction({
+              transactionIndex,
               multisigPda: multisigAddress,
               memberAddress: secondMember.address,
               memo: "approve from test by a member",
             }),
           ],
-          feePayer: secondMember,
         });
 
         const signedTransaction = await signTransactionMessageWithSigners(tx);
@@ -308,11 +277,5 @@ describe("Other Cases", async () => {
   test("Should handle maximum approval count", async () => {});
   test("Should fail when non-member tries to approve proposal", async () => {});
   test("Should verify account state after transaction execution", async () => {});
-  test("Should not execute transaction before threshold is met", async () => {
-    // Setup multisig with threshold=2 and test execution before all approvals
-  });
-  test("Should enforce permission restrictions", async () => {
-    // Test that members with Vote permission can't execute transactions
-    // Test that members without Vote permission can't approve
-  });
+  test("Should not execute transaction before threshold is met", async () => {});
 });

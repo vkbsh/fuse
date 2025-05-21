@@ -1,38 +1,42 @@
 import { create } from "zustand";
 import { Address } from "~/model/web3js";
 
+export type Token = {
+  name: string;
+  symbol: string;
+  amount: number;
+  logoURI: string;
+  decimals: number;
+  ata: Address;
+  mint: Address;
+};
+
 type WithdrawState = {
-  amount: number | null;
   memo: string | null;
+  token: Token | null;
+  amount: number | null;
   toAddress: Address | null;
-  token: {
-    mint: Address;
-    symbol: string;
-  } | null;
 };
 
 type WithdrawActions = {
-  set: <K extends keyof WithdrawState>(key: K, value: WithdrawState[K]) => void;
   reset: () => void;
+  set: <K extends keyof WithdrawState>(key: K, value: WithdrawState[K]) => void;
 };
 
 type WithdrawStore = WithdrawState & WithdrawActions;
 
 export const useWithdrawStore = create<WithdrawStore>((set) => ({
-  amount: null,
   memo: null,
-  toAddress: null,
   token: null,
-  set: (key, value) => set(() => ({ [key]: value })),
+  amount: null,
+  toAddress: null,
   reset: () =>
     set(() => ({
       amount: 0,
       memo: null,
-      toAddress: "" as Address,
-      fromAddress: "" as Address,
-      token: {
-        mint: "" as Address,
-        symbol: "",
-      },
+      token: null,
+      toAddress: null,
+      fromAddress: null,
     })),
+  set: (key, value) => set(() => ({ [key]: value })),
 }));

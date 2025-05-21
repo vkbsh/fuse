@@ -1,40 +1,25 @@
-import { cn } from "~/utils/tw";
-
 import { IconArrowUp } from "~/components/ui/icons/IconArrowUp";
-import { IconArrowDown } from "~/components/ui/icons/IconArrowDown";
-import { Address } from "~/model/web3js";
+
+import { cn } from "~/utils/tw";
 import { abbreviateAddress } from "~/utils/address";
-import { useWalletStore } from "~/state/wallet";
 
-export type Status =
-  | "Active"
-  | "Rejected"
-  | "Approved"
-  | "Executed"
-  | "Cancelled";
-
-export type Transaction = {
-  message: {
-    txType: string;
-    fromAccount: Address;
-    toAccount: Address;
-    amount: number;
-  };
-  approved: Address[];
-  rejected: Address[];
-  cancelled: Address[];
-  transactionIndex: number;
-  status: string;
-  timestamp: number;
+export type Token = {
+  name: string;
+  symbol: string;
+  amount: number;
+  logoURI: string;
 };
 
 export default function Transaction({
-  message,
   status,
+  message,
   timestamp,
-}: Transaction) {
+}: {
+  message: any;
+  status: any;
+  timestamp: number;
+}) {
   // TODO: Add custom status names
-
   const statusColor = cn({
     "": status === "Approved",
     "text-status-primary": ["Active", "Approved"].includes(status),
@@ -42,47 +27,47 @@ export default function Transaction({
     "text-status-error": status === "Cancelled",
   });
 
+  const { amount, toAccount, mint } = message || {};
+  const { logoURI, name, symbol } = mint || {};
   const milliseconds = Number(timestamp) * 1000;
   const dateStamp = new Date(milliseconds);
-  const userLocale = new Intl.DateTimeFormat().resolvedOptions().locale;
 
-  const formattedDate = dateStamp.toLocaleString(userLocale, {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  const { logoURI, name, symbol } = message?.mint || {};
+  const formattedDate = dateStamp.toLocaleString(
+    new Intl.DateTimeFormat().resolvedOptions().locale,
+    {
+      hour: "2-digit",
+      minute: "2-digit",
+    },
+  );
 
   return (
-    <div className="flex justify-between items-center gap-4">
+    <div className="w-full flex justify-between items-center gap-2">
       <div className="flex flex-row items-center gap-4">
-        <span className="relative w-[42px] h-[42px] bg-foreground text-foreground-text rounded-[14px] flex items-center justify-center">
+        <span className="relative w-[42px] h-[42px] bg-foreground text-foreground-text rounded-[14px] flex shrink-0 items-center justify-center">
           <IconArrowUp />
           <img
-            src={logoURI}
             alt={name}
+            src={logoURI}
             className="w-[20px] h-[20px] rounded-full absolute -top-1 -right-1"
           />
         </span>
         <span className="flex items-start flex-col gap-0">
           <span className="capitalize font-semibold text-base">Send</span>
-          <span className="text-sm font-medium">
-            {message?.amount.toFixed(9).replace(/\.?0+$/, "")}{" "}
+          <span className="flex gap-1 text-sm font-medium">
+            {amount?.toFixed(9).replace(/\.?0+$/, "")}{" "}
             <span className="text-foreground-text  uppercase">
               {symbol?.toLowerCase()}
             </span>
           </span>
         </span>
       </div>
-      <div className="flex flex-row mt-auto items-end  gap-6">
+      <div className="w-full flex flex-row mt-auto items-end justify-between gap-2 max-w-[300px]">
         <div className="font-medium text-sm flex flex-row gap-2">
           <span className="text-foreground-text">To</span>
-          <span className="font-semibold">
-            {message?.toAccount ? abbreviateAddress(message?.toAccount) : null}
-          </span>
+          <span className="font-semibold">{abbreviateAddress(toAccount)}</span>
         </div>
         {timestamp && (
-          <span className="w-18 text-foreground-text font-medium text-sm">
+          <span className="text-foreground-text font-medium text-sm">
             {formattedDate}
           </span>
         )}

@@ -13,22 +13,16 @@ import { IconClose } from "~/components/ui/icons/IconClose";
 
 export default function Dialog({
   isOpen,
-  trigger,
   children,
   onOpenChange,
 }: {
   isOpen: boolean;
-  trigger: ReactNode;
   children: ReactNode;
   onOpenChange: (open: boolean) => void;
 }) {
   return (
     <Root open={isOpen} onOpenChange={onOpenChange}>
-      {trigger && (
-        <Trigger asChild className="cursor-pointer max-w-max">
-          {trigger}
-        </Trigger>
-      )}
+      <Trigger hidden />
       <Portal key="dialog-portal" forceMount>
         <AnimatePresence>
           {isOpen && (
@@ -36,7 +30,7 @@ export default function Dialog({
               key="dialog"
               initial={{ backdropFilter: "blur(0px)" }}
               animate={{
-                backdropFilter: "blur(10px)",
+                backdropFilter: "blur(8px)",
                 transition: { duration: 1 },
               }}
               exit={{
@@ -64,22 +58,27 @@ export default function Dialog({
                 <Content aria-describedby={undefined}>
                   <Title className="hidden" />
                   {children}
-                  <Close>
-                    <motion.button
-                      animate={{
-                        y: [-16, 0],
-                        transition: {
-                          duration: 0.4,
-                        },
-                      }}
-                      whileHover={{
-                        scale: 1.1,
-                      }}
-                      className="cursor-pointer absolute -bottom-18 left-0 right-0 z-0 w-[47px] h-[47px] rounded-full bg-black/60 text-white flex items-center justify-center mx-auto drop-shadow-2xl border border-[#A7A7A7]"
-                    >
+                  <motion.button
+                    animate={{
+                      y: [-15, 0],
+                      opacity: [0, 1],
+                      transition: {
+                        duration: 0.5,
+                      },
+                    }}
+                    exit={{
+                      y: -15,
+                      opacity: 0,
+                    }}
+                    whileHover={{
+                      scale: 1.05,
+                    }}
+                    className="cursor-pointer absolute -bottom-20 left-0 right-0 z-0 w-[47px] h-[47px] rounded-full bg-black/60 text-white flex items-center justify-center mx-auto drop-shadow-2xl border border-[#A7A7A7]"
+                  >
+                    <Close className="w-full h-full flex justify-center items-center cursor-pointer">
                       <IconClose />
-                    </motion.button>
-                  </Close>
+                    </Close>
+                  </motion.button>
                 </Content>
               </motion.div>
             </motion.div>

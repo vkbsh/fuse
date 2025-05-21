@@ -361,11 +361,6 @@ export async function vaultTransactionAccountsClose({
   transactionIndex: bigint;
   rentCollectorPda: Address;
 }) {
-  const vaultPda = await getVaultPda({
-    vaultIndex: 0,
-    multisigAddress: multisigPda,
-  });
-
   const proposalPda = await getProposalPda({
     transactionIndex,
     multisigAddress: multisigPda,
@@ -378,14 +373,13 @@ export async function vaultTransactionAccountsClose({
 
   const vaultTransactionAccountsCloseIx =
     createVaultTransactionAccountsCloseInstruction({
-      vaultPda,
       multisigPda,
       proposalPda,
       transactionPda,
       rentCollectorPda,
     });
 
-  const feePayer = rentCollectorPda ?? vaultPda;
+  const feePayer = rentCollectorPda;
 
   return compileTransactionWithIx({
     feePayer,

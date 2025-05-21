@@ -1,4 +1,4 @@
-import { AccountMeta, PublicKey } from "@solana/web3.js";
+import { AccountMeta, PublicKey } from "web3js1";
 
 import {
   AccountRole,
@@ -19,7 +19,7 @@ import {
   SYSTEM_PROGRAM_ADDRESS,
 } from "~/program/multisig/address";
 
-import { getEphemeralSignerPda } from "~/program/multisig/pda";
+import { getEphemeralSignerPda, getProposalPda } from "~/program/multisig/pda";
 
 import { Address } from "~/model/web3js";
 import { VaultTransactionMessage } from "./legacy";
@@ -118,7 +118,7 @@ export function createVaultTransactionExecuteInstruction({
   // Then add static account keys included into the message.
   for (const [accountIndex, accountKey] of message.accountKeys.entries()) {
     accountMetas.push({
-      pubkey: accountKey,
+      pubkey: new PublicKey(accountKey),
       isWritable: isStaticWritableIndex(accountIndex, message),
       // NOTE: vaultPda and ephemeralSignerPdas cannot be marked as signers,
       // because they are PDAs and hence won't have their signatures on the transaction.
@@ -175,17 +175,22 @@ export function createProposalCreateInstruction({
   });
 }
 
-export function createProposalApproveInstruction({
+export async function createProposalApproveInstruction({
   memo,
   multisigPda,
-  proposalPda,
   memberAddress,
+  transactionIndex,
 }: {
   memo?: string;
   multisigPda: Address;
-  proposalPda: Address;
   memberAddress: Address;
-}): IInstruction {
+  transactionIndex: bigint;
+}): Promise<IInstruction> {
+  const proposalPda = await getProposalPda({
+    transactionIndex,
+    multisigAddress: multisigPda,
+  });
+
   return createInstruction({
     data: getProposalApproveCodec().encode({
       instructionDiscriminator: discriminator.proposalApprove,

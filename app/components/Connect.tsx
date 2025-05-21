@@ -1,14 +1,13 @@
-import { useEffect, useState } from "react";
+import { motion } from "motion/react";
 
 import Button from "~/components/ui/Button";
-import { ConnectWalletDialog } from "~/components/ConnectWalletDialog";
 
-import { abbreviateAddress } from "~/utils/address";
-import { LSWallet, useWalletByKey, useWalletStore } from "~/state/wallet";
+import { useDialog } from "~/state/dialog";
 
 export default function Connect() {
-  const [isOpenConnectWallet, setOpenConnectWallet] = useState(false);
-  const [extensionWallet, setExtensionWallet] = useState<null | LSWallet>(null);
+  const { onOpenChange } = useDialog("connectWallet");
+
+  const noMultisigFound = false; // TODO: Use Toast instead
 
   return (
     <div className="h-full flex items-center justify-center">
@@ -21,49 +20,21 @@ export default function Connect() {
           <h1 className="font-semibold text-5xl text-center">
             Security is in our DNA
           </h1>
-          <ConnectWalletDialog
-            isOpen={isOpenConnectWallet}
-            setWallet={setExtensionWallet}
-            onOpenChange={setOpenConnectWallet}
-          >
-            <Button size="full">
-              {extensionWallet?.address
-                ? abbreviateAddress(extensionWallet.address)
-                : "Log in with Fuse 2FA"}
-            </Button>
-          </ConnectWalletDialog>
-          {extensionWallet && <MultisigWallets wallet={extensionWallet} />}
+          <Button size="full" onClick={() => onOpenChange(true)}>
+            Log in with Fuse 2FA
+          </Button>
+          {noMultisigFound && (
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute -bottom-8 text-base font-semibold text-status-error"
+            >
+              No multisig wallets found
+            </motion.span>
+          )}
         </div>
       </div>
     </div>
   );
-}
-
-function MultisigWallets({ wallet }: { wallet: LSWallet }) {
-  const multisig = useWalletByKey(wallet.address);
-  const { saveMultisigWallets, saveWallet, selectWallet } = useWalletStore();
-  const hasMultisigWallets = multisig?.wallets?.length;
-
-  useEffect(() => {
-    if (hasMultisigWallets) {
-      saveWallet({
-        name: wallet.name,
-        icon: wallet.icon,
-        address: wallet.address,
-      });
-
-      selectWallet(wallet.name);
-      saveMultisigWallets(multisig.wallets);
-    }
-  }, [multisig?.wallets]);
-
-  if (!multisig) {
-    return null;
-  }
-
-  return !hasMultisigWallets ? (
-    <span className="absolute -bottom-8 text-status-error">
-      No multisig wallets found
-    </span>
-  ) : null;
 }

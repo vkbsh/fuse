@@ -1,5 +1,5 @@
 import { ErrorBoundary } from "react-error-boundary";
-import { useWalletByKey } from "~/state/wallet";
+import { useWalletByKey } from "~/service/getWallets";
 import { Address } from "~/model/web3js";
 import { Wallet } from "~/model/wallet";
 
@@ -12,7 +12,8 @@ export function Wallets({ keyAddress }: { keyAddress: Address }) {
 }
 
 function WalletsInner({ keyAddress }: { keyAddress: Address }) {
-  const { wallets } = useWalletByKey(keyAddress);
+  const { data: multisig } = useWalletByKey(keyAddress);
+  const { wallets } = multisig || {};
 
   return (
     <div>

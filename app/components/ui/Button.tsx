@@ -58,7 +58,7 @@ const Button = forwardRef(
           scale: 1.02,
         }}
         {...props}
-        onClick={onClick}
+        onClick={disabled ? undefined : onClick}
         className={clsName}
       >
         {children}

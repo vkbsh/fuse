@@ -132,9 +132,7 @@ export const getDynamicStringCodec = () => {
 export const getProposalArgsCodec = () =>
   getStructCodec([["memo", getOptionCodec(getDynamicStringCodec())]]);
 
-export function getProposalApproveCodec(): Codec<
-  z.infer<typeof ProposalApprove>
-> {
+export function getProposalApproveCodec() {
   return getStructCodec([
     ["instructionDiscriminator", getArrayCodec(getU8Codec(), { size: 8 })],
     ["args", getProposalArgsCodec()],

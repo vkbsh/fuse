@@ -1,76 +1,46 @@
-import { useCallback } from "react";
 import { address } from "gill";
 import { motion } from "motion/react";
-import {
-  UiWallet,
-  useConnect,
-  useWallets,
-  UiWalletAccount,
-  uiWalletAccountsAreSame,
-} from "@wallet-standard/react";
+import { useCallback, useEffect, useState } from "react";
+import { UiWallet, useConnect, useWallets } from "@wallet-standard/react";
 
 import Dialog from "~/components/ui/Dialog";
 
-import { LSWallet } from "~/state/wallet";
-import { SOLANA_SIGN_AND_SEND_TRANSACTION } from "~/service/getWallets";
+import { useDialog } from "~/state/dialog";
+import { useWalletStore } from "~/state/wallet";
+import { useMultisigWallets } from "~/hooks/resources";
+import { SOLANA_SIGN_AND_SEND_TRANSACTION } from "~/hooks/wallet";
+import { Address } from "~/model/web3js";
 
-export function ConnectWalletDialog({
-  isOpen,
-  children,
-  setWallet,
-  onOpenChange,
-}: {
-  isOpen: boolean;
-  children?: React.ReactNode;
-  onOpenChange: (open: boolean) => void;
-  setWallet: (wallet: LSWallet | null) => void;
-}) {
+export function ConnectWalletDialog() {
+  const { isOpen, onOpenChange } = useDialog("connectWallet");
+
   return (
-    <Dialog isOpen={isOpen} onOpenChange={onOpenChange} trigger={children}>
-      <WalletOptions setWallet={setWallet} close={() => onOpenChange(false)} />
+    <Dialog isOpen={isOpen} onOpenChange={onOpenChange}>
+      <WalletOptions close={() => onOpenChange(false)} />
     </Dialog>
   );
 }
 
 function WalletOptions({
   close,
-  setWallet,
 }: {
   close: () => void;
-  setWallet: (wallet: LSWallet | null) => void;
+  setWalletAddress?: (address: Address) => void;
+  setNoMultisigFound?: (value: boolean) => void;
 }) {
   const wallets = useWallets();
+  const supportedWallets = wallets.filter((w) =>
+    w.features.includes(SOLANA_SIGN_AND_SEND_TRANSACTION),
+  );
 
   return (
     <div className="flex flex-col gap-6 w-80 p-8 m-auto bg-black text-white rounded-[40px]">
       <span className="text-xl font-bold text-center">Select wallet</span>
       <hr className=" opacity-20" />
       <div className="flex flex-col gap-6">
-        {wallets
-          .filter((wallet) =>
-            wallet.features.includes(SOLANA_SIGN_AND_SEND_TRANSACTION),
-          )
-          .map((wallet) => (
-            <WalletOption
-              key={wallet.name}
-              wallet={wallet}
-              onError={(err) => {
-                console.error(err);
-                close();
-              }}
-              onAccountSelect={(walletAccount) => {
-                if (walletAccount) {
-                  setWallet({
-                    name: wallet.name,
-                    icon: wallet.icon,
-                    address: address(walletAccount.address),
-                  });
-                }
-
-                close();
-              }}
-            />
-          ))}
+        {supportedWallets.map((wallet) => (
+          <WalletOption key={wallet.name} close={close} wallet={wallet} />
+        ))}
       </div>
     </div>
   );
@@ -78,43 +48,47 @@ function WalletOptions({
 
 function WalletOption({
   wallet,
-  onError,
-  onAccountSelect,
+  close,
 }: {
   wallet: UiWallet;
-  onError(err: unknown): void;
-  onAccountSelect(account: UiWalletAccount | null): void;
+  close: () => void;
 }) {
   const [isConnecting, connect] = useConnect(wallet);
+  const [accountAddress, saveStorageAccountAddress] = useState<Address | null>(
+    null,
+  );
+  const { saveStorageWallet, selectStorageWallet, saveMultisigWallets } =
+    useWalletStore();
+
+  const { data: multisig, isLoading } = useMultisigWallets(accountAddress);
+
+  const hasMultisigWallets = multisig?.length;
 
   const handleConnectClick = useCallback(async () => {
     try {
-      const existingAccounts = [...wallet.accounts];
-      const nextAccounts = await connect();
+      const [account] = await connect();
 
-      // Filter to accounts that support the features we need.
-      const withSignAndSendTransaction = nextAccounts.filter((nextAccount) =>
-        nextAccount.features.includes(SOLANA_SIGN_AND_SEND_TRANSACTION),
-      );
-
-      // Try to choose the first never-before-seen account.
-      for (const nextAccount of withSignAndSendTransaction) {
-        if (
-          !existingAccounts.some((existingAccount) =>
-            uiWalletAccountsAreSame(nextAccount, existingAccount),
-          )
-        ) {
-          return onAccountSelect(nextAccount);
-        }
-      }
-      // Failing that, choose the first account in the list.
-      if (withSignAndSendTransaction[0]) {
-        return onAccountSelect(withSignAndSendTransaction[0]);
+      if (account) {
+        saveStorageAccountAddress(address(account.address));
       }
     } catch (e) {
-      onError(e);
+      console.log(e);
+    } finally {
+      close && close();
     }
   }, [wallet.accounts]);
+
+  useEffect(() => {
+    if (hasMultisigWallets && accountAddress) {
+      saveStorageWallet({
+        name: wallet.name,
+        icon: wallet.icon,
+        address: accountAddress,
+      });
+      selectStorageWallet(wallet.name);
+      saveMultisigWallets(multisig);
+    }
+  }, [accountAddress, wallet]);
 
   if (isConnecting) {
     return (

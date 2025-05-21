@@ -1,86 +1,35 @@
-import { useState } from "react";
-import { UiWalletAccount } from "@wallet-standard/react";
-
 import Button from "~/components/ui/Button";
-import Dialog from "~/components/ui/Dialog";
-import Review from "~/components/withdraw-dialog/Review";
-import EnterAmount from "~/components/withdraw-dialog/EnterAmount";
-import ChooseWallet from "~/components/withdraw-dialog/ChooseWallet";
 import { IconCircleArrow } from "~/components/ui/icons/IconCircleArrow";
 
-import { useWithdrawStore } from "~/state/withdraw";
+import { MemberPermissions } from "~/program/multisig/utils/parse-transaction";
+
+import { useDialog } from "~/state/dialog";
 import { useWalletStore } from "~/state/wallet";
+import { useWithdrawStore } from "~/state/withdraw";
 
-export default function WithdrawDialog({
-  account,
-}: {
-  account: UiWalletAccount;
-}) {
+export default function WithdrawButton() {
   const { reset } = useWithdrawStore();
-  const [isOpen, setOpen] = useState(false);
-  const { currentMultisigWallet, currentWallet } = useWalletStore();
+  const { onOpenChange } = useDialog("withdraw");
+  const { storageMultisigWallet, storageWallet } = useWalletStore();
 
-  const isDisabled = currentMultisigWallet?.account?.members.some(
-    (m) => m.key === currentWallet?.address && m.permissions.mask !== 7,
+  const members = storageMultisigWallet?.account?.members || [];
+  const hasAllPermissions = members.some(
+    (m) =>
+      m.key === storageWallet?.address &&
+      m.permissions?.mask === MemberPermissions.All,
   );
 
-  // TODO: Add Tooltip with required permissions
-
-  if (isDisabled) {
-    return (
-      <Button size="sm" variant="bordered" disabled={isDisabled}>
-        <span className="rounded-full w-[16px] h-[16px] flex items-center justify-center">
-          <IconCircleArrow />
-        </span>
-        <span>Withdraw</span>
-      </Button>
-    );
-  }
-
   return (
-    <Dialog
-      isOpen={isOpen}
-      onOpenChange={setOpen}
-      trigger={
-        <Button size="sm" variant="bordered">
-          <span className="rounded-full w-[16px] h-[16px] flex items-center justify-center">
-            <IconCircleArrow />
-          </span>
-          <span>Withdraw</span>
-        </Button>
-      }
+    <Button
+      size="sm"
+      variant="bordered"
+      disabled={!hasAllPermissions}
+      onClick={() => onOpenChange(true, { some: "data" })}
     >
-      <Steps walletAccount={account} onClose={() => setOpen(false)} />
-    </Dialog>
-  );
-}
-
-function Steps({
-  onClose,
-  walletAccount,
-}: {
-  onClose: () => void;
-  walletAccount: UiWalletAccount;
-}) {
-  const [currentStep, setCurrentStep] = useState(1);
-  const nextStep = () => setCurrentStep((step) => (step < 3 ? step + 1 : step));
-  const prevStep = () => setCurrentStep((step) => (step > 1 ? step - 1 : step));
-
-  return (
-    <div className="flex flex-col gap-6 w-[516px] p-8 m-auto bg-black text-white rounded-[40px]">
-      {currentStep === 1 && (
-        <ChooseWallet onClose={onClose} nextStep={nextStep} />
-      )}
-      {currentStep === 2 && (
-        <EnterAmount prevStep={prevStep} nextStep={nextStep} />
-      )}
-      {currentStep === 3 && (
-        <Review
-          onClose={onClose}
-          prevStep={prevStep}
-          walletAccount={walletAccount}
-        />
-      )}
-    </div>
+      <span className="rounded-full w-[16px] h-[16px] flex items-center justify-center">
+        <IconCircleArrow />
+      </span>
+      <span>Withdraw</span>
+    </Button>
   );
 }

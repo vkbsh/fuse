@@ -1,3 +1,5 @@
+import * as multisig from "@sqds/multisig";
+
 import {
   getMintSize,
   getTokenSize,
@@ -28,11 +30,81 @@ import {
 } from "gill";
 
 import { getCreateAccountInstruction } from "gill/programs";
+import { Connection, Keypair, PublicKey, Signer } from "web3js1";
 
 import { Address } from "~/model/web3js";
 import { useRpcStore } from "~/state/rpc";
 
 const client = useRpcStore.getState();
+const connection = new Connection(client.RPC_URL, "confirmed");
+export async function getMultisigInfo({
+  multisigPda,
+}: {
+  multisigPda: PublicKey;
+}) {
+  const multisigInfo = await multisig.accounts.Multisig.fromAccountAddress(
+    connection,
+    multisigPda,
+  );
+
+  return multisigInfo;
+}
+
+export function generateLegacyKeyPair(): Keypair {
+  return Keypair.generate();
+}
+
+export function getMultisigPda(createKey: Address): PublicKey {
+  const [multisigPda] = multisig.getMultisigPda({
+    createKey: new PublicKey(createKey),
+  });
+
+  return multisigPda;
+}
+
+export async function createMultisig({
+  creator,
+  members,
+  createKey,
+  multisigPda,
+}: {
+  members: Array<{ key: Address; permissions: Permissions }>;
+  creator: Signer;
+  createKey: Signer;
+  multisigPda: PublicKey;
+}) {
+  const programConfigPda = multisig.getProgramConfigPda({})[0];
+
+  const programConfig =
+    await multisig.accounts.ProgramConfig.fromAccountAddress(
+      connection,
+      programConfigPda,
+    );
+
+  const legacyMembers = members.map((member) => ({
+    key: new PublicKey(member.key),
+    permissions: member.permissions,
+  }));
+
+  try {
+    const signature = await multisig.rpc.multisigCreateV2({
+      creator,
+      createKey,
+      connection,
+      multisigPda,
+      timeLock: 0,
+      threshold: 2,
+      configAuthority: null,
+      members: legacyMembers,
+      treasury: programConfig.treasury,
+      rentCollector: Keypair.generate().publicKey,
+    });
+
+    await connection.confirmTransaction(signature);
+  } catch (error) {
+    console.log(error);
+  }
+}
 
 export const airdrop = async (
   recipientAddress: Address,

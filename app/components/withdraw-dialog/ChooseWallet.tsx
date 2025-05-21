@@ -1,6 +1,5 @@
 import { address } from "gill";
 import { useState } from "react";
-import { motion } from "motion/react";
 
 import Input from "~/components/ui/Input";
 import Button from "~/components/ui/Button";
@@ -11,11 +10,10 @@ import Dropdown from "~/components/ui/Dropdown";
 import { Address } from "~/model/web3js";
 import { useWalletStore } from "~/state/wallet";
 import { useWithdrawStore } from "~/state/withdraw";
-import { useVaultTokens } from "~/state/totalBalance";
 
 import { getRoundedUSD } from "~/utils/amount";
 import { abbreviateAddress } from "~/utils/address";
-import { useBalanceQuery } from "~/state/balance";
+import { useBalance } from "~/hooks/resources";
 
 const ChooseWallet = ({
   onClose,
@@ -26,15 +24,13 @@ const ChooseWallet = ({
 }) => {
   const { toAddress, set, token } = useWithdrawStore();
   const [error, setError] = useState<string | null>(null);
-  const { currentMultisigWallet, history } = useWalletStore();
+  const { storageMultisigWallet, history } = useWalletStore();
   const [value, setValue] = useState<string | Address>(toAddress || "");
-  const balanceData = useBalanceQuery({
-    address: address(currentMultisigWallet?.defaultVault as Address),
-  });
-  const { totalAmount } = useVaultTokens({
-    address: address(currentMultisigWallet?.defaultVault as Address),
-    balanceData,
-  });
+  const balanceData = useBalance(
+    storageMultisigWallet?.defaultVault as Address,
+  );
+
+  const totalAmount = 0;
 
   const handleFocus = () => {
     setError("");
@@ -77,7 +73,7 @@ const ChooseWallet = ({
             <span className="font-semibold text-base">
               {token
                 ? abbreviateAddress(token.ata)
-                : abbreviateAddress(currentMultisigWallet?.defaultVault)}
+                : abbreviateAddress(storageMultisigWallet?.defaultVault)}
             </span>
           </span>
         </div>

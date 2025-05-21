@@ -9,9 +9,9 @@ import Button from "~/components/ui/Button";
 import SelectToken from "~/components/SelectToken";
 
 import { useWalletStore } from "~/state/wallet";
-import { useBalanceQuery } from "~/state/balance";
+import { useBalance } from "~/hooks/resources";
 import { useWithdrawStore } from "~/state/withdraw";
-import { useVaultTokens, fetchTokenPrice } from "~/state/totalBalance";
+import { fetchTokenPrice, fetchTokenMeta } from "~/service/token";
 
 import { Address } from "~/model/web3js";
 import { getRoundedCoin, getRoundedSOL } from "~/utils/amount";
@@ -27,14 +27,15 @@ const EnterAmount = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const { set, amount, token } = useWithdrawStore();
   const [value, setValue] = useState(amount || "0");
-  const { currentMultisigWallet } = useWalletStore();
-  const { data: balanceData } = useBalanceQuery({
-    address: address(currentMultisigWallet?.defaultVault as Address),
-  });
-  const { coins } = useVaultTokens({
-    address: address(currentMultisigWallet?.defaultVault as Address),
-    balanceData,
-  });
+  const { storageMultisigWallet } = useWalletStore();
+  const multisigAddress = address(
+    storageMultisigWallet?.defaultVault as Address,
+  );
+  const { data, isLoading } = useBalance(
+    storageMultisigWallet?.defaultVault as Address,
+  );
+
+  const coins = [];
 
   const selectedToken = token || coins[0];
   const debounceValue = useDebounce(value, 700);

@@ -1,8 +1,15 @@
-import { Address, LAMPORTS_PER_SOL, TransactionSendingSigner } from "gill";
+import {
+  Address,
+  LAMPORTS_PER_SOL,
+  parseBase64RpcAccount,
+  TransactionSendingSigner,
+} from "gill";
 
 import {
   createProposalApproveInstruction,
   createProposalCreateInstruction,
+  createVaultTransactionAccountsCloseInstruction,
+  createVaultTransactionExecuteInstruction,
 } from "~/program/multisig/instruction";
 
 import {
@@ -12,8 +19,17 @@ import {
 } from "~/program/multisig/transaction";
 
 import { createVaultInstruction } from "~/program/multisig/legacy";
-import { getProposalPda, getVaultPda } from "~/program/multisig/pda";
-import { Signer, TransactionMessage } from "web3js1";
+import {
+  getProposalPda,
+  getTransactionPda,
+  getVaultPda,
+} from "~/program/multisig/pda";
+import { TransactionMessage } from "web3js1";
+import { getVaultTransactionCodec } from "~/program/multisig/codec";
+
+import { useRpcStore } from "~/state/rpc";
+
+const { rpc } = useRpcStore.getState();
 
 export async function createTransferSolMessage({
   amount,
@@ -21,13 +37,15 @@ export async function createTransferSolMessage({
   toAddress,
   multisigPda,
   transactionIndex,
+  feePayer,
   memo,
 }: {
   amount: number;
+  feePayer: TransactionSendingSigner;
   toAddress: Address;
   multisigPda: Address;
   transactionIndex: bigint;
-  creator: TransactionSendingSigner | Signer;
+  creator: Address;
   memo?: string;
 }) {
   const vaultPda = await getVaultPda({
@@ -38,12 +56,13 @@ export async function createTransferSolMessage({
     toAddress,
     payer: vaultPda,
     fromAddress: vaultPda,
-    lamports: Math.round(amount * LAMPORTS_PER_SOL),
+    lamports: amount * LAMPORTS_PER_SOL,
   });
 
   return createTransferMessageWithProposalApprove({
     memo,
     creator,
+    feePayer,
     multisigPda,
     transferMessage,
     transactionIndex,
@@ -57,14 +76,16 @@ export async function createTransferTokenMessage({
   fromToken,
   multisigPda,
   transactionIndex,
+  feePayer,
   memo,
 }: {
   amount: number;
+  feePayer: TransactionSendingSigner;
   authority: Address;
   toAddress: Address;
   multisigPda: Address;
   transactionIndex: bigint;
-  creator: TransactionSendingSigner;
+  creator: Address;
   fromToken: { decimals: number; mint: Address; ata: Address };
   memo?: string;
 }) {
@@ -72,12 +93,13 @@ export async function createTransferTokenMessage({
     fromToken,
     toAddress,
     authority,
-    amount: amount * 10 ** fromToken.decimals,
+    amount: amount,
   });
 
   return createTransferMessageWithProposalApprove({
     memo,
     creator,
+    feePayer,
     multisigPda,
     transferMessage,
     transactionIndex,
@@ -89,12 +111,14 @@ export async function createTransferMessageWithProposalApprove({
   multisigPda,
   transferMessage,
   transactionIndex,
+  feePayer,
   memo,
 }: {
+  feePayer: TransactionSendingSigner;
   multisigPda: Address;
   transactionIndex: bigint;
   transferMessage: TransactionMessage;
-  creator: TransactionSendingSigner | Signer;
+  creator: Address;
   memo?: string;
 }) {
   const proposalPda = await getProposalPda({
@@ -103,27 +127,87 @@ export async function createTransferMessageWithProposalApprove({
   });
 
   const txMessage = await createMessageWithSigner({
-    feePayer: creator,
+    feePayer: feePayer,
     instructions: [
       createVaultInstruction({
         multisigPda,
         vaultIndex: 0,
         transactionIndex,
         ephemeralSigners: 0,
-        creator: creator.address,
+        creator,
         transactionMessage: transferMessage,
       }),
       createProposalCreateInstruction({
         multisigPda,
         proposalPda,
         transactionIndex,
-        creator: creator.address,
+        creator,
       }),
-      createProposalApproveInstruction({
+      await createProposalApproveInstruction({
         memo,
         multisigPda,
+        transactionIndex,
+        memberAddress: creator,
+      }),
+    ],
+  });
+
+  return txMessage;
+}
+
+export async function createMessageExecuteAndCloseAccounts({
+  feePayer,
+  multisigPda,
+  transactionIndex,
+  rentCollectorPda,
+  memberAddress,
+}: {
+  multisigPda: Address;
+  memberAddress: Address;
+  rentCollectorPda: Address;
+  transactionIndex: bigint;
+  feePayer: TransactionSendingSigner;
+}) {
+  const proposalPda = await getProposalPda({
+    transactionIndex,
+    multisigAddress: multisigPda,
+  });
+
+  const transactionPda = await getTransactionPda({
+    transactionIndex,
+    multisigAddress: multisigPda,
+  });
+
+  const transactionPdaInfo = await rpc
+    .getAccountInfo(transactionPda, { encoding: "base64" })
+    .send();
+
+  const vaultTransaction = getVaultTransactionCodec().decode(
+    parseBase64RpcAccount(transactionPda, transactionPdaInfo.value).data,
+  );
+
+  const vaultPda = await getVaultPda({
+    vaultIndex: 0,
+    multisigAddress: multisigPda,
+  });
+
+  const txMessage = await createMessageWithSigner({
+    feePayer,
+    instructions: [
+      createVaultTransactionExecuteInstruction({
+        vaultPda,
+        multisigPda,
         proposalPda,
-        memberAddress: creator.address,
+        memberAddress,
+        transactionPda,
+        message: vaultTransaction.message,
+        ephemeralSignerBumps: vaultTransaction.ephemeralSignerBumps,
+      }),
+      createVaultTransactionAccountsCloseInstruction({
+        proposalPda,
+        multisigPda,
+        transactionPda,
+        rentCollectorPda,
       }),
     ],
   });

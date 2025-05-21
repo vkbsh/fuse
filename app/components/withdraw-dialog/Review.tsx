@@ -1,117 +1,84 @@
-import {
-  address,
-  LAMPORTS_PER_SOL,
-  getBase58Decoder,
-  signAndSendTransactionMessageWithSigners,
-} from "gill";
-
 import { UiWalletAccount } from "@wallet-standard/react";
 import { useWalletAccountTransactionSendingSigner } from "@solana/react";
+import {
+  LAMPORTS_PER_SOL,
+  signAndSendTransactionMessageWithSigners,
+} from "gill";
 
 import Input from "~/components/ui/Input";
 import Button from "~/components/ui/Button";
 import { IconLogo } from "~/components/ui/icons/IconLogo";
 
+import {
+  createTransferSolMessage,
+  createTransferTokenMessage,
+} from "~/program/multisig/utils/message";
+
+import { useWalletStore } from "~/state/wallet";
 import { useWithdrawStore } from "~/state/withdraw";
+
+import { Address } from "~/model/web3js";
+import { Wallet } from "~/model/wallet";
 import { abbreviateAddress } from "~/utils/address";
-import { getProposalPda } from "~/program/multisig/pda";
-
-import {
-  createMessageWithSigner,
-  createTransferInnerMessage,
-  createTransferTokenInnerMessage,
-} from "~/program/multisig/transaction";
-
-import {
-  createProposalApproveInstruction,
-  createProposalCreateInstruction,
-} from "~/program/multisig/instruction";
-
-import { createVaultInstruction } from "~/program/multisig/legacy";
-
-import { useWalletStore, useWalletByKey } from "~/state/wallet";
 
 const Review = ({
   onClose,
   prevStep,
   walletAccount,
+  multisigWallet,
 }: {
   onClose: () => void;
   prevStep: () => void;
+  multisigWallet: Wallet;
   walletAccount: UiWalletAccount;
 }) => {
-  // const wallets = useWallets();
-  const { currentWallet, history } = useWalletStore();
+  const { storageWallet, history } = useWalletStore();
   const { memo, toAddress, token, amount, set } = useWithdrawStore();
-  const multisigWallet = useWalletByKey(currentWallet?.address);
-  const currentMultisigWallet = multisigWallet?.wallets[0];
 
   const signer = useWalletAccountTransactionSendingSigner(
     walletAccount,
-    "solana:mainnet",
+    "solana:mainnet", // TODO: Get from .env
   );
 
   const handleTx = async () => {
-    const nextTxIndex = BigInt(
-      currentMultisigWallet.account.transactionIndex + 1n,
-    );
+    if (!multisigWallet || !storageWallet || !toAddress || !token || !amount) {
+      return;
+    }
 
-    const proposalPda = await getProposalPda({
-      transactionIndex: nextTxIndex,
-      multisigAddress: currentMultisigWallet.address,
-    });
+    const nextTxIndex = BigInt(multisigWallet.account.transactionIndex + 1n);
 
-    let transferMessage = null;
+    let message = null;
+    const memo = "auto approve";
 
     if (token?.mint !== "So11111111111111111111111111111111111111112") {
-      transferMessage = await createTransferTokenInnerMessage({
+      message = await createTransferTokenMessage({
+        memo,
+        toAddress,
+        feePayer: signer,
         fromToken: token,
-        toAddress: address(toAddress),
-        amount: BigInt(amount * 10 ** token.decimals),
-        authority: address(currentMultisigWallet?.defaultVault),
+        transactionIndex: nextTxIndex,
+        multisigPda: multisigWallet.address,
+        authority: multisigWallet.defaultVault,
+        creator: storageWallet?.address as Address,
+        amount: Math.round(amount * 10 ** token.decimals),
       });
     } else {
-      transferMessage = await createTransferInnerMessage({
-        lamports: Math.round(amount * LAMPORTS_PER_SOL),
-        toAddress: address(toAddress),
-        payer: address(currentMultisigWallet.defaultVault),
-        fromAddress: address(currentMultisigWallet.defaultVault),
+      message = await createTransferSolMessage({
+        memo,
+        toAddress,
+        feePayer: signer,
+        transactionIndex: nextTxIndex,
+        creator: storageWallet?.address,
+        multisigPda: multisigWallet.address,
+        amount: Math.round(amount * LAMPORTS_PER_SOL),
       });
     }
 
-    const message = await createMessageWithSigner({
-      feePayer: signer,
-      instructions: [
-        createVaultInstruction({
-          vaultIndex: 0,
-          ephemeralSigners: 0,
-          transactionIndex: nextTxIndex,
-          transactionMessage: transferMessage,
-          creator: address(currentWallet?.address),
-          multisigPda: address(currentMultisigWallet.address),
-        }),
-        createProposalCreateInstruction({
-          transactionIndex: nextTxIndex,
-          proposalPda: address(proposalPda),
-          creator: address(currentWallet?.address),
-          multisigPda: address(currentMultisigWallet.address),
-        }),
-        createProposalApproveInstruction({
-          proposalPda,
-          memo: "auto approve",
-          memberAddress: address(currentWallet?.address),
-          multisigPda: address(currentMultisigWallet.address),
-        }),
-      ],
-    });
-
     try {
-      const signatureBytes =
-        await signAndSendTransactionMessageWithSigners(message);
-      const base58Signature = getBase58Decoder().decode(signatureBytes);
-      console.log("Signature [Initiate, Proposal, Approve]: ", base58Signature);
+      await signAndSendTransactionMessageWithSigners(message);
     } catch (error) {
       console.log("Error [Initiate, Proposal, Approve]:", error);
+      // TODO: Trigger Toast
     } finally {
       typeof onClose === "function" && onClose();
     }
@@ -128,9 +95,7 @@ const Review = ({
           <span className="flex w-8 h-8 rounded-full bg-white justify-center text-black">
             <IconLogo />
           </span>
-          <span>
-            {abbreviateAddress(currentMultisigWallet?.defaultVault || "")}
-          </span>
+          <span>{abbreviateAddress(multisigWallet.defaultVault)}</span>
         </span>
       </div>
       <div className="h-14 border border-white rounded-[20px] px-4 py-2.5 flex flex-row gap-2 items-center justify-between">
@@ -154,7 +119,7 @@ const Review = ({
               <span className="w-6 h-6 rounded-full bg-black" />
             )}
           </span>
-          <span>{abbreviateAddress(toAddress || "")}</span>
+          <span>{abbreviateAddress(toAddress as Address)}</span>
         </span>
       </div>
       <div className="h-14 border border-white rounded-[20px] px-4 py-2.5 flex flex-row gap-2 items-center justify-between">
