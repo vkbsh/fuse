@@ -7,7 +7,6 @@ import { Toasts } from "~/components/ui/Toast";
 import Transactions from "~/components/Transactions";
 import VaultAccount from "~/components/VaultAccount";
 import WithdrawButton from "~/components/WithdrawButton";
-import TransactionDialog from "~/components/TransactionDialog";
 import MemberKeysDropdown from "~/components/MemberKeysDropdown";
 import AutoReconnectWallet from "~/components/AutoReconnectWallet";
 import { ConnectWalletDialog } from "~/components/ConnectWalletDialog";
@@ -43,13 +42,17 @@ export default function Index() {
             </header>
             <main className="flex-1 flex flex-col w-full h-full min-h-0 gap-10">
               <div className="flex flex-col">
+                {/* TODO: Medium Refactoring */}
                 <Balance vaultAddress={vaultAddress} />
+                {/* TODO: Medium Refactoring */}
                 <WithdrawButton />
               </div>
               <div className="flex flex-1 w-full h-full min-h-0 justify-between items-stretch">
                 <div className="h-full flex flex-1 min-w-0 flex-col gap-4">
                   <h3 className="font-semibold text-xl">Coins</h3>
+                  {/* TODO: Minimum Refactoring */}
                   <Coins vaultAddress={vaultAddress} />
+                  {/* TODO: Minimum Refactoring */}
                 </div>
                 <div className="flex h-auto items-center mx-10">
                   <div className="w-px h-full bg-black/20" />
@@ -62,7 +65,6 @@ export default function Index() {
             </main>
           </div>
           <WithdrawDialog />
-          <TransactionDialog />
         </>
       )}
       <ConnectWalletDialog />

@@ -1,10 +1,9 @@
 import { motion, AnimatePresence } from "motion/react";
 
-import { useBalance, useTokensPrice } from "~/hooks/resources";
-import { getRoundedUSD } from "~/utils/amount";
+import { useTokenInfo } from "~/hooks/resources";
 
 import { Address } from "~/model/web3js";
-import { Balance } from "~/model/balance";
+import { roundCoin } from "~/utils/amount";
 
 export default function BalanceComponent({
   vaultAddress,
@@ -22,67 +21,34 @@ export default function BalanceComponent({
 }
 
 function TotalBalance({ vaultAddress }: { vaultAddress: Address }) {
-  const { data, isLoading } = useBalance(vaultAddress);
-
-  if (!data?.spl || isLoading) {
-    return (
-      <motion.span
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="text-[45px] font-bold"
-      >
-        $0.00
-      </motion.span>
-    );
-  }
-
-  return <TotalAmount vaultAddress={vaultAddress} balanceData={data} />;
-}
-
-function TotalAmount({
-  vaultAddress,
-  balanceData,
-}: {
-  vaultAddress: Address;
-  balanceData: Balance;
-}) {
-  const tokens = Object.keys(balanceData.spl);
-  const res = useTokensPrice(tokens);
-  const isLoading = res.some((r) => r.isLoading);
-
-  const totalAmount = res.reduce((acc, { data }) => {
-    if (!data) return acc;
-
-    return (
-      acc +
-      (data.price * Number(balanceData.spl[data.mint]?.amount)) /
-        10 ** balanceData.spl[data.mint]?.decimals
-    );
-  }, 0);
-
-  if (isLoading) {
-    return (
-      <motion.span
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="text-[45px] font-bold"
-      >
-        $0.00
-      </motion.span>
-    );
-  }
+  const { totalAmount } = useTokenInfo(vaultAddress);
+  const roundedAmount = roundCoin("usd", totalAmount);
+  const roundedAmounArray = roundedAmount.toString().split("");
 
   return (
-    <motion.span
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      key={totalAmount}
-      className="text-[45px] font-bold"
+      className="flex text-[45px] font-bold"
     >
-      ${typeof totalAmount === "number" ? getRoundedUSD(totalAmount) : "-"}
-    </motion.span>
+      <span>$</span>
+      <AnimatePresence>
+        {roundedAmounArray.map((num, i) => (
+          <span key={i} className="flex justify-center items-center">
+            <motion.span
+              key={i + num}
+              layout
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.8, delay: i * 0.05 }}
+            >
+              {num}
+            </motion.span>
+          </span>
+        ))}
+      </AnimatePresence>
+    </motion.div>
   );
 }

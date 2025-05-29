@@ -1,4 +1,4 @@
-import { getBase64Codec, getU64Encoder, parseBase64RpcAccount } from "gill";
+import { parseBase64RpcAccount } from "gill";
 
 import {
   getMultisigAccountCodec,
@@ -9,7 +9,6 @@ import {
 import {
   SQUADS_PROGRAM_ID,
   MULTISIG_ACCOUNT_DISCRIMINATOR_BASE64,
-  PROPOSAL_ACCOUNT_DISCRIMINATOR_BASE64,
 } from "~/program/multisig/address";
 
 import {
@@ -26,9 +25,27 @@ import { useRpcStore } from "~/state/rpc";
 
 const { rpc } = useRpcStore.getState();
 
+export async function getMultisigAccount(multisigAddress: Address) {
+  if (!multisigAddress) {
+    return null;
+  }
+
+  const multisigAccountInfo = await rpc
+    .getAccountInfo(multisigAddress, { encoding: "base64" })
+    .send();
+
+  return getMultisigAccountCodec().decode(
+    parseBase64RpcAccount(multisigAddress, multisigAccountInfo.value).data,
+  );
+}
+
 export async function getWalletByMemberKey(
-  keyAddress: Address,
-): Promise<Wallet[]> {
+  keyAddress: Address | null,
+): Promise<Wallet[] | null> {
+  if (!keyAddress) {
+    return null;
+  }
+
   // The key must be the one of the first 6 multisig members: Paymaster (optionally), up to 2 Active Keys, up to 3 Recovery Keys.
   const [...wallets] = await Promise.all([
     getWalletByKeyAndIndex(keyAddress, 0),
@@ -119,16 +136,25 @@ export async function getTransaction({
     transactionIndex: BigInt(transactionIndex),
   });
 
-  const parsed = transactionAccount?.message
+  const parsedMessage = transactionAccount?.message
     ? await parseTransactionMessage(transactionAccount.message)
     : null;
 
+  if (transactionAccount?.message && !parsedMessage) {
+    console.log("NO MESSAGE: transactionAccount - ", transactionAccount);
+  }
+
+  // console.log("tx: ", transactionIndex, " - ", transactionAccount?.message);
+
   return {
-    approved: proposalAccount.approved,
     transactionIndex,
+    message: parsedMessage,
+    approved: proposalAccount.approved,
+    rejected: proposalAccount.rejected,
+    cancelled: proposalAccount.cancelled,
+    creator: transactionAccount?.creator,
     status: proposalAccount.status.__kind,
     timestamp: proposalAccount.status.timestamp,
-    message: parsed,
   };
 }
 
@@ -176,19 +202,5 @@ async function getWalletByKeyAndIndex(
         address: wallet.pubkey,
       };
     }),
-  );
-}
-
-export async function getMultisigAccount(multisigAddress: Address) {
-  if (!multisigAddress) {
-    return null;
-  }
-
-  const multisigAccountInfo = await rpc
-    .getAccountInfo(multisigAddress, { encoding: "base64" })
-    .send();
-
-  return getMultisigAccountCodec().decode(
-    parseBase64RpcAccount(multisigAddress, multisigAccountInfo.value).data,
   );
 }

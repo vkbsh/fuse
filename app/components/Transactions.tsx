@@ -1,64 +1,64 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { delay } from "motion";
 import { motion, AnimatePresence } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
 
 import Transaction from "~/components/Transaction";
-import { useMultisigAccount, useTransactions } from "~/hooks/resources";
+import {
+  queryKeys,
+  useMultisigAccount,
+  useTransactionBatch,
+} from "~/hooks/resources";
 
 import { Address } from "~/model/web3js";
-import { useDialog } from "~/state/dialog";
 
 export type Status = "ready" | "executed" | "cancelled";
+
+const batchSize = 10;
 
 export default function Transactions({
   multisigAddress,
 }: {
   multisigAddress: Address;
 }) {
-  const [page, setPage] = useState(1);
-  const pageSize = 15;
-  const { onOpenChange } = useDialog("transaction");
+  const queryClient = useQueryClient();
   const { data: multisigAccount } = useMultisigAccount(multisigAddress);
 
-  const transactionIndex = Number(multisigAccount?.transactionIndex);
-  const indexes = Array.from(
-    { length: transactionIndex },
-    (_, i) => i,
-  ).reverse();
+  const lastTxIndex = multisigAccount?.transactionIndex
+    ? Number(multisigAccount?.transactionIndex)
+    : undefined;
 
-  const _transactions = useMemo(() => {
-    const startIdx = 0;
-    const endIdx = page * pageSize;
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useTransactionBatch(
+      multisigAddress,
+      batchSize,
+      Number(multisigAccount?.transactionIndex),
+      // Number(multisigAccount?.staleTransactionIndex),
+      0,
+    );
 
-    return indexes.slice(startIdx, endIdx);
-  }, [transactionIndex, page]);
+  const transactions = data?.pages.flatMap((page) => page) || [];
 
-  const results = useTransactions(multisigAddress, _transactions);
-  const transactions = results.filter((tx) => tx?.data?.message?.amount);
-  const isLoading = results.some((result) => result.isLoading);
-  const hasMoreTransactions = transactionIndex > page * pageSize;
-
-  useEffect(() => {
-    const totalFetched = transactions.length;
-    const totalToFetch = page * pageSize;
-
-    if (
-      !isLoading &&
-      transactions.length < page * pageSize &&
-      hasMoreTransactions
-    ) {
-      setPage(page + 1);
+  const loadMoreTransactions = () => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
-  }, [_transactions, page, isLoading]);
+  };
+
+  const refetch = async (transactionIndex: number) => {
+    return queryClient.invalidateQueries({
+      queryKey: [queryKeys.transaction, multisigAddress, transactionIndex],
+      exact: true,
+    });
+  };
 
   return (
     <div className="flex flex-1 flex-col gap-0 overflow-y-auto scroll-smooth">
-      <AnimatePresence mode="popLayout">
-        {!transactionIndex ? (
+      <AnimatePresence>
+        {lastTxIndex === 0 && (
           <motion.div
-            key="empty"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1 }}
+            transition={{ duration: 0.5 }}
           >
             <div className="flex flex-col justify-center items-center">
               <img
@@ -70,49 +70,128 @@ export default function Transactions({
               </span>
             </div>
           </motion.div>
-        ) : (
-          transactions.map((tx, i) => {
-            return (
-              <motion.div
-                layout
-                key={i}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  y: { delay: i * 0.04, duration: 1 },
-                  opacity: { delay: i * 0.04, duration: 1 },
-                }}
-                whileHover={{
-                  backgroundColor: "var(--color-trn-hover)",
-                  transition: { duration: 0.2, delay: 0 },
-                }}
-                onClick={() => {
-                  onOpenChange(true, tx.data);
-                }}
-                className="flex items-center justify-between cursor-pointer rounded-[20px] p-3"
-              >
-                <Transaction
-                  key={tx.data.transactionIndex}
-                  status={tx.data.status}
-                  message={tx.data.message}
-                  timestamp={tx.data.timestamp}
-                />
-              </motion.div>
-            );
-          })
         )}
-        {/* {hasMoreTransactions && (
-          <motion.button
-            layout
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mt-4 py-2 px-4 rounded-lg bg-blue-500 text-white font-medium hover:bg-blue-600 transition-colors"
-            onClick={() => setPage(page + 1)}
-            disabled={isLoading}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {lastTxIndex &&
+          !transactions.length &&
+          Array.from({ length: batchSize }).map((_, i) => (
+            <motion.div
+              key={i}
+              layout
+              initial={{
+                opacity: 0,
+                y: -10,
+                filter: "blur(3px)",
+              }}
+              animate={{
+                y: 0,
+                opacity: 1,
+                transition: {
+                  duration: 2,
+                  delay: i * 0.05,
+                },
+              }}
+              exit={{
+                opacity: 0.8,
+                transition: {
+                  duration: 0.1,
+                },
+              }}
+            >
+              <Transaction
+                status="Active"
+                timestamp={3000}
+                creator="G5JD6WrkWjMFhRoiNiA6x3mELZPJvETFbv2jvKFePnmY"
+                message={{
+                  amount: 100000,
+                  toAccount: "BVkj5GFnMNoXimvWTZAQFgNZFQ4jvPSVQ8EBswGpCnN7",
+                  mint: {
+                    name: "Token",
+                    symbol: "TOK",
+                    logoURI:
+                      "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+                    decimals: 0,
+                    address: "G5JD6WrkWjMFhRoiNiA6x3mELZPJvETFbv2jvKFePnmY",
+                  },
+                }}
+                approved={["txData?.approved"]}
+                rejected={["txData?.rejected"]}
+                cancelled={["txData?.cancelled"]}
+                rentCollectorAddress={"multisigAccount?.rentCollector"}
+              />
+            </motion.div>
+          ))}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {transactions.map((txData, i) => {
+          const batchIndex = i % batchSize;
+          const delay = batchIndex * 0.04;
+
+          return (
+            <motion.div
+              key={i}
+              layout
+              initial={{
+                opacity: 0.8,
+                filter: "blur(3px)",
+              }}
+              animate={{
+                opacity: 1,
+                filter: "blur(0px)",
+                transition: {
+                  delay,
+                  duration: 1,
+                },
+              }}
+            >
+              <Transaction
+                status={txData?.status}
+                creator={txData?.creator}
+                message={txData?.message}
+                approved={txData?.approved}
+                rejected={txData?.rejected}
+                cancelled={txData?.cancelled}
+                timestamp={txData?.timestamp}
+                transactionIndex={txData?.transactionIndex}
+                refetch={() => refetch(txData?.transactionIndex)}
+                rentCollectorAddress={multisigAccount?.rentCollector}
+              />
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {hasNextPage && (
+          <motion.span
+            key="load-more"
+            viewport={{ margin: "200px" }}
+            onClick={loadMoreTransactions}
+            onViewportEnter={loadMoreTransactions}
           >
-            {isLoading ? "Loading..." : "Load More"}
-          </motion.button>
-        )} */}
+            <div className="flex w-full h-[68px] justify-center items-center rounded-[20px] text-black/40">
+              Loading...
+            </div>
+          </motion.span>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {transactions.length && !isFetchingNextPage && !hasNextPage && (
+          <motion.div
+            key="no-transactions"
+            initial={{ opacity: 0.8 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="flex w-full h-[68px] justify-center items-center rounded-[20px] text-black/40">
+              No more transactions
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );

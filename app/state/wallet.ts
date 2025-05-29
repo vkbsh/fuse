@@ -1,6 +1,5 @@
 import { create } from "zustand";
-import superjson from "superjson";
-import { persist, PersistStorage } from "zustand/middleware";
+import { persist } from "zustand/middleware";
 
 import { Wallet } from "~/model/wallet";
 import { Address } from "~/model/web3js";
@@ -14,33 +13,25 @@ export type LSWallet = {
   address: Address;
 };
 
+type WalletWithMembers = Omit<Wallet, "account"> & {
+  account: Omit<Wallet["account"], "members"> & {
+    members: Wallet["account"]["members"][];
+  };
+};
+
 type WalletStore = {
   history: LSWallet[];
   storageWallet: LSWallet | null;
-  multisigWallets: Wallet[] | null;
-  storageMultisigWallet: Wallet | null;
+  multisigWallets: WalletWithMembers[] | null;
+  storageMultisigWallet: WalletWithMembers | null;
   storageAccount: UiWalletAccount | null;
   removeStorageWallet(name: string): void;
   selectStorageWallet(name: string): void;
   saveStorageWallet(wallet: LSWallet): void;
   updateHistory(wallets: (LSWallet | undefined)[]): void;
   saveStorageAccount(account: UiWalletAccount): void;
-  saveMultisigWallets(wallets: Wallet[]): void;
+  saveMultisigWallets(wallets: WalletWithMembers[]): void;
   selectMultisigWallet(walletAddress: Address): void;
-};
-
-const storage: PersistStorage<WalletStore> = {
-  getItem: (name) => {
-    const str = localStorage.getItem(name);
-
-    if (!str) return null;
-
-    return superjson.parse(str);
-  },
-  setItem: (name, value) => {
-    localStorage.setItem(name, superjson.stringify(value));
-  },
-  removeItem: (name) => localStorage.removeItem(name),
 };
 
 export const useWalletStore = create<WalletStore>()(
@@ -64,11 +55,21 @@ export const useWalletStore = create<WalletStore>()(
               state.multisigWallets?.find((w) => w.address === address) || null,
           };
         }),
-      saveMultisigWallets: (wallets: Wallet[]) =>
+
+      saveMultisigWallets: (wallets: WalletWithMembers[]) =>
         set(() => {
+          const _wallets = wallets.map((w) => {
+            return {
+              ...w,
+              account: {
+                members: w.account.members,
+              },
+            };
+          });
+
           return {
-            multisigWallets: wallets,
-            storageMultisigWallet: wallets[0],
+            multisigWallets: _wallets,
+            storageMultisigWallet: _wallets[0],
           };
         }),
       removeStorageWallet: (name: string) =>
@@ -119,7 +120,6 @@ export const useWalletStore = create<WalletStore>()(
         }),
     }),
     {
-      storage,
       name: STORAGE_KEY,
       partialize: (state) => {
         return {

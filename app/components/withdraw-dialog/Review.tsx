@@ -14,26 +14,26 @@ import {
   createTransferTokenMessage,
 } from "~/program/multisig/utils/message";
 
+import { toast } from "~/state/toast";
 import { useWalletStore } from "~/state/wallet";
 import { useWithdrawStore } from "~/state/withdraw";
 
 import { Address } from "~/model/web3js";
-import { Wallet } from "~/model/wallet";
 import { abbreviateAddress } from "~/utils/address";
 
 const Review = ({
   onClose,
   prevStep,
   walletAccount,
-  multisigWallet,
+  transactionIndex,
 }: {
   onClose: () => void;
   prevStep: () => void;
-  multisigWallet: Wallet;
+  transactionIndex: number;
   walletAccount: UiWalletAccount;
 }) => {
-  const { storageWallet, history } = useWalletStore();
   const { memo, toAddress, token, amount, set } = useWithdrawStore();
+  const { storageWallet, storageMultisigWallet, history } = useWalletStore();
 
   const signer = useWalletAccountTransactionSendingSigner(
     walletAccount,
@@ -41,26 +41,36 @@ const Review = ({
   );
 
   const handleTx = async () => {
-    if (!multisigWallet || !storageWallet || !toAddress || !token || !amount) {
+    if (
+      !transactionIndex ||
+      !storageWallet ||
+      !toAddress ||
+      !token ||
+      !amount
+    ) {
+      // TODO: Trigger Toast
+      console.log("Error [Review]: Missing data");
       return;
     }
 
-    const nextTxIndex = BigInt(multisigWallet.account.transactionIndex + 1n);
+    const nextTxIndex = BigInt(transactionIndex + 1);
 
     let message = null;
     const memo = "auto approve";
+    const isNative =
+      token?.mint === "So11111111111111111111111111111111111111112";
 
-    if (token?.mint !== "So11111111111111111111111111111111111111112") {
+    if (!isNative) {
       message = await createTransferTokenMessage({
         memo,
         toAddress,
         feePayer: signer,
         fromToken: token,
         transactionIndex: nextTxIndex,
-        multisigPda: multisigWallet.address,
-        authority: multisigWallet.defaultVault,
         creator: storageWallet?.address as Address,
         amount: Math.round(amount * 10 ** token.decimals),
+        multisigPda: storageMultisigWallet?.address as Address,
+        authority: storageMultisigWallet?.defaultVault as Address,
       });
     } else {
       message = await createTransferSolMessage({
@@ -69,18 +79,21 @@ const Review = ({
         feePayer: signer,
         transactionIndex: nextTxIndex,
         creator: storageWallet?.address,
-        multisigPda: multisigWallet.address,
         amount: Math.round(amount * LAMPORTS_PER_SOL),
+        multisigPda: storageMultisigWallet?.address as Address,
       });
     }
 
     try {
-      await signAndSendTransactionMessageWithSigners(message);
-    } catch (error) {
-      console.log("Error [Initiate, Proposal, Approve]:", error);
-      // TODO: Trigger Toast
-    } finally {
+      const signature = await signAndSendTransactionMessageWithSigners(message);
+      // TODO: Check status of transaction
+      console.log("Signature", signature);
+      // TODO: Fetch status of transaction
       typeof onClose === "function" && onClose();
+    } catch (error) {
+      toast.error(error.message);
+      typeof onClose === "function" && onClose();
+      console.error("Error [Initiate, Proposal, Approve]:", error);
     }
   };
 
@@ -95,7 +108,9 @@ const Review = ({
           <span className="flex w-8 h-8 rounded-full bg-white justify-center text-black">
             <IconLogo />
           </span>
-          <span>{abbreviateAddress(multisigWallet.defaultVault)}</span>
+          <span>
+            {abbreviateAddress(storageMultisigWallet?.defaultVault as Address)}
+          </span>
         </span>
       </div>
       <div className="h-14 border border-white rounded-[20px] px-4 py-2.5 flex flex-row gap-2 items-center justify-between">

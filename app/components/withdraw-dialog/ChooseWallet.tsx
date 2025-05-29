@@ -1,11 +1,11 @@
 import { address } from "gill";
 import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 
 import Input from "~/components/ui/Input";
 import Button from "~/components/ui/Button";
-
-import { IconLogo } from "~/components/ui/icons/IconLogo";
 import Dropdown from "~/components/ui/Dropdown";
+import { IconLogo } from "~/components/ui/icons/IconLogo";
 
 import { Address } from "~/model/web3js";
 import { useWalletStore } from "~/state/wallet";
@@ -13,7 +13,7 @@ import { useWithdrawStore } from "~/state/withdraw";
 
 import { getRoundedUSD } from "~/utils/amount";
 import { abbreviateAddress } from "~/utils/address";
-import { useBalance } from "~/hooks/resources";
+import { useTokenInfo } from "~/hooks/resources";
 
 const ChooseWallet = ({
   onClose,
@@ -22,19 +22,15 @@ const ChooseWallet = ({
   onClose: () => void;
   nextStep: () => void;
 }) => {
-  const { toAddress, set, token } = useWithdrawStore();
+  const { toAddress, set } = useWithdrawStore();
   const [error, setError] = useState<string | null>(null);
   const { storageMultisigWallet, history } = useWalletStore();
   const [value, setValue] = useState<string | Address>(toAddress || "");
-  const balanceData = useBalance(
+  const { data, totalAmount, isLoading } = useTokenInfo(
     storageMultisigWallet?.defaultVault as Address,
   );
 
-  const totalAmount = 0;
-
-  const handleFocus = () => {
-    setError("");
-  };
+  const handleFocus = () => setError("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError("");
@@ -60,25 +56,15 @@ const ChooseWallet = ({
           <span className="font-semibold opacity-40">From</span>
           <span className="flex flex-row items-center gap-3">
             <span className="flex w-8 h-8 rounded-full justify-center items-center text-black bg-white">
-              {token ? (
-                <img
-                  src={token.logoURI}
-                  alt={token.name}
-                  className="w-6 h-6 rounded-full"
-                />
-              ) : (
-                <IconLogo />
-              )}
+              <IconLogo />
             </span>
             <span className="font-semibold text-base">
-              {token
-                ? abbreviateAddress(token.ata)
-                : abbreviateAddress(storageMultisigWallet?.defaultVault)}
+              {abbreviateAddress(storageMultisigWallet?.defaultVault)}
             </span>
           </span>
         </div>
         <span className="font-semibold text-base">
-          ${getRoundedUSD(token ? token.amountUSD : totalAmount)}
+          ${getRoundedUSD(totalAmount)}
         </span>
       </div>
       <div className="bg-white/20 relative h-14 border border-white/30 rounded-[20px] px-4 py-2.5 flex flex-row gap-2 items-center">
@@ -96,15 +82,16 @@ const ChooseWallet = ({
                 <div
                   key={w.address}
                   onClick={() => {
+                    setError("");
                     setValue(w.address);
                   }}
                   className="flex flex-row items-center gap-2 p-2 cursor-pointer hover:bg-primary"
                 >
                   <span className=" ">
                     <img
-                      className="w-6 h-6 p-1 rounded-full"
                       src={w.icon}
                       alt={w.name}
+                      className="w-6 h-6 p-1 rounded-full"
                     />
                   </span>
                   <span>{abbreviateAddress(w.address)}</span>
@@ -121,11 +108,19 @@ const ChooseWallet = ({
           placeholder="Enter wallet address"
           className="text-sm"
         />
-        {error && (
-          <span className="absolute text-xs -bottom-5 w-full text-red-500">
-            {error}
-          </span>
-        )}
+        <AnimatePresence>
+          {error && (
+            <motion.span
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.3 }}
+              className="absolute text-xs -bottom-5 w-full text-red-500"
+            >
+              {error}
+            </motion.span>
+          )}
+        </AnimatePresence>
       </div>
 
       <div className="flex flex-row gap-2 justify-center">

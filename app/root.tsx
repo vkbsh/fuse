@@ -6,13 +6,14 @@ import {
   LinksFunction,
   ScrollRestoration,
 } from "react-router";
-import { ReactNode, useEffect, useState } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  persistQueryClient,
-  persistQueryClientSave,
-} from "@tanstack/react-query-persist-client";
+import { ReactNode, useState } from "react";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+
+import superjson from "superjson";
+
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 import "./global.css";
 
@@ -20,45 +21,53 @@ export const links: LinksFunction = () => [
   { rel: "icon", href: "/favicon.png" },
 ];
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 60 * 24, // 24 hours
-
-      refetchOnMount: false,
-      refetchInterval: false,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
-persistQueryClient({
-  queryClient,
-  persister: createSyncStoragePersister({
-    key: "fuse:query-client",
-    storage: typeof window === "undefined" ? null : window.localStorage,
-  }),
-  dehydrateOptions: {
-    shouldDehydrateQuery: (query) => {
-      return true;
-
-      return [
-        "balance",
-        "tokenMeta",
-        "tokenPrice",
-        "transaction",
-        "multisigAccount",
-        "multisigWalletsByKey",
-      ].includes(query.queryKey[0] as string);
-    },
-  },
-});
-
 export default function App() {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            gcTime: 1000 * 60 * 60 * 24,
+            staleTime: 1000 * 60 * 60 * 24,
+          },
+        },
+      }),
+  );
+
+  const [persister] = useState(() =>
+    createSyncStoragePersister({
+      storage: window.localStorage,
+      key: "fuse:query-client",
+    }),
+  );
+
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister,
+        maxAge: 1000 * 60 * 60 * 24,
+        buster: "v0.0.1",
+        hydrateOptions: {
+          defaultOptions: {
+            deserializeData: (data) => superjson.parse(data),
+          },
+        },
+        dehydrateOptions: {
+          serializeData: (data) => superjson.stringify(data),
+          shouldRedactErrors: () => {
+            return true;
+          },
+
+          shouldDehydrateQuery: (query) => {
+            return query.state.status === "success" && !!query.meta?.persist;
+          },
+        },
+      }}
+    >
       <Outlet />
-    </QueryClientProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </PersistQueryClientProvider>
   );
 }
 

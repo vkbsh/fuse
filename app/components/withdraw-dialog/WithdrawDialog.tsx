@@ -11,45 +11,38 @@ import { useMultisigAccount } from "~/hooks/resources";
 import { useWalletByName } from "~/hooks/wallet";
 import { useWalletStore } from "~/state/wallet";
 import { UiWalletAccount } from "@wallet-standard/react";
-import { Wallet } from "~/model/wallet";
 import { Address } from "~/model/web3js";
 
 export default function WithdrawDialog() {
-  const { isOpen, onOpenChange, data } = useDialog("withdraw");
-  const { storageWallet, storageMultisigWallet } = useWalletStore();
+  const { isOpen, onOpenChange } = useDialog("withdraw");
+  const { storageWallet } = useWalletStore();
   const walletAccount = useWalletByName(storageWallet?.name as string)
     ?.accounts[0];
-  const { data: multisig } = useMultisigAccount(
-    storageMultisigWallet?.address as Address,
-  );
 
   return (
     <Dialog isOpen={isOpen} onOpenChange={onOpenChange}>
       <div className="flex flex-col gap-6 w-[516px] p-8 m-auto bg-black text-white rounded-[40px]">
-        <Steps
-          walletAccount={walletAccount}
-          onClose={() => onOpenChange(false)}
-          multisigWallet={multisig}
-        />
+        {walletAccount && <Steps walletAccount={walletAccount} />}
       </div>
     </Dialog>
   );
 }
 
-function Steps({
-  onClose,
-  walletAccount,
-  multisigWallet,
-}: {
-  onClose: () => void;
-  walletAccount: UiWalletAccount;
-  multisigWallet: Wallet;
-}) {
+function Steps({ walletAccount }: { walletAccount: UiWalletAccount }) {
+  const { onOpenChange } = useDialog("withdraw");
   const [currentStep, setCurrentStep] = useState(1);
+  const { storageMultisigWallet } = useWalletStore();
+  const { data: multisigAccount } = useMultisigAccount(
+    storageMultisigWallet?.address as Address,
+  );
+
+  const onClose = () => onOpenChange(false);
   const nextStep = () => setCurrentStep((step) => (step < 3 ? step + 1 : step));
   const prevStep = () => setCurrentStep((step) => (step > 1 ? step - 1 : step));
 
   switch (currentStep) {
+    default:
+      return null;
     case 1:
       return <ChooseWallet onClose={onClose} nextStep={nextStep} />;
     case 2:
@@ -60,11 +53,8 @@ function Steps({
           onClose={onClose}
           prevStep={prevStep}
           walletAccount={walletAccount}
-          multisigWallet={multisigWallet}
+          transactionIndex={Number(multisigAccount?.transactionIndex)}
         />
       );
-
-    default:
-      return null;
   }
 }

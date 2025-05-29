@@ -1,20 +1,17 @@
-import { address } from "gill";
+import { useState } from "react";
 import { motion } from "motion/react";
 import { useDebounce } from "@uidotdev/usehooks";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
 
 import Input from "~/components/ui/Input";
 import Button from "~/components/ui/Button";
 import SelectToken from "~/components/SelectToken";
 
-import { useWalletStore } from "~/state/wallet";
-import { useBalance } from "~/hooks/resources";
+import { useTokenPrice } from "~/hooks/resources";
 import { useWithdrawStore } from "~/state/withdraw";
-import { fetchTokenPrice, fetchTokenMeta } from "~/service/token";
 
 import { Address } from "~/model/web3js";
-import { getRoundedCoin, getRoundedSOL } from "~/utils/amount";
+import { getRoundedToken, getRoundedSOL } from "~/utils/amount";
+import { useWalletStore } from "~/state/wallet";
 
 const EnterAmount = ({
   nextStep,
@@ -24,36 +21,19 @@ const EnterAmount = ({
   prevStep: () => void;
 }) => {
   const [error, setError] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
   const { set, amount, token } = useWithdrawStore();
   const [value, setValue] = useState(amount || "0");
   const { storageMultisigWallet } = useWalletStore();
-  const multisigAddress = address(
-    storageMultisigWallet?.defaultVault as Address,
-  );
-  const { data, isLoading } = useBalance(
-    storageMultisigWallet?.defaultVault as Address,
-  );
-
-  const coins = [];
-
-  const selectedToken = token || coins[0];
   const debounceValue = useDebounce(value, 700);
 
-  const { data: calculatedAmount = 0 } = useQuery({
-    enabled: Number(debounceValue) > 0,
-    queryKey: ["tokenPrice", debounceValue],
-    queryFn: async () => {
-      const tokenPrice = await fetchTokenPrice(token?.mint as string);
+  const { data: price } = useTokenPrice(token?.mint as Address) || {};
+  const calculatedAmount = Number(debounceValue) * price;
 
-      return Number(debounceValue) * tokenPrice;
-    },
-  });
-
+  const tokenAmount = Number(token?.amount) || 0;
   const maxAmount =
     token?.symbol?.toLocaleLowerCase() === "sol"
-      ? getRoundedSOL(selectedToken?.amount)
-      : getRoundedCoin(selectedToken?.amount);
+      ? getRoundedSOL(tokenAmount)
+      : getRoundedToken(tokenAmount);
 
   const validateInput = (value: string) => {
     const regex = /^\d+([.,]\d*)?$/;
@@ -74,27 +54,19 @@ const EnterAmount = ({
   };
 
   const setMax = () => {
-    set("amount", Number(selectedToken?.amount));
-    setValue(selectedToken?.amount + "");
+    const max = Number(token?.amount);
+    if (!max) return;
+
+    set("amount", max);
+    setValue(token?.amount + "");
   };
-
-  const onFocus = () => {
-    if (inputRef.current) {
-      const length = inputRef.current.value.length;
-
-      inputRef.current.setSelectionRange(length, length);
-      inputRef.current.focus();
-    }
-  };
-
-  const onBlur = () => {};
 
   const validateAmount = () => {
-    if (Number(value) > Number(selectedToken?.amount)) {
+    if (Number(value) > Number(token?.amount)) {
       return "Invalid amount (not enough balance)";
     }
-    if (Number(value) < 0.0000000001) {
-      // TODO: check min amount
+
+    if (Number(value) < 1 / 10 ** (token?.decimals || 6)) {
       return "Invalid amount (too small)";
     }
 
@@ -111,17 +83,11 @@ const EnterAmount = ({
     }
   };
 
-  useEffect(() => {
-    set("token", selectedToken);
-  }, [selectedToken]);
-
   return (
     <>
       <h3 className="text-center font-bold text-xl">Enter Amount</h3>
       <SelectToken
-        items={coins}
-        selected={selectedToken}
-        onSelect={(token) => set("token", token)}
+        vaultAddress={storageMultisigWallet?.defaultVault as Address}
       />
       <div className="relative flex flex-row gap-4 items-center justify-between">
         <label htmlFor="amount" className="cursor-pointer flex flex-row w-full">
@@ -129,9 +95,6 @@ const EnterAmount = ({
             <Input
               id="amount"
               value={value}
-              ref={inputRef}
-              onBlur={onBlur}
-              onFocus={onFocus}
               onChange={onChange}
               className="font-bold text-5xl"
             />

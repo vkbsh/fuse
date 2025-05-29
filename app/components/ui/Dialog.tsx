@@ -58,7 +58,7 @@ export default function Dialog({
                 <Content aria-describedby={undefined}>
                   <Title className="hidden" />
                   {children}
-                  <motion.button
+                  <motion.span
                     animate={{
                       y: [-15, 0],
                       opacity: [0, 1],
@@ -78,7 +78,7 @@ export default function Dialog({
                     <Close className="w-full h-full flex justify-center items-center cursor-pointer">
                       <IconClose />
                     </Close>
-                  </motion.button>
+                  </motion.span>
                 </Content>
               </motion.div>
             </motion.div>

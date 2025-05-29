@@ -67,7 +67,7 @@ export async function getBalance(vault: Address): Promise<Balance> {
 
       assertIsAddress(mintAddress);
 
-      const amount = BigInt(account.data.parsed.info.tokenAmount.amount);
+      const amount = account.data.parsed.info.tokenAmount.amount;
       const decimals = account.data.parsed.info.tokenAmount.decimals;
 
       return {
@@ -88,7 +88,7 @@ export async function getBalance(vault: Address): Promise<Balance> {
   );
 
   return {
-    native: lamports,
+    native: Number(lamports),
     spl: splTokenAccountBalances,
   };
 }

@@ -1,34 +1,30 @@
 import { address } from "gill";
 import { motion } from "motion/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { UiWallet, useConnect, useWallets } from "@wallet-standard/react";
 
 import Dialog from "~/components/ui/Dialog";
 
+import { toast } from "~/state/toast";
 import { useDialog } from "~/state/dialog";
 import { useWalletStore } from "~/state/wallet";
 import { useMultisigWallets } from "~/hooks/resources";
+import { abbreviateAddress } from "~/program/multisig/legacy";
 import { SOLANA_SIGN_AND_SEND_TRANSACTION } from "~/hooks/wallet";
-import { Address } from "~/model/web3js";
 
 export function ConnectWalletDialog() {
   const { isOpen, onOpenChange } = useDialog("connectWallet");
 
   return (
     <Dialog isOpen={isOpen} onOpenChange={onOpenChange}>
-      <WalletOptions close={() => onOpenChange(false)} />
+      <WalletOptions />
     </Dialog>
   );
 }
 
-function WalletOptions({
-  close,
-}: {
-  close: () => void;
-  setWalletAddress?: (address: Address) => void;
-  setNoMultisigFound?: (value: boolean) => void;
-}) {
+function WalletOptions() {
   const wallets = useWallets();
+
   const supportedWallets = wallets.filter((w) =>
     w.features.includes(SOLANA_SIGN_AND_SEND_TRANSACTION),
   );
@@ -38,61 +34,35 @@ function WalletOptions({
       <span className="text-xl font-bold text-center">Select wallet</span>
       <hr className=" opacity-20" />
       <div className="flex flex-col gap-6">
+        {/* TODO: if (supportedWallets.length === 0) return "No supported wallets found"  */}
         {supportedWallets.map((wallet) => (
-          <WalletOption key={wallet.name} close={close} wallet={wallet} />
+          <WalletOption key={wallet.name} wallet={wallet} />
         ))}
       </div>
     </div>
   );
 }
 
-function WalletOption({
-  wallet,
-  close,
-}: {
-  wallet: UiWallet;
-  close: () => void;
-}) {
+function WalletOption({ wallet }: { wallet: UiWallet }) {
+  const { onOpenChange } = useDialog("connectWallet");
   const [isConnecting, connect] = useConnect(wallet);
-  const [accountAddress, saveStorageAccountAddress] = useState<Address | null>(
-    null,
-  );
-  const { saveStorageWallet, selectStorageWallet, saveMultisigWallets } =
-    useWalletStore();
-
-  const { data: multisig, isLoading } = useMultisigWallets(accountAddress);
-
-  const hasMultisigWallets = multisig?.length;
+  const [isConnectionInitiated, setConnectionInitiated] = useState(false);
+  const account = wallet.accounts[0];
+  const accountAddress = account?.address && address(account?.address);
 
   const handleConnectClick = useCallback(async () => {
     try {
-      const [account] = await connect();
-
-      if (account) {
-        saveStorageAccountAddress(address(account.address));
-      }
+      await connect();
+      setConnectionInitiated(() => true);
     } catch (e) {
-      console.log(e);
-    } finally {
-      close && close();
+      toast.error("Failed to connect to wallet");
+      console.error(e);
+      onOpenChange(false);
     }
-  }, [wallet.accounts]);
-
-  useEffect(() => {
-    if (hasMultisigWallets && accountAddress) {
-      saveStorageWallet({
-        name: wallet.name,
-        icon: wallet.icon,
-        address: accountAddress,
-      });
-      selectStorageWallet(wallet.name);
-      saveMultisigWallets(multisig);
-    }
-  }, [accountAddress, wallet]);
+  }, [accountAddress]);
 
   if (isConnecting) {
     return (
-      // TODO: make it animated
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -105,14 +75,74 @@ function WalletOption({
   }
 
   return (
-    <button
-      onClick={handleConnectClick}
-      className="cursor-pointer flex flex-row items-center gap-6"
-    >
-      <span className="w-[40px] h-[40px] rounded-[13px] bg-white flex items-center justify-center">
-        <img width={24} height={24} src={wallet.icon} alt={wallet.name} />
-      </span>
-      <span className="font-semibold text-base">{wallet.name}</span>
-    </button>
+    <>
+      {isConnectionInitiated && account && (
+        <WithAccount
+          walletWithAccount={wallet}
+          onClose={() => onOpenChange(false)}
+        />
+      )}
+      <button
+        onClick={handleConnectClick}
+        className="cursor-pointer flex flex-row items-center gap-6"
+      >
+        <span className="w-[40px] h-[40px] rounded-[13px] bg-white flex items-center justify-center">
+          <img width={24} height={24} src={wallet.icon} alt={wallet.name} />
+        </span>
+        <span className="font-semibold text-base">{wallet.name}</span>
+      </button>
+    </>
   );
+}
+
+function WithAccount({
+  onClose,
+  walletWithAccount,
+}: {
+  onClose: () => void;
+  walletWithAccount: UiWallet;
+}) {
+  const account = walletWithAccount.accounts[0];
+  const accountAddress = address(account?.address);
+
+  const { saveStorageWallet, selectStorageWallet, saveMultisigWallets } =
+    useWalletStore();
+  const { isLoading, data: multisigWallets } =
+    useMultisigWallets(accountAddress) || {};
+
+  const multisig = multisigWallets?.[0];
+
+  useEffect(() => {
+    console.log(accountAddress, isLoading, multisig);
+
+    if (multisigWallets && accountAddress && !isLoading) {
+      if (!multisig) {
+        toast.error(
+          "Can't find multisig wallet for " + abbreviateAddress(accountAddress),
+        );
+      } else {
+        saveStorageWallet({
+          address: accountAddress,
+          name: walletWithAccount.name,
+          icon: walletWithAccount.icon,
+        });
+        selectStorageWallet(walletWithAccount.name);
+        saveMultisigWallets(multisigWallets);
+      }
+
+      onClose();
+    }
+  }, [
+    multisig,
+    isLoading,
+    accountAddress,
+    multisigWallets,
+    saveStorageWallet,
+    selectStorageWallet,
+    saveMultisigWallets,
+    walletWithAccount.name,
+    walletWithAccount.icon,
+  ]);
+
+  return null;
 }

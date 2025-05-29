@@ -64,7 +64,22 @@ const ToastStatusIcon = ({
   return null;
 };
 
-const Toast = (props) => {
+type Toast = {
+  status: "default" | "success" | "error";
+  open: boolean;
+  type?: string;
+  duration?: number;
+  description: string;
+};
+
+const Toast = (props: {
+  id: string;
+  toast: Toast;
+  index: number;
+  isHovering: boolean;
+  total: number;
+  onOpenChange: (open: boolean) => void;
+}) => {
   const { onOpenChange, toast, id, index, isHovering, total, ...toastProps } =
     props;
   const ref = React.useRef<HTMLDivElement>(null);

@@ -11,6 +11,7 @@ import {
 
 import {
   pipe,
+  address,
   lamports,
   Commitment,
   KeyPairSigner,
@@ -34,6 +35,10 @@ import { Connection, Keypair, PublicKey, Signer } from "web3js1";
 
 import { Address } from "~/model/web3js";
 import { useRpcStore } from "~/state/rpc";
+
+type Permissions = {
+  mask: number;
+};
 
 const client = useRpcStore.getState();
 const connection = new Connection(client.RPC_URL, "confirmed");
@@ -163,7 +168,7 @@ const createMint = async (
       space,
       lamports: rent,
       newAccount: mint,
-      programAddress: TOKEN_PROGRAM_ADDRESS,
+      programAddress: address(TOKEN_PROGRAM_ADDRESS),
     }),
     getInitializeMintInstruction({
       decimals,

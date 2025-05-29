@@ -19,7 +19,8 @@ import {
   SOLANA_SIGN_AND_SEND_TRANSACTION,
 } from "~/hooks/wallet";
 
-import { Address } from "~/model/web3js";
+import { toast } from "~/state/toast";
+
 import { abbreviateAddress } from "~/utils/address";
 
 function getPermissionLabel(permissions?: number) {
@@ -71,9 +72,11 @@ export default function MemberKeysDropdown() {
       const isMember = members.some((m) => m.key === account.address);
 
       if (!isMember) {
-        // TODO: Show Toast
         removeStorageWallet(wallet.name);
-        return;
+        return toast.error(
+          "Can't find multisig wallet for " +
+            abbreviateAddress(account.address),
+        );
       }
 
       return {
@@ -101,15 +104,15 @@ export default function MemberKeysDropdown() {
             const permissionLabel = getPermissionLabel(permission);
 
             return (
-              <div onClick={(e) => e.stopPropagation()}>
-                <div className="flex flex-row items-center gap-2 px-2 py-2">
-                  <span className="text-white/60 text-sm">
-                    {permissionLabel}
-                  </span>
-                </div>
+              <div
+                key={wallet.address}
+                onClick={(e) => e.stopPropagation()}
+                className="p-2"
+              >
                 <Account
                   key={wallet.address}
                   walletStorage={wallet}
+                  permissionLabel={permissionLabel}
                   active={wallet.address === storageWallet?.address}
                 />
               </div>
@@ -131,35 +134,13 @@ export default function MemberKeysDropdown() {
 function Account({
   active,
   walletStorage,
+  permissionLabel,
 }: {
   active: boolean;
+  permissionLabel: string;
   walletStorage: LSWallet;
 }) {
   const wallet = useWalletByName(walletStorage.name);
-
-  if (!wallet) {
-    // TODO: check if need to remove wallet from history
-    return null;
-  }
-
-  return (
-    <WithWallet
-      active={active}
-      wallet={wallet}
-      walletAddress={walletStorage.address}
-    />
-  );
-}
-
-function WithWallet({
-  active,
-  wallet,
-  walletAddress,
-}: {
-  active: boolean;
-  wallet: UiWallet;
-  walletAddress: Address;
-}) {
   const [, connect] = useConnect(wallet);
   const {
     removeStorageWallet,
@@ -187,48 +168,53 @@ function WithWallet({
     }
   };
 
-  return (
-    <motion.span className="flex flex-row items-center p-2 gap-6 justify-between">
-      <div className="w-[132px] flex flex-row gap-2 items-center">
-        <img
-          src={wallet.icon}
-          alt={wallet.name}
-          className="rounded-full w-5 h-5"
-        />
-        <span className="text-sm">{abbreviateAddress(walletAddress)}</span>
+  const walletAddress = walletStorage?.address;
 
-        <motion.span
-          className="w-3 h-3 bg-transparent rounded-full ml-auto"
-          animate={{
-            opacity: active ? 1 : 0,
-            backgroundColor: active
-              ? "var(--color-status-success)"
-              : "transparent",
-          }}
-          transition={{ duration: 0.2 }}
-        />
-      </div>
-      <div className="flex flex-row gap-2">
-        <Tooltip text="Disconnect">
+  return (
+    <div className="flex flex-col">
+      <span className="text-white/60 text-sm">{permissionLabel}</span>
+      <motion.span className="flex flex-row items-center py-2 gap-6 justify-between">
+        <div className="w-[132px] flex flex-row gap-2 items-center">
+          <img
+            src={wallet.icon}
+            alt={wallet.name}
+            className="rounded-full w-5 h-5"
+          />
+          <span className="text-sm">{abbreviateAddress(walletAddress)}</span>
+
           <motion.span
-            onClick={() => removeStorageWallet(wallet.name)}
-            className="cursor-pointer ml-auto"
-            whileHover={{ color: "var(--color-status-error)" }}
-          >
-            <IconDisconnect />
-          </motion.span>
-        </Tooltip>
-        <Tooltip text="Connect">
-          <motion.span
-            onClick={handleConnect}
-            className="cursor-pointer ml-auto"
-            whileHover={{ color: "var(--color-status-success)" }}
-          >
-            <IconConnect />
-          </motion.span>
-        </Tooltip>
-      </div>
-    </motion.span>
+            className="w-3 h-3 bg-transparent rounded-full ml-auto"
+            animate={{
+              opacity: active ? 1 : 0,
+              backgroundColor: active
+                ? "var(--color-status-success)"
+                : "transparent",
+            }}
+            transition={{ duration: 0.2 }}
+          />
+        </div>
+        <div className="flex flex-row gap-2">
+          <Tooltip text="Disconnect">
+            <motion.span
+              onClick={() => removeStorageWallet(wallet.name)}
+              className="cursor-pointer ml-auto"
+              whileHover={{ color: "var(--color-status-error)" }}
+            >
+              <IconDisconnect />
+            </motion.span>
+          </Tooltip>
+          <Tooltip text="Connect">
+            <motion.span
+              onClick={handleConnect}
+              className="cursor-pointer ml-auto"
+              whileHover={{ color: "var(--color-status-success)" }}
+            >
+              <IconConnect />
+            </motion.span>
+          </Tooltip>
+        </div>
+      </motion.span>
+    </div>
   );
 }
 

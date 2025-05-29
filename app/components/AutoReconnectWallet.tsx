@@ -1,9 +1,12 @@
 import { address } from "gill";
 import { useEffect } from "react";
-import { useConnect } from "@wallet-standard/react";
+import { useConnect, useWallets } from "@wallet-standard/react";
 
 import { useWalletStore } from "~/state/wallet";
 import { useWalletByName } from "~/hooks/wallet";
+
+import { toast } from "~/state/toast";
+import { abbreviateAddress } from "~/utils/address";
 
 export default function AutoReconnectWallet({ name }: { name: string }) {
   const wallet = useWalletByName(name);
@@ -12,7 +15,6 @@ export default function AutoReconnectWallet({ name }: { name: string }) {
   const {
     storageWallet,
     saveStorageWallet,
-    saveStorageAccount,
     selectStorageWallet,
     removeStorageWallet,
     storageMultisigWallet,
@@ -28,8 +30,6 @@ export default function AutoReconnectWallet({ name }: { name: string }) {
         const isMember = members.some((m) => m.key === account.address);
 
         if (isMember) {
-          saveStorageAccount(account);
-
           if (account.address !== storageWallet?.address) {
             saveStorageWallet({
               name: wallet.name,
@@ -43,7 +43,10 @@ export default function AutoReconnectWallet({ name }: { name: string }) {
         // Remove wallet from history if it's not a member
         if (!isMember) {
           removeStorageWallet(wallet.name);
-          // TODO: Show Toast
+          toast.error(
+            "Can't find multisig wallet for " +
+              abbreviateAddress(account.address),
+          );
         }
       }
     };
