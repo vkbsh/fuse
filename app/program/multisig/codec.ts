@@ -92,7 +92,6 @@ export function getProposalStatusCodec() {
     ["Active", getStructCodec([["timestamp", getI64Codec()]])],
     ["Rejected", getStructCodec([["timestamp", getI64Codec()]])],
     ["Approved", getStructCodec([["timestamp", getI64Codec()]])],
-    ["Executing", getUnitCodec()],
     ["Executed", getStructCodec([["timestamp", getI64Codec()]])],
     ["Cancelled", getStructCodec([["timestamp", getI64Codec()]])],
   ]);

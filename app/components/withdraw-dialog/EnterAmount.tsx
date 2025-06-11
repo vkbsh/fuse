@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { motion } from "motion/react";
+import { useEffect, useState } from "react";
 import { useDebounce } from "@uidotdev/usehooks";
 
 import Input from "~/components/ui/Input";
@@ -11,25 +11,17 @@ import { useWithdrawStore } from "~/state/withdraw";
 
 import { Address } from "~/model/web3js";
 import { getRoundedToken, getRoundedSOL } from "~/utils/amount";
-import { useWalletStore } from "~/state/wallet";
 
-const EnterAmount = ({
-  nextStep,
-  prevStep,
-}: {
-  nextStep: () => void;
-  prevStep: () => void;
-}) => {
+const EnterAmount = ({ vaultAddress }: { vaultAddress: Address }) => {
   const [error, setError] = useState("");
   const { set, amount, token } = useWithdrawStore();
-  const [value, setValue] = useState(amount || "0");
-  const { storageMultisigWallet } = useWalletStore();
+  const [value, setValue] = useState(amount ? amount + "" : "");
   const debounceValue = useDebounce(value, 700);
 
   const { data: price } = useTokenPrice(token?.mint as Address) || {};
-  const calculatedAmount = Number(debounceValue) * price;
+  const calculatedAmount = !error ? Number(debounceValue) * price : 0;
 
-  const tokenAmount = Number(token?.amount) || 0;
+  const tokenAmount = Number(token?.amount);
   const maxAmount =
     token?.symbol?.toLocaleLowerCase() === "sol"
       ? getRoundedSOL(tokenAmount)
@@ -73,30 +65,22 @@ const EnterAmount = ({
     return "";
   };
 
-  const handleNextStep = () => {
-    const error = validateAmount();
-
-    if (error) {
-      return setError(error);
-    } else {
-      return nextStep();
-    }
-  };
+  useEffect(() => {
+    setError(validateAmount());
+  }, [value]);
 
   return (
     <>
-      <h3 className="text-center font-bold text-xl">Enter Amount</h3>
-      <SelectToken
-        vaultAddress={storageMultisigWallet?.defaultVault as Address}
-      />
       <div className="relative flex flex-row gap-4 items-center justify-between">
+        <SelectToken vaultAddress={vaultAddress} />
         <label htmlFor="amount" className="cursor-pointer flex flex-row w-full">
-          <div className="relative overflow-visible flex flex-row gap-1.5 items-center justify-between">
+          <div className="relative overflow-visible flex flex-row gap-1.5 items-center justify-between border rounded-2xl border-white/40 px-4 py-1">
             <Input
               id="amount"
               value={value}
               onChange={onChange}
-              className="font-bold text-5xl"
+              className="text-2xl"
+              placeholder="0.00"
             />
           </div>
         </label>
@@ -140,14 +124,6 @@ const EnterAmount = ({
           ${calculatedAmount?.toFixed(2)}{" "}
         </motion.span>
         <span>{maxAmount}</span>
-      </div>
-      <div className="flex flex-row gap-2 justify-center">
-        <Button size="md" onClick={prevStep} variant="cancel">
-          Back
-        </Button>
-        <Button size="md" onClick={handleNextStep} variant="secondary">
-          Next
-        </Button>
       </div>
     </>
   );

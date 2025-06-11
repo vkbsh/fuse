@@ -1,9 +1,8 @@
-import { reactRouter } from "@react-router/dev/vite";
 import { defineConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
-import { nodePolyfills } from "vite-plugin-node-polyfills";
 import tailwindcss from "@tailwindcss/vite";
-import preload from "vite-plugin-preload";
+import tsconfigPaths from "vite-tsconfig-paths";
+import { vitePlugin as remix } from "@remix-run/dev";
+import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 export default defineConfig({
   plugins: [
@@ -11,9 +10,17 @@ export default defineConfig({
       include: ["process", "buffer"],
       globals: { process: true, Buffer: true },
     }),
-    reactRouter(),
-    tsconfigPaths(),
+    remix({
+      ssr: false,
+      future: {
+        v3_singleFetch: true,
+        v3_fetcherPersist: true,
+        v3_throwAbortReason: true,
+        v3_relativeSplatPath: true,
+        v3_lazyRouteDiscovery: true,
+      },
+    }),
     tailwindcss(),
-    preload(),
+    tsconfigPaths(),
   ],
 });

@@ -1,13 +1,15 @@
 @import "tailwindcss";
 
 @font-face {
-  font-family: "SFProDisplay";
   font-style: normal;
-  src: url("/fonts/SF-Pro.ttf") format("truetype");
+  font-family: "SFProDisplay";
+  src: url("/fonts/sf-pro.ttf") format("truetype");
 }
 
 @theme {
-  --color-white: #ffffff;
+  --color-*: initial; /* reset default colors */
+  --color-white: #fff;
+  --color-black: #000;
   --color-background: #f3f3f3;
   --color-foreground: #ebebeb;
   --color-foreground-text: #7b7b7b;
@@ -33,16 +35,11 @@ html,
 body {
   height: 100%;
   overflow: hidden;
-  margin: 0;
-  padding: 0;
   font-family: SFProDisplay;
   color: var(--color-primary-text);
   background-color: var(--color-background);
 }
 
-/* Disable arrow bar - input[type='number'] */
-input[type="number"],
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
 }

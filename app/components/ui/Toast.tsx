@@ -9,10 +9,11 @@ import { cn } from "~/utils/tw";
 const ANIMATION_OUT_DURATION = 350;
 
 export const Toasts = () => {
-  const viewportRef = React.useRef<HTMLDivElement>(null);
   const { toasts, removeToast } = useToastStore();
-  const toastsArray = Array.from(toasts);
+  const viewportRef = React.useRef<HTMLDivElement>(null);
   const [isHovering, setIsHovering] = React.useState(false);
+
+  const toastsArray = Array.from(toasts);
 
   return (
     <ToastPrimitive.Provider>
@@ -21,26 +22,24 @@ export const Toasts = () => {
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
       >
-        <AnimatePresence>
-          {toastsArray.map(([key, toast], index) => (
-            <Toast
-              key={key}
-              id={key}
-              toast={toast}
-              index={index}
-              isHovering={isHovering}
-              total={toastsArray.length}
-              onOpenChange={(open) => {
-                if (!open) {
-                  useToastStore.getState().setToastElement(key, null);
-                  setTimeout(() => {
-                    removeToast(key);
-                  }, ANIMATION_OUT_DURATION);
-                }
-              }}
-            />
-          ))}
-        </AnimatePresence>
+        {toastsArray.map(([key, toast], index) => (
+          <Toast
+            key={key}
+            id={key}
+            toast={toast}
+            index={index}
+            isHovering={isHovering}
+            total={toastsArray.length}
+            onOpenChange={(open) => {
+              if (!open) {
+                useToastStore.getState().setToastElement(key, null);
+                setTimeout(() => {
+                  removeToast(key);
+                }, ANIMATION_OUT_DURATION);
+              }
+            }}
+          />
+        ))}
       </div>
       <ToastPrimitive.Viewport
         ref={viewportRef}
@@ -92,7 +91,7 @@ const Toast = (props: {
   }, [id]);
 
   // Calculate position based on index and hover state
-  const yOffset = isHovering ? index * -60 : index * -10;
+  const yOffset = isHovering ? index * -85 : index * -10;
   const scale = isHovering ? 1 : isFront ? 1 : 0.95;
   const opacity = isHovering ? 1 : isFront ? 1 : 0.7;
   const zIndex = total - index;
@@ -102,16 +101,16 @@ const Toast = (props: {
       {...toastProps}
       ref={ref}
       type={toast.type}
-      duration={toast.duration || 5000}
+      duration={toast.duration || 3000}
       onOpenChange={onOpenChange}
       asChild
     >
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.9 }}
         animate={{
-          opacity: opacity,
           y: yOffset,
           scale: scale,
+          opacity: opacity,
           transition: { duration: 0.3 },
         }}
         exit={{ opacity: 0, y: 20, scale: 0.9 }}
@@ -121,7 +120,7 @@ const Toast = (props: {
       >
         <div
           className={cn(
-            "p-4 rounded-lg shadow-lg bg-white",
+            "p-4 shadow-lg bg-black text-white rounded-[20px]",
             "grid gap-2",
             toast.status !== "default" &&
               "grid-cols-[max-content_1fr_max-content]",
@@ -131,23 +130,23 @@ const Toast = (props: {
           data-status={toast.status}
         >
           <ToastStatusIcon status={toast.status} />
-          <div className="flex flex-col">
-            <ToastPrimitive.Title className="font-medium text-slate-900 text-sm">
+          <div className="flex flex-col gap-3">
+            <ToastPrimitive.Title className="font-medium text-white text-sm">
               {toast.status === "success"
                 ? "Success"
                 : toast.status === "error"
                   ? "Error"
                   : "Notification"}
             </ToastPrimitive.Title>
-            <ToastPrimitive.Description className="text-slate-700 text-xs">
+            <ToastPrimitive.Description className="text-white text-xs">
               {toast.description}
             </ToastPrimitive.Description>
           </div>
           <ToastPrimitive.Close
             aria-label="Close"
-            className="self-start text-slate-500 hover:text-slate-900 transition-colors"
+            className="self-start text-white"
           >
-            <IconClose />
+            <IconClose size={12} />
           </ToastPrimitive.Close>
         </div>
       </motion.div>

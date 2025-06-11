@@ -1,5 +1,5 @@
 import { PublicKey } from "web3js1";
-import { getAddressDecoder } from "gill";
+import { address, getAddressDecoder } from "gill";
 
 import { Address } from "~/model/web3js";
 

@@ -7,6 +7,8 @@ import {
   ReadonlyUint8Array,
 } from "gill";
 
+import { SYSTEM_PROGRAM_ADDRESS } from "gill/programs";
+
 import {
   getProposalCodec,
   getVaultExecuteCodec,
@@ -14,10 +16,7 @@ import {
   getProposalApproveCodec,
 } from "~/program/multisig/codec";
 
-import {
-  SQUADS_PROGRAM_ID,
-  SYSTEM_PROGRAM_ADDRESS,
-} from "~/program/multisig/address";
+import { SQUADS_PROGRAM_ID } from "~/program/multisig/address";
 
 import { getEphemeralSignerPda, getProposalPda } from "~/program/multisig/pda";
 

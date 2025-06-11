@@ -2,20 +2,21 @@ import { create } from "zustand";
 import { Address } from "~/model/web3js";
 
 export type Token = {
+  ata: Address;
+  mint: Address;
   name: string;
   symbol: string;
   amount: number;
   logoURI: string;
   decimals: number;
-  ata: Address;
-  mint: Address;
 };
 
 type WithdrawState = {
-  memo: string | null;
   token: Token | null;
+  memo: string | null;
   amount: number | null;
   toAddress: Address | null;
+  errors: { type: string; message: string }[] | [];
 };
 
 type WithdrawActions = {
@@ -26,6 +27,7 @@ type WithdrawActions = {
 type WithdrawStore = WithdrawState & WithdrawActions;
 
 export const useWithdrawStore = create<WithdrawStore>((set) => ({
+  errors: [],
   memo: null,
   token: null,
   amount: null,
@@ -39,4 +41,16 @@ export const useWithdrawStore = create<WithdrawStore>((set) => ({
       fromAddress: null,
     })),
   set: (key, value) => set(() => ({ [key]: value })),
+  addError: (type: string, message: string) =>
+    set((state) => {
+      const errors = state.errors || [];
+      errors.push({ type, message });
+      return { errors };
+    }),
+  removeError: (type: string) =>
+    set((state) => {
+      const errors = state.errors || [];
+      const newErrors = errors.filter((e) => e.type !== type);
+      return { errors: newErrors };
+    }),
 }));

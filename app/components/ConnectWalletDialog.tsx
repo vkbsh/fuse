@@ -1,6 +1,6 @@
 import { address } from "gill";
 import { motion } from "motion/react";
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { UiWallet, useConnect, useWallets } from "@wallet-standard/react";
 
 import Dialog from "~/components/ui/Dialog";
@@ -34,7 +34,11 @@ function WalletOptions() {
       <span className="text-xl font-bold text-center">Select wallet</span>
       <hr className=" opacity-20" />
       <div className="flex flex-col gap-6">
-        {/* TODO: if (supportedWallets.length === 0) return "No supported wallets found"  */}
+        {!supportedWallets.length && (
+          <div className="flex justify-center items-center py-8">
+            <span>No supported wallets found</span>
+          </div>
+        )}
         {supportedWallets.map((wallet) => (
           <WalletOption key={wallet.name} wallet={wallet} />
         ))}
@@ -69,7 +73,7 @@ function WalletOption({ wallet }: { wallet: UiWallet }) {
         exit={{ opacity: 0 }}
         className="flex flex-row items-center gap-6"
       >
-        <span>Connecting...</span>
+        <span className="h-[40px]">Connecting...</span>
       </motion.div>
     );
   }
@@ -105,29 +109,29 @@ function WithAccount({
   const account = walletWithAccount.accounts[0];
   const accountAddress = address(account?.address);
 
-  const { saveStorageWallet, selectStorageWallet, saveMultisigWallets } =
-    useWalletStore();
-  const { isLoading, data: multisigWallets } =
-    useMultisigWallets(accountAddress) || {};
+  const { addwalletStorage, addMultisig, selectWalletName } = useWalletStore();
+  const {
+    isLoading,
+    isFetched,
+    data: multisigWallets,
+  } = useMultisigWallets(accountAddress) || {};
 
   const multisig = multisigWallets?.[0];
 
   useEffect(() => {
-    console.log(accountAddress, isLoading, multisig);
-
-    if (multisigWallets && accountAddress && !isLoading) {
+    if (isFetched && accountAddress && !isLoading) {
       if (!multisig) {
         toast.error(
           "Can't find multisig wallet for " + abbreviateAddress(accountAddress),
         );
       } else {
-        saveStorageWallet({
+        addwalletStorage({
           address: accountAddress,
           name: walletWithAccount.name,
           icon: walletWithAccount.icon,
         });
-        selectStorageWallet(walletWithAccount.name);
-        saveMultisigWallets(multisigWallets);
+        addMultisig(multisig);
+        selectWalletName(walletWithAccount.name);
       }
 
       onClose();
@@ -135,11 +139,9 @@ function WithAccount({
   }, [
     multisig,
     isLoading,
+    isFetched,
     accountAddress,
     multisigWallets,
-    saveStorageWallet,
-    selectStorageWallet,
-    saveMultisigWallets,
     walletWithAccount.name,
     walletWithAccount.icon,
   ]);

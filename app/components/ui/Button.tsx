@@ -48,14 +48,18 @@ const Button = forwardRef(
     ref: React.Ref<HTMLButtonElement>,
   ) => {
     const clsName = cn(base, sizes[size], variants[variant], className, {
-      "opacity-50 cursor-not-allowed": disabled,
+      "cursor-not-allowed": disabled,
     });
 
     return (
       <motion.button
+        initial={{ opacity: 1 }}
+        animate={{ opacity: disabled ? 0.5 : 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3 }}
         ref={ref}
         whileHover={{
-          scale: 1.02,
+          scale: disabled ? 1 : 1.02,
         }}
         {...props}
         onClick={disabled ? undefined : onClick}

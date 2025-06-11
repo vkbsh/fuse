@@ -11,44 +11,48 @@ export default function BalanceComponent({
   vaultAddress: Address;
 }) {
   return (
-    <section className="flex flex-col">
+    <section className="w-auto flex flex-col">
       <span className="font-medium text-sm opacity-40">Total Balance</span>
-      <AnimatePresence>
-        {vaultAddress && <TotalBalance vaultAddress={vaultAddress} />}
-      </AnimatePresence>
+      {vaultAddress && <TotalBalance vaultAddress={vaultAddress} />}
     </section>
   );
 }
 
 function TotalBalance({ vaultAddress }: { vaultAddress: Address }) {
-  const { totalAmount } = useTokenInfo(vaultAddress);
-  const roundedAmount = roundCoin("usd", totalAmount);
-  const roundedAmounArray = roundedAmount.toString().split("");
+  const { totalAmount, isLoading, isError } = useTokenInfo(vaultAddress);
+
+  const roundedAmount = totalAmount ? roundCoin("usd", totalAmount) : "0.00";
+  const roundedAmounArray = String(roundedAmount).split("");
+
+  const isLoadingOrError = isLoading || isError;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="flex text-[45px] font-bold"
-    >
+    <div className="text-[45px] font-bold">
       <span>$</span>
-      <AnimatePresence>
+      <AnimatePresence mode="popLayout">
         {roundedAmounArray.map((num, i) => (
-          <span key={i} className="flex justify-center items-center">
-            <motion.span
-              key={i + num}
-              layout
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              transition={{ duration: 0.8, delay: i * 0.05 }}
-            >
-              {num}
-            </motion.span>
-          </span>
+          <motion.span
+            key={i}
+            initial={{ opacity: 0, y: -10 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="relative inline-block"
+            animate={{ opacity: isLoadingOrError ? [0.2, 1, 0.2] : 1, y: 0 }}
+            transition={{
+              opacity: {
+                duration: isLoadingOrError ? 2 : 0.4,
+                repeat: isLoadingOrError ? Infinity : 0,
+                delay: isLoadingOrError ? 0 : i * 0.04,
+              },
+              y: {
+                duration: 0.4,
+                delay: i * 0.04,
+              },
+            }}
+          >
+            {num}
+          </motion.span>
         ))}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }

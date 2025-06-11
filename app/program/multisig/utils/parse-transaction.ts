@@ -1,26 +1,22 @@
-import { parseTransferSolInstruction } from "gill/programs";
+import { address } from "gill";
+import {
+  parseTransferSolInstruction,
+  SYSTEM_PROGRAM_ADDRESS,
+  ParsedTransferSolInstruction,
+} from "gill/programs";
 import {
   parseTransferInstruction,
   parseCreateAssociatedTokenIdempotentInstruction,
+  ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
+  ParsedTransferInstruction,
 } from "@solana-program/token";
 
-import {
-  TOKEN_PROGRAM_ADDRESS,
-  SYSTEM_PROGRAM_ADDRESS,
-  ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
-} from "~/program/multisig/address";
+import { TOKEN_PROGRAM_ADDRESS } from "@solana-program/token";
 
 import { Address } from "~/model/web3js";
-import { fetchTokenMeta } from "~/service/token";
-import { LAMPORTS_PER_SOL } from "gill";
 
 const nativeToken = {
-  decimals: 9,
-  symbol: "SOL",
-  name: "Solana",
-  address: "So11111111111111111111111111111111111111112",
-  logoURI:
-    "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+  address: address("So11111111111111111111111111111111111111112"),
 };
 
 type Message = {
@@ -32,36 +28,78 @@ type Message = {
   }>;
 };
 
-export type Mint = {
-  name: string;
-  symbol: string;
-  logoURI: string;
-  decimals: number;
-  address: Address;
-};
-
 type Result = {
-  mint: Mint;
   amount: number;
   toAccount: Address;
   fromAccount: Address;
+  mintAddress: Address;
 };
 
 export async function parseTransactionMessage(
   message: Message,
 ): Promise<Result | null> {
-  const instructions = message?.instructions || [];
-  const accountKeys = message?.accountKeys || [];
-  let decoded = null;
-  let result = null;
+  const { accountKeys = [], instructions = [] } = message || {};
 
   if (instructions.length === 0) {
-    return decoded;
+    return null;
+  }
+
+  let result: Result | null = null;
+
+  // Transfer (SOL/Token) Instruction
+  if (instructions.length === 1) {
+    const ixLegacy = instructions[0];
+    const programAddress = accountKeys[ixLegacy.programIdIndex] as
+      | typeof TOKEN_PROGRAM_ADDRESS
+      | typeof SYSTEM_PROGRAM_ADDRESS;
+
+    const ix = convertFromLegacyInstruction({
+      accountKeys,
+      programAddress,
+      data: ixLegacy.data,
+      accounts: ixLegacy.accountIndexes,
+    });
+
+    let parsedTx:
+      | ParsedTransferInstruction<Address>
+      | ParsedTransferSolInstruction<string>
+      | null = null;
+
+    if (isSystemProgram(programAddress)) {
+      try {
+        parsedTx = parseTransferSolInstruction(ix);
+      } catch (error) {
+        console.log("Failed to parse Transfer SOL Instruction: ", error);
+        return null;
+      }
+    }
+
+    if (isTokenProgram(programAddress)) {
+      try {
+        parsedTx = parseTransferInstruction(ix);
+      } catch (error) {
+        console.log("Failed to parse Transfer Token Instruction: ", error);
+        return null;
+      }
+    }
+
+    if (!parsedTx) {
+      return null;
+    }
+
+    const { accounts, data } = parsedTx;
+
+    result = {
+      amount: Number(data.amount),
+      mintAddress: nativeToken.address,
+      fromAccount: accounts.source.address,
+      toAccount: accounts.destination.address,
+    };
   }
 
   // List of 2 instructions might contain:
   // ['Create ATA Instruction', 'Transfer Token Instruction']
-  if (instructions.length > 1) {
+  if (instructions.length === 2) {
     const createATAIx = instructions[0]; // Maybe Create ATA
     const transferTokenIx = instructions[1]; // Maybe Transfer Token
 
@@ -73,12 +111,8 @@ export async function parseTransactionMessage(
       isAssociatedTokenProgram(programAddressCreateATA) &&
       isTokenProgram(programAddressTransferToken)
     ) {
-      let ata = null;
-      let toAccount = null;
-      let mintAddress = null;
-
       try {
-        const decodedATA = parseCreateAssociatedTokenIdempotentInstruction(
+        const decodedATI = parseCreateAssociatedTokenIdempotentInstruction(
           convertFromLegacyInstruction({
             accountKeys,
             accounts: createATAIx.accountIndexes,
@@ -87,125 +121,56 @@ export async function parseTransactionMessage(
           }),
         );
 
-        if (decodedATA) {
-          ata = decodedATA?.accounts?.ata?.address;
-          toAccount = decodedATA?.accounts?.owner?.address;
-          mintAddress = decodedATA?.accounts?.mint?.address;
-        }
-      } catch (error) {
-        console.log("error", error);
-      }
+        if (decodedATI) {
+          const accountsATI = decodedATI?.accounts;
 
-      try {
-        decoded = parseTransferInstruction(
-          convertFromLegacyInstruction({
-            accountKeys,
-            accounts: transferTokenIx.accountIndexes,
-            programAddress: TOKEN_PROGRAM_ADDRESS,
-            data: new Uint8Array(transferTokenIx.data),
-          }),
-        );
+          const ata = accountsATI.ata.address;
+          const toAccount = accountsATI.owner.address;
+          const mintAddress = accountsATI.mint.address;
 
-        if (decoded) {
           try {
-            const mintInfo = mintAddress
-              ? await fetchTokenMeta(mintAddress)
-              : {};
-
-            // decoded.accounts.source.address = ata;
-            // decoded.accounts.destination.address = toAccount;
-            // decoded.mint = mintInfo;
+            const { accounts, data } = parseTransferInstruction(
+              convertFromLegacyInstruction({
+                accountKeys,
+                accounts: transferTokenIx.accountIndexes,
+                programAddress: TOKEN_PROGRAM_ADDRESS,
+                data: new Uint8Array(transferTokenIx.data),
+              }),
+            );
 
             result = {
-              ...decoded,
-              accounts: {
-                source: {
-                  address: ata,
-                },
-                destination: {
-                  address: toAccount,
-                },
-              },
-              mint: mintInfo,
+              mintAddress,
+              amount: Number(data.amount),
+              toAccount:
+                accounts.destination.address === ata
+                  ? toAccount
+                  : accounts.destination.address,
+              fromAccount: accounts.source.address,
             };
-          } catch (error) {
-            console.log("error", error);
+
+            console.log("Result: ", result);
+          } catch (e) {
+            console.log("Failed to parse Transfer Instruction: ", e);
+            return null;
           }
         }
-      } catch (error) {
-        console.log("error", error);
+      } catch (e) {
+        console.log("Failed to parse Create ATA Instruction: ", e);
+        return null;
       }
     }
   }
 
-  // [Transfer Token]
   if (
-    instructions.length === 1 &&
-    isTokenProgram(accountKeys[instructions[0].programIdIndex])
+    !result?.amount ||
+    !result?.toAccount ||
+    !result?.fromAccount ||
+    !result?.mintAddress
   ) {
-    const ix = instructions[0];
-    const programAddress = accountKeys[ix.programIdIndex];
-
-    const customIx = convertFromLegacyInstruction({
-      data: ix.data,
-      accounts: ix.accountIndexes,
-      accountKeys,
-      programAddress,
-    });
-
-    try {
-      decoded = parseTransferInstruction(customIx);
-      if (decoded) {
-        result = {
-          ...decoded,
-        };
-      }
-    } catch (error) {
-      console.log("error", error);
-    }
-  }
-
-  // [Transfer SOL]
-  if (
-    instructions.length === 1 &&
-    isSystemProgram(accountKeys[instructions[0].programIdIndex])
-  ) {
-    const ix = instructions[0];
-    const programAddress = accountKeys[ix.programIdIndex];
-
-    const customIx = convertFromLegacyInstruction({
-      data: ix.data,
-      accounts: ix.accountIndexes,
-      accountKeys,
-      programAddress,
-    });
-
-    try {
-      decoded = parseTransferSolInstruction(customIx);
-
-      if (decoded) {
-        result = {
-          ...decoded,
-          mint: nativeToken,
-        };
-      }
-    } catch (error) {
-      console.log("error", error);
-    }
-  }
-
-  if (!result) {
     return null;
   }
 
-  return {
-    mint: result.mint,
-    fromAccount: result?.accounts?.source?.address as Address,
-    toAccount: result?.accounts?.destination?.address as Address,
-    amount: isTokenProgram(decoded?.programAddress)
-      ? Number(result?.data?.amount) / 10 ** result?.mint?.decimals
-      : Number(result?.data?.amount) / LAMPORTS_PER_SOL,
-  };
+  return result;
 }
 
 function convertFromLegacyInstruction({
@@ -217,7 +182,10 @@ function convertFromLegacyInstruction({
   data: any;
   accounts: number[];
   accountKeys: Address[];
-  programAddress: Address;
+  programAddress:
+    | typeof TOKEN_PROGRAM_ADDRESS
+    | typeof SYSTEM_PROGRAM_ADDRESS
+    | typeof ASSOCIATED_TOKEN_PROGRAM_ADDRESS;
 }): {
   data: Uint8Array;
   programAddress: Address;

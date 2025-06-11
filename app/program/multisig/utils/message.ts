@@ -55,8 +55,8 @@ export async function createTransferSolMessage({
   const transferMessage = await createTransferInnerMessage({
     toAddress,
     payer: vaultPda,
+    lamports: amount,
     fromAddress: vaultPda,
-    lamports: amount * LAMPORTS_PER_SOL,
   });
 
   return createTransferMessageWithProposalApprove({
@@ -90,10 +90,10 @@ export async function createTransferTokenMessage({
   memo?: string;
 }) {
   const transferMessage = await createTransferTokenInnerMessage({
+    amount,
     fromToken,
     toAddress,
     authority,
-    amount: amount,
   });
 
   return createTransferMessageWithProposalApprove({

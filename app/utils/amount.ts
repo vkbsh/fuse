@@ -2,9 +2,11 @@ export function roundAmount(num: number): number | string {
   const min = 0.0001;
 
   if (typeof num !== "number" || isNaN(num)) {
-    console.error("Invalid number:", num);
-
     return "-";
+  }
+
+  if (num === 0) {
+    return 0;
   }
 
   if (num < min) {
@@ -66,5 +68,7 @@ export function getAmount({
   price?: number;
   decimals: number;
 }) {
+  if (!decimals || !amount || !price) return 0;
+
   return (Number(amount) / 10 ** decimals) * price;
 }

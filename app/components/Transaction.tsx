@@ -21,6 +21,8 @@ import { getProposalPda } from "~/program/multisig/pda";
 import { createMessageWithSigner } from "~/program/multisig/transaction";
 import { createMessageExecuteAndCloseAccounts } from "~/program/multisig/utils/message";
 
+import { refetchTransactions } from "~/hooks/resources";
+
 import { cn } from "~/utils/tw";
 import { toast } from "~/state/toast";
 import { Address } from "~/model/web3js";
@@ -37,7 +39,6 @@ export default function Transaction({
   status,
   creator,
   message,
-  refetch,
   approved,
   cancelled,
   timestamp,
@@ -48,14 +49,13 @@ export default function Transaction({
   message: any;
   creator: Address;
   timestamp: number;
-  refetch: () => Promise<void>;
   rentCollectorAddress: Address;
   approved: Address[];
   cancelled: Address[];
   transactionIndex: number;
 }) {
-  const { storageWallet, storageMultisigWallet } = useWalletStore();
-  const wallet = useWalletByName(storageWallet?.name as Address);
+  const { walletStorage, multisigStorage } = useWalletStore();
+  const wallet = useWalletByName(walletStorage?.name as Address);
   const walletAccount = wallet?.accounts[0];
 
   const [isOpen, onOpenChange] = useState(false);
@@ -82,11 +82,16 @@ export default function Transaction({
   return (
     <div className="flex flex-col items-center justify-between gap-2 select-none">
       <motion.div
+        onClick={() => onOpenChange(!isOpen)}
+        animate={{
+          backgroundColor: isOpen
+            ? "var(--color-trn-hover)"
+            : "rgba(0, 0, 0, 0)",
+        }}
         whileHover={{
           backgroundColor: "var(--color-trn-hover)",
           transition: { duration: 0.6, delay: 0 },
         }}
-        onClick={() => onOpenChange(!isOpen)}
         className="flex flex-row items-center justify-between w-full rounded-[20px] p-3 cursor-pointer h-[72px]"
       >
         <div className="flex flex-row items-center gap-4">
@@ -140,9 +145,9 @@ export default function Transaction({
             transition={{
               duration: 0.3,
             }}
-            className="origin-top overflow-hidden w-full rounded-[20px] bg-amber-950"
+            className="overflow-hidden w-full rounded-[20px] bg-trn-hover"
           >
-            <div className="w-full h-[220px] grow-0 flex-1 shrink-0 flex flex-col p-4 justify-between">
+            <div className="flex flex-col gap-6 p-6 justify-end">
               <Progress
                 status={status}
                 approved={approved}
@@ -152,16 +157,13 @@ export default function Transaction({
                 <Footer
                   status={status}
                   creator={creator}
-                  refetch={refetch}
                   approved={approved}
                   walletAccount={walletAccount}
                   onClose={() => onOpenChange(false)}
                   transactionIndex={transactionIndex}
                   rentCollectorAddress={rentCollectorAddress}
-                  storageWalletAddress={walletAccount.address as Address}
-                  storageMultisigWalletAddress={
-                    storageMultisigWallet?.address as Address
-                  }
+                  walletStorageAddress={walletAccount.address as Address}
+                  multisigStorageAddress={multisigStorage?.address as Address}
                 />
               )}
             </div>
@@ -191,28 +193,26 @@ function Progress({
       initial={{ height: 0 }}
       animate={{ height: "auto" }}
       exit={{ height: 0 }}
-      className="px-2 py-4 pt-3 pb-0"
+      className="flex flex-row gap-20 justify-center text-sm font-semibold mx-auto"
     >
-      <div className="flex flex-row gap-4 justify-center text-sm font-semibold">
-        <ProgressStatus
-          label="Initiated"
-          active={true}
-          icon={<IconCirclePlus />}
-          addresses={[initiated]}
-        />
-        <ProgressStatus
-          label="Approved"
-          active={isAllApproved}
-          icon={<IconSquareDot />}
-          addresses={approved}
-        />
-        <ProgressStatus
-          label="Executed"
-          active={isExecuted}
-          icon={<IconCircleDot />}
-          addresses={[initiated]}
-        />
-      </div>
+      <ProgressStatus
+        label="Initiated"
+        active={true}
+        icon={<IconCirclePlus />}
+        addresses={[initiated]}
+      />
+      <ProgressStatus
+        label="Approved"
+        active={isAllApproved}
+        icon={<IconSquareDot />}
+        addresses={approved}
+      />
+      <ProgressStatus
+        label="Executed"
+        active={isExecuted}
+        icon={<IconCircleDot />}
+        addresses={[initiated]}
+      />
     </motion.div>
   );
 }
@@ -229,14 +229,12 @@ function ProgressStatus({
   addresses: Address[];
 }) {
   return (
-    <div className="w-full flex flex-col items-center gap-5 text-white/40">
-      <motion.span
-        animate={{ color: active ? "#fff" : "rgba(255, 255, 255, 0.3)" }}
-      >
+    <div className="w-full flex flex-col items-center gap-5 text-black/30">
+      <motion.span animate={{ color: active ? "#000" : "rgba(0, 0, 0, 0.3)" }}>
         {icon}
       </motion.span>
       <div className="flex flex-col gap-1 items-center">
-        <span className="text-white">{label}</span>
+        <span className="text-black">{label}</span>
         <div className="flex flex-row gap-1">
           <div className="flex flex-col">
             <span>With</span>
@@ -256,37 +254,37 @@ function ProgressStatus({
 
 function Footer({
   status,
-  refetch,
   creator,
   onClose,
   approved,
   walletAccount,
   transactionIndex,
   rentCollectorAddress,
-  storageWalletAddress,
-  storageMultisigWalletAddress,
+  walletStorageAddress,
+  multisigStorageAddress,
 }: {
   status: any;
   creator: Address;
   approved: Address[];
   onClose: () => void;
-  refetch: () => Promise<void>;
   transactionIndex: number;
-  storageWalletAddress: Address;
+  walletStorageAddress: Address;
   rentCollectorAddress: Address;
   walletAccount: UiWalletAccount;
-  storageMultisigWalletAddress: Address;
+  multisigStorageAddress: Address;
 }) {
   const feePayer = useWalletAccountTransactionSendingSigner(
     walletAccount,
     "solana:mainnet",
   );
 
+  const refetch = refetchTransactions(multisigStorageAddress);
+
   // TODO: Check if Voter permission
-  // TODO: CHeck if Account already did approve or cancel
+  // TODO: CHeck if Account already  approved
   const isApproveDisabled = approved.some((a) => a === walletAccount.address);
   // TODO: Check if All permission (Cloud Key)
-  const isExecuteDisabled = creator !== walletAccount.address;
+  const isExecuteDisabled = !walletAccount.address;
 
   const cancelHandler = async () => {
     try {
@@ -296,23 +294,21 @@ function Footer({
           await createProposalCancelInstruction({
             memo: "Approved by a Member",
             proposalPda: await getProposalPda({
-              multisigAddress: storageMultisigWalletAddress,
+              multisigAddress: multisigStorageAddress,
               transactionIndex: BigInt(transactionIndex),
             }),
-            memberAddress: address(storageWalletAddress),
-            multisigPda: address(storageMultisigWalletAddress),
+            memberAddress: address(walletStorageAddress),
+            multisigPda: address(multisigStorageAddress),
           }),
         ],
       });
 
       await signAndSendTransactionMessageWithSigners(message);
-      refetch().then((index) => {
-        console.log("Refetch", index);
-        onClose();
-      });
-    } catch (error) {
-      console.error("Error [Cancel]:", error);
-      toast.error(error.message);
+      await refetch();
+      onClose();
+    } catch (e: any) {
+      console.error("Error [Cancel]:", e);
+      toast.error(e.message);
     }
   };
 
@@ -324,50 +320,54 @@ function Footer({
           await createProposalApproveInstruction({
             memo: "Approved by a Member",
             transactionIndex: BigInt(transactionIndex),
-            memberAddress: address(storageWalletAddress),
-            multisigPda: address(storageMultisigWalletAddress),
+            memberAddress: address(walletStorageAddress),
+            multisigPda: address(multisigStorageAddress),
           }),
         ],
       });
 
       await signAndSendTransactionMessageWithSigners(message);
-      refetch().then((index) => {
-        console.log("Refetch", index);
-        onClose();
-      });
-    } catch (error) {
-      console.error("Error [Approve]:", error);
-      toast.error(error.message);
+      await refetch();
+      onClose();
+    } catch (e: any) {
+      console.error("Error [Approve]:", e);
+      toast.error(e.message);
     }
   };
 
   const executeHandler = async () => {
+    console.log({
+      feePayer,
+      memberAddress: walletStorageAddress,
+      multisigPda: multisigStorageAddress,
+      transactionIndex,
+      rentCollectorAddress,
+    });
+
     try {
       const message = await createMessageExecuteAndCloseAccounts({
         feePayer,
-        memberAddress: storageWalletAddress,
-        multisigPda: storageMultisigWalletAddress,
+        memberAddress: walletStorageAddress,
+        multisigPda: multisigStorageAddress,
         transactionIndex: BigInt(transactionIndex),
         rentCollectorPda: address(rentCollectorAddress),
       });
       await signAndSendTransactionMessageWithSigners(message);
-      refetch().then((index) => {
-        console.log("Refetch", index);
-        onClose();
-      });
-    } catch (error) {
-      console.error("Error [Execute, Close Accounts]:", error);
-      toast.error(error.message);
+      await refetch();
+      onClose();
+    } catch (e: any) {
+      console.error("Error [Execute, Close Accounts]:", e);
+      toast.error(e.message);
     }
   };
 
   return (
-    <div className="flex flex-row justify-center gap-1.5">
+    <div className="flex flex-row justify-center gap-4">
       {status === "Active" && (
         <>
           <Button
             size="md"
-            variant="cancel"
+            variant="bordered"
             onClick={cancelHandler}
             disabled={isApproveDisabled}
           >
@@ -375,7 +375,7 @@ function Footer({
           </Button>
           <Button
             size="md"
-            variant="secondary"
+            variant="bordered"
             onClick={approveHandler}
             disabled={isApproveDisabled}
           >
@@ -387,7 +387,7 @@ function Footer({
       {status === "Approved" && (
         <Button
           size="md"
-          variant="secondary"
+          variant="bordered"
           onClick={executeHandler}
           disabled={isExecuteDisabled}
         >
@@ -396,7 +396,7 @@ function Footer({
       )}
 
       {["Executed", "Canceled", "Rejected"].includes(status) && (
-        <Button size="md" variant="secondary" onClick={onClose}>
+        <Button size="md" variant="bordered" onClick={onClose}>
           Ok
         </Button>
       )}

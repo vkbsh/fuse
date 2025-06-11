@@ -17,7 +17,7 @@ export function useWalletByName(
 
   const wallet = wallets
     .filter((w) => w.features.includes(SOLANA_SIGN_AND_SEND_TRANSACTION))
-    .find((w) => w.name === walletName);
+    .find((w) => w?.name === walletName);
 
   return wallet;
 }

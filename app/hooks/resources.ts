@@ -1,15 +1,16 @@
-import { useQueries, useQuery, useInfiniteQuery } from "@tanstack/react-query";
-
-import { Address } from "~/model/web3js";
+import { address } from "gill";
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
-  getTransaction,
   getMultisigAccount,
   getWalletByMemberKey,
+  getTransactionsByMultisig,
 } from "~/service/multisig";
 
 import { getBalance } from "~/service/balance";
 import { fetchTokenMeta, fetchTokenPrice } from "~/service/token";
+
+import { Address } from "~/model/web3js";
 import { getAmount } from "~/utils/amount";
 
 export type QueryKey =
@@ -29,12 +30,20 @@ export const queryKeys: { [key in QueryKey]: QueryKey } = {
   multisigWalletsByKey: "multisigWalletsByKey",
 };
 
+const staleTimeByQueryKey: { [key in QueryKey]: number } = {
+  balance: 1000 * 20, // 20 sec
+  tokenMeta: 1000 * 60 * 60 * 24 * 30, // 1 month
+  tokenPrice: 1000 * 20, // 20 sec
+  transaction: 0, // 1 min
+  multisigAccount: 1000 * 60, // 1 min
+  multisigWalletsByKey: 1000 * 60, // 1 min
+};
+
 export function useMultisigWallets(keyAddress: Address | null) {
   return useQuery({
     enabled: !!keyAddress,
     queryKey: [queryKeys.multisigWalletsByKey, keyAddress],
-    meta: { persist: true },
-    staleTime: 1000 * 60 * 5,
+    staleTime: staleTimeByQueryKey.multisigWalletsByKey,
     queryFn: async () => getWalletByMemberKey(keyAddress),
   });
 }
@@ -43,92 +52,41 @@ export function useMultisigAccount(multisigAddress: Address) {
   return useQuery({
     enabled: !!multisigAddress,
     queryKey: [queryKeys.multisigAccount, multisigAddress],
-    meta: { persist: true },
-    staleTime: 1000 * 60 * 0.5,
+    staleTime: staleTimeByQueryKey.multisigAccount,
     queryFn: async () => getMultisigAccount(multisigAddress),
   });
 }
 
-async function fetchTransactionBatch({
-  multisigAddress,
-  startIndex,
-  batchSize = 10,
-  staleTransactionIndex,
-}: {
-  multisigAddress: Address;
-  startIndex: number | undefined;
-  batchSize?: number;
-  staleTransactionIndex: number;
-}) {
-  if (!startIndex) {
-    return null;
-  }
-
-  const endIndex = staleTransactionIndex;
-  if (endIndex >= startIndex) {
-    return null;
-  }
-
-  let transactions = [];
-  let _startIndex = startIndex;
-
-  while (transactions.length < batchSize && _startIndex > endIndex) {
-    const transaction = await getTransaction({
-      multisigAddress,
-      transactionIndex: _startIndex,
-    });
-
-    if (transaction) {
-      transactions.push(transaction);
-    }
-
-    _startIndex--;
-  }
-
-  return transactions;
-}
-
-export function useTransactionBatch(
-  multisigAddress: Address,
-  batchSize = 10,
-  transactionIndex: number,
-  staleTransactionIndex: number,
-) {
-  return useInfiniteQuery({
-    enabled: !!multisigAddress && transactionIndex > 0,
-    queryKey: [queryKeys.transaction, multisigAddress, transactionIndex],
-    queryFn: async ({ pageParam }) => {
-      return fetchTransactionBatch({
-        startIndex: pageParam,
-        batchSize,
-        multisigAddress,
-        staleTransactionIndex,
-      });
-    },
-    initialPageParam: transactionIndex,
-
-    getNextPageParam: (lastPage) => {
-      if (!lastPage?.length) {
-        return undefined;
-      }
-
-      const nextIndex = lastPage?.[lastPage.length - 1]?.transactionIndex - 1;
-
-      if (nextIndex < 1 || nextIndex < staleTransactionIndex) {
-        return undefined;
-      }
-
-      return nextIndex;
+export function useTransactions(multisigAddress: Address) {
+  return useQuery({
+    enabled: !!multisigAddress,
+    queryKey: [queryKeys.transaction, multisigAddress],
+    staleTime: Infinity,
+    queryFn: async () => {
+      console.log("Fetching transactions");
+      return getTransactionsByMultisig(multisigAddress);
     },
   });
+}
+
+export function refetchTransactions(multisigAddress: Address) {
+  const queryClient = useQueryClient();
+  console.log("Refetching transactions");
+
+  return async () => {
+    console.log("Refetching inside");
+    return queryClient.refetchQueries({
+      queryKey: [queryKeys.transaction, multisigAddress],
+    });
+  };
 }
 
 export function useBalance(vaultAddress: Address) {
   return useQuery({
     enabled: !!vaultAddress,
-    meta: { persist: true },
-    staleTime: 1000 * 30,
+    staleTime: staleTimeByQueryKey.balance,
     queryKey: [queryKeys.balance, vaultAddress],
+    refetchInterval: staleTimeByQueryKey.balance,
     queryFn: async () => getBalance(vaultAddress),
   });
 }
@@ -137,8 +95,7 @@ export function useTokenPrice(mint: Address) {
   return useQuery({
     enabled: !!mint,
     queryKey: [queryKeys.tokenPrice, mint],
-    meta: { persist: true },
-    staleTime: 1000 * 15,
+    staleTime: staleTimeByQueryKey.tokenPrice,
     queryFn: async () => {
       const tokenPrice = await fetchTokenPrice(mint);
 
@@ -152,8 +109,8 @@ export function useTokensPrice(tokens: Address[]) {
     queries: tokens.map((mint) => ({
       enabled: !!mint,
       queryKey: [queryKeys.tokenPrice, mint],
-      meta: { persist: true },
-      staleTime: 1000 * 15,
+      staleTime: staleTimeByQueryKey.tokenPrice,
+      refetchInterval: staleTimeByQueryKey.tokenPrice,
       queryFn: async () => await fetchTokenPrice(mint),
     })),
   });
@@ -164,19 +121,26 @@ export function useTokensMeta(tokens: Address[]) {
     queries: tokens.map((mint) => ({
       enabled: !!mint,
       queryKey: [queryKeys.tokenMeta, mint],
-      meta: { persist: true },
+      staleTime: staleTimeByQueryKey.tokenMeta,
       queryFn: async () => fetchTokenMeta(mint),
     })),
   });
 }
 
 export const useTokenInfo = (vaultAddress: Address) => {
-  const { data: balanceData, isLoading: isBalanceLoading } =
-    useBalance(vaultAddress);
+  const { data: balanceData } = useBalance(vaultAddress);
 
   const tokens = Object.values(balanceData?.spl || {})
     .filter((token) => token && token.amount > 0)
-    .map(({ mint, amount, address }) => ({ mint, amount, ata: address }));
+    .map((token) => {
+      return {
+        ata: token?.address,
+        amount: token?.amount,
+        mint: address(token?.mint as string),
+      };
+    });
+
+  tokens;
 
   const meta = useTokensMeta(tokens.map((t) => t.mint));
   const price = useTokensPrice(tokens.map((t) => t.mint));
@@ -193,21 +157,26 @@ export const useTokenInfo = (vaultAddress: Address) => {
       ata: tokens[i].ata,
       mint: tokens[i].mint,
       amount: getAmount({
-        amount: tokens[i].amount,
         decimals: m.data?.decimals,
+        amount: tokens[i].amount ? Number(tokens[i].amount) : 0,
       }),
       usdAmount: getAmount({
-        amount: tokens[i].amount,
+        price: price[i].data || 0,
         decimals: m.data?.decimals,
-        price: price[i].data || 1,
+        amount: tokens[i].amount ? Number(tokens[i].amount) : 0,
       }),
     };
   });
+
+  const totalAmount = data.reduce(
+    (acc, token) => acc + (token?.usdAmount || 0),
+    0,
+  );
 
   return {
     data,
     isError,
     isLoading,
-    totalAmount: data.reduce((acc, token) => acc + token.usdAmount, 0),
+    totalAmount,
   };
 };

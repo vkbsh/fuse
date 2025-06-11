@@ -48,6 +48,7 @@ export default function Dialog({
                 animate={{
                   y: 0,
                   opacity: 1,
+                  transition: { duration: 0.4 },
                 }}
                 exit={{
                   y: -32,

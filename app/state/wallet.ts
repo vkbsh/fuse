@@ -1,9 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import { Wallet } from "~/model/wallet";
 import { Address } from "~/model/web3js";
-import { UiWalletAccount } from "@wallet-standard/react";
+import { MultisigAccount } from "~/program/multisig/codec";
 
 const STORAGE_KEY = "fuse:wallet-store";
 
@@ -13,122 +12,93 @@ export type LSWallet = {
   address: Address;
 };
 
-type WalletWithMembers = Omit<Wallet, "account"> & {
-  account: Omit<Wallet["account"], "members"> & {
-    members: Wallet["account"]["members"][];
+export type WalletWithMembers = {
+  address: Address;
+  defaultVault: Address;
+  account: {
+    members: MultisigAccount["members"];
   };
 };
 
 type WalletStore = {
-  history: LSWallet[];
-  storageWallet: LSWallet | null;
-  multisigWallets: WalletWithMembers[] | null;
-  storageMultisigWallet: WalletWithMembers | null;
-  storageAccount: UiWalletAccount | null;
-  removeStorageWallet(name: string): void;
-  selectStorageWallet(name: string): void;
-  saveStorageWallet(wallet: LSWallet): void;
+  walletHistory: LSWallet[];
+  walletStorage: LSWallet | null;
+  selectedWalletName: string | null;
+  multisigStorage: WalletWithMembers | null;
+  removewalletStorage(name: string): void;
+  addwalletStorage(wallet: LSWallet): void;
+  selectWalletName(name: string): void;
   updateHistory(wallets: (LSWallet | undefined)[]): void;
-  saveStorageAccount(account: UiWalletAccount): void;
-  saveMultisigWallets(wallets: WalletWithMembers[]): void;
-  selectMultisigWallet(walletAddress: Address): void;
+  addMultisig(wallet: WalletWithMembers): void;
 };
 
 export const useWalletStore = create<WalletStore>()(
   persist(
     (set) => ({
-      history: [],
-      multisigWallets: null,
-      storageWallet: null,
-      storageMultisigWallet: null,
-      storageAccount: null,
-      saveStorageAccount: (account: UiWalletAccount) =>
+      walletHistory: [],
+      walletStorage: null,
+      selectedWalletName: null,
+      multisigStorage: null,
+      addMultisig: (wallet: WalletWithMembers) =>
         set(() => {
-          return {
-            storageAccount: account,
-          };
-        }),
-      selectMultisigWallet: (address: Address) =>
-        set((state) => {
-          return {
-            storageMultisigWallet:
-              state.multisigWallets?.find((w) => w.address === address) || null,
-          };
-        }),
+          if (!wallet) {
+            return { multisigStorage: null };
+          }
 
-      saveMultisigWallets: (wallets: WalletWithMembers[]) =>
-        set(() => {
-          const _wallets = wallets.map((w) => {
-            return {
-              ...w,
+          return {
+            multisigStorage: {
+              address: wallet.address,
+              defaultVault: wallet.defaultVault,
               account: {
-                members: w.account.members,
+                members: wallet.account.members,
               },
-            };
-          });
-
-          return {
-            multisigWallets: _wallets,
-            storageMultisigWallet: _wallets[0],
+            },
           };
         }),
-      removeStorageWallet: (name: string) =>
+      removewalletStorage: (name: string) =>
         set((state) => {
           const newHistory =
-            state.history?.filter((w) => w.name !== name) || [];
+            state.walletHistory?.filter((w) => w.name !== name) || [];
 
-          if (state?.storageWallet?.name === name) {
+          if (state?.walletStorage?.name === name) {
             return {
-              history: newHistory,
-              storageWallet: newHistory[0] || null,
-              storageMultisigWallet: newHistory.length
-                ? state.storageMultisigWallet
-                : null,
-              multisigWallets: newHistory.length ? state.multisigWallets : null,
+              walletHistory: newHistory,
+              walletStorage: newHistory[0] || null,
+              multisigStorage: newHistory.length ? state.multisigStorage : null,
             };
           }
 
           return {
-            history: newHistory,
+            walletHistory: newHistory,
           };
         }),
-
-      saveStorageWallet: (wallet: LSWallet) =>
+      addwalletStorage: (wallet: LSWallet) =>
         set((state) => {
-          const history = [
-            wallet,
-            ...(state.history?.filter((w) => w.name !== wallet.name) || []),
+          const walletHistory = [
+            { name: wallet.name, icon: wallet.icon, address: wallet.address },
+            ...state.walletHistory?.filter((w) => w.name !== wallet.name),
           ];
 
           return {
-            history,
-          };
-        }),
-      selectStorageWallet: (name: string) =>
-        set((state) => {
-          const wallet = state.history?.find((w) => w.name === name);
-
-          return {
-            storageWallet: wallet,
+            walletHistory,
           };
         }),
       updateHistory: (wallets: LSWallet[]) =>
         set(() => {
           return {
-            history: wallets,
+            walletHistory: wallets.filter(Boolean),
           };
         }),
+      selectWalletName: (name: string) =>
+        set((state) => ({
+          walletStorage:
+            state.walletHistory.find((w) => w.name === name) || null,
+        })),
     }),
+
     {
+      version: 0.1,
       name: STORAGE_KEY,
-      partialize: (state) => {
-        return {
-          history: state.history,
-          storageWallet: state.storageWallet,
-          multisigWallets: state.multisigWallets,
-          storageMultisigWallet: state.storageMultisigWallet,
-        };
-      },
     },
   ),
 );

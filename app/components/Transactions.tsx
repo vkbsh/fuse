@@ -1,62 +1,46 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { delay } from "motion";
 import { motion, AnimatePresence } from "motion/react";
 
 import Transaction from "~/components/Transaction";
-import {
-  queryKeys,
-  useMultisigAccount,
-  useTransactionBatch,
-} from "~/hooks/resources";
+import { useTransactions, useMultisigAccount } from "~/hooks/resources";
 
 import { Address } from "~/model/web3js";
 
 export type Status = "ready" | "executed" | "cancelled";
-
-const batchSize = 10;
 
 export default function Transactions({
   multisigAddress,
 }: {
   multisigAddress: Address;
 }) {
-  const queryClient = useQueryClient();
+  const { data, isLoading } = useTransactions(multisigAddress);
   const { data: multisigAccount } = useMultisigAccount(multisigAddress);
 
-  const lastTxIndex = multisigAccount?.transactionIndex
-    ? Number(multisigAccount?.transactionIndex)
-    : undefined;
+  let transactions =
+    data
+      ?.flat()
+      .filter(Boolean)
+      .sort((a, b) => {
+        return Number(b.timestamp) - Number(a.timestamp);
+      }) || [];
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useTransactionBatch(
-      multisigAddress,
-      batchSize,
-      Number(multisigAccount?.transactionIndex),
-      // Number(multisigAccount?.staleTransactionIndex),
-      0,
+  if (multisigAccount?.staleTransactionIndex) {
+    transactions = transactions.filter((txData) =>
+      txData?.transactionIndex > multisigAccount?.staleTransactionIndex
+        ? true
+        : false,
     );
+  }
 
-  const transactions = data?.pages.flatMap((page) => page) || [];
+  console.log("isLoading", isLoading);
 
-  const loadMoreTransactions = () => {
-    if (hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  };
-
-  const refetch = async (transactionIndex: number) => {
-    return queryClient.invalidateQueries({
-      queryKey: [queryKeys.transaction, multisigAddress, transactionIndex],
-      exact: true,
-    });
-  };
+  const rentCollectorAddress = multisigAccount?.rentCollector as Address;
 
   return (
-    <div className="flex flex-1 flex-col gap-0 overflow-y-auto scroll-smooth">
+    <div className="flex flex-1 flex-col gap-2 overflow-y-auto scroll-smooth scrollbar-hidden">
       <AnimatePresence>
-        {lastTxIndex === 0 && (
+        {!isLoading && !transactions?.length && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
@@ -74,76 +58,21 @@ export default function Transactions({
       </AnimatePresence>
 
       <AnimatePresence>
-        {lastTxIndex &&
-          !transactions.length &&
-          Array.from({ length: batchSize }).map((_, i) => (
-            <motion.div
-              key={i}
-              layout
-              initial={{
-                opacity: 0,
-                y: -10,
-                filter: "blur(3px)",
-              }}
-              animate={{
-                y: 0,
-                opacity: 1,
-                transition: {
-                  duration: 2,
-                  delay: i * 0.05,
-                },
-              }}
-              exit={{
-                opacity: 0.8,
-                transition: {
-                  duration: 0.1,
-                },
-              }}
-            >
-              <Transaction
-                status="Active"
-                timestamp={3000}
-                creator="G5JD6WrkWjMFhRoiNiA6x3mELZPJvETFbv2jvKFePnmY"
-                message={{
-                  amount: 100000,
-                  toAccount: "BVkj5GFnMNoXimvWTZAQFgNZFQ4jvPSVQ8EBswGpCnN7",
-                  mint: {
-                    name: "Token",
-                    symbol: "TOK",
-                    logoURI:
-                      "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
-                    decimals: 0,
-                    address: "G5JD6WrkWjMFhRoiNiA6x3mELZPJvETFbv2jvKFePnmY",
-                  },
-                }}
-                approved={["txData?.approved"]}
-                rejected={["txData?.rejected"]}
-                cancelled={["txData?.cancelled"]}
-                rentCollectorAddress={"multisigAccount?.rentCollector"}
-              />
-            </motion.div>
-          ))}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {transactions.map((txData, i) => {
-          const batchIndex = i % batchSize;
-          const delay = batchIndex * 0.04;
-
+        {transactions?.map((txData, i) => {
           return (
             <motion.div
               key={i}
               layout
               initial={{
-                opacity: 0.8,
-                filter: "blur(3px)",
+                y: -10,
+                opacity: 0,
               }}
               animate={{
+                y: 0,
                 opacity: 1,
-                filter: "blur(0px)",
                 transition: {
-                  delay,
-                  duration: 1,
+                  duration: 0.6,
+                  delay: i * 0.04,
                 },
               }}
             >
@@ -156,8 +85,7 @@ export default function Transactions({
                 cancelled={txData?.cancelled}
                 timestamp={txData?.timestamp}
                 transactionIndex={txData?.transactionIndex}
-                refetch={() => refetch(txData?.transactionIndex)}
-                rentCollectorAddress={multisigAccount?.rentCollector}
+                rentCollectorAddress={rentCollectorAddress}
               />
             </motion.div>
           );
@@ -165,32 +93,16 @@ export default function Transactions({
       </AnimatePresence>
 
       <AnimatePresence>
-        {hasNextPage && (
+        {isLoading && (
           <motion.span
-            key="load-more"
-            viewport={{ margin: "200px" }}
-            onClick={loadMoreTransactions}
-            onViewportEnter={loadMoreTransactions}
-          >
-            <div className="flex w-full h-[68px] justify-center items-center rounded-[20px] text-black/40">
-              Loading...
-            </div>
-          </motion.span>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {transactions.length && !isFetchingNextPage && !hasNextPage && (
-          <motion.div
-            key="no-transactions"
             initial={{ opacity: 0.8 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
             <div className="flex w-full h-[68px] justify-center items-center rounded-[20px] text-black/40">
-              No more transactions
+              Loading...
             </div>
-          </motion.div>
+          </motion.span>
         )}
       </AnimatePresence>
     </div>

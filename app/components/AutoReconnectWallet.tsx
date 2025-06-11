@@ -9,45 +9,75 @@ import { toast } from "~/state/toast";
 import { abbreviateAddress } from "~/utils/address";
 
 export default function AutoReconnectWallet({ name }: { name: string }) {
-  const wallet = useWalletByName(name);
-  // TODO: Cover use case when wallet is not matched and it's null or undefined
-  const [, connect] = useConnect(wallet);
   const {
-    storageWallet,
-    saveStorageWallet,
-    selectStorageWallet,
-    removeStorageWallet,
-    storageMultisigWallet,
+    walletHistory,
+    walletStorage,
+    updateHistory,
+    multisigStorage,
+    addwalletStorage,
+    selectWalletName,
+    removewalletStorage,
   } = useWalletStore();
+  const wallets = useWallets();
 
-  const members = storageMultisigWallet?.account?.members || [];
+  const wallet = useWalletByName(name);
 
+  if (!wallet) {
+    return null;
+  }
+
+  const [, connect] = useConnect(wallet);
+
+  const members = multisigStorage?.account?.members || [];
+
+  // Update walletHistory with latest wallets
+  useEffect(() => {
+    const updatedHistory = walletHistory.map((wHistory) => {
+      const wallet = wallets.find((w) => w.name === wHistory.name);
+      const account = wallet?.accounts[0];
+
+      return {
+        name: wallet?.name || wHistory.name,
+        icon: wallet?.icon || wHistory.icon,
+        address: account?.address ? address(account.address) : wHistory.address,
+      };
+    });
+
+    updateHistory(updatedHistory);
+    selectWalletName(wallet.name);
+  }, [wallets]);
+
+  // Connect to wallet
   useEffect(() => {
     const connectWallet = async () => {
-      const [account] = await connect({ silent: true });
+      try {
+        const [account] = await connect({ silent: true });
 
-      if (wallet && account?.address) {
-        const isMember = members.some((m) => m.key === account.address);
+        if (wallet && account?.address) {
+          const isMember = members.some((m) => m.key === account.address);
 
-        if (isMember) {
-          if (account.address !== storageWallet?.address) {
-            saveStorageWallet({
-              name: wallet.name,
-              icon: wallet.icon,
-              address: address(account.address),
-            });
-            selectStorageWallet(wallet.name);
+          if (isMember) {
+            if (account.address !== walletStorage?.address) {
+              addwalletStorage({
+                name: wallet.name,
+                icon: wallet.icon,
+                address: address(account.address),
+              });
+            }
+          }
+
+          if (!isMember) {
+            removewalletStorage(wallet.name);
+            toast.error(
+              "Can't find multisig wallet for " +
+                abbreviateAddress(address(account.address)),
+            );
           }
         }
-
-        // Remove wallet from history if it's not a member
-        if (!isMember) {
-          removeStorageWallet(wallet.name);
-          toast.error(
-            "Can't find multisig wallet for " +
-              abbreviateAddress(account.address),
-          );
-        }
+      } catch (e) {
+        console.error(e);
+        removewalletStorage(wallet.name);
+        toast.error(`Failed to connect to ${wallet.name} wallet`);
       }
     };
 

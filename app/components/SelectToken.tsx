@@ -2,7 +2,7 @@ import { motion } from "motion/react";
 
 import Dropdown from "~/components/ui/Dropdown";
 import { IconChevronDown } from "~/components/ui/icons/IconChevronDown";
-import { useBalance, useTokenInfo } from "~/hooks/resources";
+import { useTokenInfo } from "~/hooks/resources";
 
 import { useWithdrawStore } from "~/state/withdraw";
 import { Address } from "~/model/web3js";
@@ -38,7 +38,7 @@ export default function SelectToken({
 
   const itemsComponent = items.map((item, i) => {
     const amount =
-      item.symbol.toLocaleLowerCase() === "sol"
+      item?.symbol?.toLocaleLowerCase() === "sol"
         ? getRoundedSOL(item.amount)
         : getRoundedToken(item.amount);
     const name = item.name === "Wrapped SOL" ? "Solana" : item.name;

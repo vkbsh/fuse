@@ -5,17 +5,16 @@ import { MemberPermissions } from "~/program/multisig/utils/parse-transaction";
 
 import { useDialog } from "~/state/dialog";
 import { useWalletStore } from "~/state/wallet";
-import { useWithdrawStore } from "~/state/withdraw";
 
 export default function WithdrawButton() {
-  const { reset } = useWithdrawStore();
   const { onOpenChange } = useDialog("withdraw");
-  const { storageMultisigWallet, storageWallet } = useWalletStore();
+  const { multisigStorage, walletStorage } = useWalletStore();
 
-  const members = storageMultisigWallet?.account?.members || [];
+  // TODO: Reuse in AutoReconnectWallet
+  const members = multisigStorage?.account?.members || [];
   const hasAllPermissions = members.some(
     (m) =>
-      m.key === storageWallet?.address &&
+      m.key === walletStorage?.address &&
       m.permissions?.mask === MemberPermissions.All,
   );
 
