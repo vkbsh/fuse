@@ -1,5 +1,6 @@
+import { Address } from "gill";
+import { MetaFunction } from "@remix-run/node";
 import { motion, AnimatePresence } from "motion/react";
-import type { MetaFunction } from "@remix-run/node";
 
 import Coins from "~/components/Coins";
 import Connect from "~/components/Connect";
@@ -13,7 +14,6 @@ import AutoReconnectWallet from "~/components/AutoReconnectWallet";
 import { ConnectWalletDialog } from "~/components/ConnectWalletDialog";
 import WithdrawDialog from "~/components/withdraw-dialog/WithdrawDialog";
 
-import { Address } from "~/model/web3js";
 import { useWalletStore } from "~/state/wallet";
 
 export const meta: MetaFunction = () => {
@@ -25,8 +25,8 @@ export const meta: MetaFunction = () => {
 
 export default function Index() {
   const { multisigStorage, walletStorage } = useWalletStore();
-  const vaultAddress = multisigStorage?.defaultVault as Address;
   const multisigAddress = multisigStorage?.address as Address;
+  const vaultAddress = multisigStorage?.defaultVault as Address;
 
   return (
     <>

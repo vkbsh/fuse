@@ -1,7 +1,8 @@
+import { Address } from "gill";
+
 import { IconLogo } from "~/components/ui/icons/IconLogo";
 
 import { abbreviateAddress } from "~/utils/address";
-import { Address } from "~/model/web3js";
 
 export default function VaultAccount({
   vaultAddress,

@@ -1,5 +1,5 @@
+import { Address } from "gill";
 import { create } from "zustand";
-import { Address } from "~/model/web3js";
 
 export type Token = {
   ata: Address;
@@ -43,9 +43,7 @@ export const useWithdrawStore = create<WithdrawStore>((set) => ({
   set: (key, value) => set(() => ({ [key]: value })),
   addError: (type: string, message: string) =>
     set((state) => {
-      const errors = state.errors || [];
-      errors.push({ type, message });
-      return { errors };
+      return { errors: [...state.errors, { type, message }] };
     }),
   removeError: (type: string) =>
     set((state) => {

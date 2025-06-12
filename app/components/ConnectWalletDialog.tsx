@@ -8,9 +8,11 @@ import Dialog from "~/components/ui/Dialog";
 import { toast } from "~/state/toast";
 import { useDialog } from "~/state/dialog";
 import { useWalletStore } from "~/state/wallet";
+
 import { useMultisigWallets } from "~/hooks/resources";
-import { abbreviateAddress } from "~/program/multisig/legacy";
 import { SOLANA_SIGN_AND_SEND_TRANSACTION } from "~/hooks/wallet";
+
+import { abbreviateAddress } from "~/utils/address";
 
 export function ConnectWalletDialog() {
   const { isOpen, onOpenChange } = useDialog("connectWallet");

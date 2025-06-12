@@ -1,19 +1,19 @@
-import { address } from "gill";
+import { address, Address } from "gill";
+
 import {
-  parseTransferSolInstruction,
   SYSTEM_PROGRAM_ADDRESS,
+  parseTransferSolInstruction,
   ParsedTransferSolInstruction,
 } from "gill/programs";
+
 import {
   parseTransferInstruction,
-  parseCreateAssociatedTokenIdempotentInstruction,
-  ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
   ParsedTransferInstruction,
+  ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
+  parseCreateAssociatedTokenIdempotentInstruction,
 } from "@solana-program/token";
 
 import { TOKEN_PROGRAM_ADDRESS } from "@solana-program/token";
-
-import { Address } from "~/model/web3js";
 
 const nativeToken = {
   address: address("So11111111111111111111111111111111111111112"),
@@ -69,7 +69,7 @@ export async function parseTransactionMessage(
       try {
         parsedTx = parseTransferSolInstruction(ix);
       } catch (error) {
-        console.log("Failed to parse Transfer SOL Instruction: ", error);
+        console.error("Failed to parse Transfer SOL Instruction: ", error);
         return null;
       }
     }
@@ -78,7 +78,7 @@ export async function parseTransactionMessage(
       try {
         parsedTx = parseTransferInstruction(ix);
       } catch (error) {
-        console.log("Failed to parse Transfer Token Instruction: ", error);
+        console.error("Failed to parse Transfer Token Instruction: ", error);
         return null;
       }
     }
@@ -147,15 +147,13 @@ export async function parseTransactionMessage(
                   : accounts.destination.address,
               fromAccount: accounts.source.address,
             };
-
-            console.log("Result: ", result);
           } catch (e) {
-            console.log("Failed to parse Transfer Instruction: ", e);
+            console.error("Failed to parse Transfer Instruction: ", e);
             return null;
           }
         }
       } catch (e) {
-        console.log("Failed to parse Create ATA Instruction: ", e);
+        console.error("Failed to parse Create ATA Instruction: ", e);
         return null;
       }
     }
@@ -214,14 +212,4 @@ function isSystemProgram(programAddress: Address): boolean {
 
 function isAssociatedTokenProgram(programAddress: Address): boolean {
   return programAddress === ASSOCIATED_TOKEN_PROGRAM_ADDRESS;
-}
-
-export enum MemberPermissions {
-  Initiate = 1,
-  Vote = 2,
-  InitiateVote = 3,
-  Execute = 4,
-  InitiateExecute = 5,
-  VoteExecute = 6,
-  All = 7,
 }

@@ -2,23 +2,22 @@ import { UiWalletAccount } from "@wallet-standard/react";
 import { useWalletAccountTransactionSendingSigner } from "@solana/react";
 import {
   address,
+  Address,
   LAMPORTS_PER_SOL,
   signAndSendTransactionMessageWithSigners,
 } from "gill";
-
-import Button from "~/components/ui/Button";
 
 import {
   createTransferSolMessage,
   createTransferTokenMessage,
 } from "~/program/multisig/utils/message";
 
+import Button from "~/components/ui/Button";
+
 import { refetchTransactions } from "~/hooks/resources";
 
 import { toast } from "~/state/toast";
 import { Token, useWithdrawStore } from "~/state/withdraw";
-
-import { Address } from "~/model/web3js";
 
 const Review = ({
   onClose,

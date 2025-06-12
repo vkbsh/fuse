@@ -36,6 +36,9 @@ export default function AutoReconnectWallet({ name }: { name: string }) {
       const wallet = wallets.find((w) => w.name === wHistory.name);
       const account = wallet?.accounts[0];
 
+      // TODO: Need to check if the account is a member
+      // TODO: if not a member, remove from history
+
       return {
         name: wallet?.name || wHistory.name,
         icon: wallet?.icon || wHistory.icon,

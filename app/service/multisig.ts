@@ -1,4 +1,5 @@
 import {
+  Address,
   getBase64Codec,
   EncodedAccount,
   AccountInfoBase,
@@ -27,10 +28,9 @@ import {
   getTransactionPda,
 } from "~/program/multisig/pda";
 
-import { Wallet } from "~/model/wallet";
-import { Address } from "~/model/web3js";
 import { parseTransactionMessage } from "~/program/multisig/utils/parse-transaction";
 
+import { Wallet } from "~/model/wallet";
 import { useRpcStore } from "~/state/rpc";
 
 const { rpc } = useRpcStore.getState();
@@ -51,7 +51,7 @@ export async function getMultisigAccount(multisigAddress: Address) {
 
     return parsed;
   } catch (e) {
-    console.error(e);
+    console.error("Failed to decode multisig account: ", e);
   }
 }
 
@@ -60,7 +60,7 @@ type Transaction = {
   status: any;
   message: any;
   timestamp: number;
-  creator: Address;
+  creator: Address | null;
   approved: Address[];
   rejected: Address[];
   cancelled: Address[];
@@ -189,7 +189,7 @@ async function getWalletByKeyAndIndex(
 async function getTransactionsByMultisigAndIndex(
   multisigAddress: Address,
   status: number,
-): Promise<(Transaction | null)[]> {
+): Promise<(Transaction | null)[] | null> {
   let accounts: ProgramAccountInfo[];
 
   try {
@@ -258,8 +258,8 @@ async function getTransactionsByMultisigAndIndex(
           parsedTransaction?.data,
         );
       } catch (e) {
-        console.log("Decode vaultTransaction: ", transactionIndex);
-        console.error(e);
+        console.error("Decode vaultTransaction: ", transactionIndex, e);
+        return null;
       }
 
       let parsedMessage;
@@ -269,10 +269,15 @@ async function getTransactionsByMultisigAndIndex(
           ? await parseTransactionMessage(vaultTransaction.message)
           : null;
       } catch (e) {
-        console.error(e);
+        console.error(
+          "Failed to parse vaultTransaction: ",
+          transactionIndex,
+          e,
+        );
+        return null;
       }
+
       if (!parsedMessage) {
-        console.log("Message parseTransactionMessage", transactionIndex);
         return null;
       }
 
@@ -280,10 +285,10 @@ async function getTransactionsByMultisigAndIndex(
         approved,
         rejected,
         cancelled,
-        transactionIndex,
         status: status.__kind,
         message: parsedMessage,
-        timestamp: status.timestamp,
+        timestamp: Number(status.timestamp),
+        transactionIndex: Number(transactionIndex),
         creator: vaultTransaction ? vaultTransaction.creator : null,
       };
     }),

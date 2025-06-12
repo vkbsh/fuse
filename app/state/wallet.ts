@@ -1,7 +1,7 @@
+import { Address } from "gill";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import { Address } from "~/model/web3js";
 import { MultisigAccount } from "~/program/multisig/codec";
 
 const STORAGE_KEY = "fuse:wallet-store";

@@ -1,16 +1,15 @@
-import Dialog from "~/components/ui/Dialog";
+import { Address } from "gill";
 
 import Review from "./Review";
 import EnterAmount from "./EnterAmount";
 import ChooseWallet from "./ChooseWallet";
+import Dialog from "~/components/ui/Dialog";
 
 import { useWalletByName } from "~/hooks/wallet";
 import { useMultisigAccount } from "~/hooks/resources";
 
 import { useDialog } from "~/state/dialog";
 import { useWalletStore } from "~/state/wallet";
-
-import { Address } from "~/model/web3js";
 
 export default function WithdrawDialog() {
   const { walletStorage } = useWalletStore();

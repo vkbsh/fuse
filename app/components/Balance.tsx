@@ -1,8 +1,8 @@
+import { Address } from "gill";
 import { motion, AnimatePresence } from "motion/react";
 
 import { useTokenInfo } from "~/hooks/resources";
 
-import { Address } from "~/model/web3js";
 import { roundCoin } from "~/utils/amount";
 
 export default function BalanceComponent({

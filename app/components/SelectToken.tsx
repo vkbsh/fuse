@@ -1,3 +1,5 @@
+import { Address } from "gill";
+import { useEffect } from "react";
 import { motion } from "motion/react";
 
 import Dropdown from "~/components/ui/Dropdown";
@@ -5,10 +7,8 @@ import { IconChevronDown } from "~/components/ui/icons/IconChevronDown";
 import { useTokenInfo } from "~/hooks/resources";
 
 import { useWithdrawStore } from "~/state/withdraw";
-import { Address } from "~/model/web3js";
 
 import { getRoundedSOL, getRoundedToken } from "~/utils/amount";
-import { useEffect } from "react";
 
 export type Token = {
   name: string;

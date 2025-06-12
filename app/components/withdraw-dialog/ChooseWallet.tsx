@@ -1,4 +1,4 @@
-import { address } from "gill";
+import { address, Address, isAddress } from "gill";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -8,7 +8,6 @@ import { IconLogo } from "~/components/ui/icons/IconLogo";
 import { useTokenInfo } from "~/hooks/resources";
 import { useWithdrawStore } from "~/state/withdraw";
 
-import { Address } from "~/model/web3js";
 import { getRoundedUSD } from "~/utils/amount";
 import { abbreviateAddress } from "~/utils/address";
 
@@ -25,11 +24,10 @@ const ChooseWallet = ({ vaultAddress }: { vaultAddress: Address }) => {
   useEffect(() => {
     if (!value) return;
 
-    try {
-      Address.parse(value);
+    if (isAddress(value)) {
       setError("");
-      set("toAddress", address(value));
-    } catch (e: any) {
+      set("toAddress", value);
+    } else {
       setError("Invalid address");
     }
   }, [value]);

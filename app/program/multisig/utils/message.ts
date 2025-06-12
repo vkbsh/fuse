@@ -1,15 +1,17 @@
+import { TransactionMessage } from "web3js1";
+
 import {
   Address,
-  LAMPORTS_PER_SOL,
+  EncodedAccount,
   parseBase64RpcAccount,
   TransactionSendingSigner,
 } from "gill";
 
 import {
-  createProposalApproveInstruction,
   createProposalCreateInstruction,
-  createVaultTransactionAccountsCloseInstruction,
+  createProposalApproveInstruction,
   createVaultTransactionExecuteInstruction,
+  createVaultTransactionAccountsCloseInstruction,
 } from "~/program/multisig/instruction";
 
 import {
@@ -20,11 +22,11 @@ import {
 
 import { createVaultInstruction } from "~/program/multisig/legacy";
 import {
+  getVaultPda,
   getProposalPda,
   getTransactionPda,
-  getVaultPda,
 } from "~/program/multisig/pda";
-import { TransactionMessage } from "web3js1";
+
 import { getVaultTransactionCodec } from "~/program/multisig/codec";
 
 import { useRpcStore } from "~/state/rpc";
@@ -182,8 +184,13 @@ export async function createMessageExecuteAndCloseAccounts({
     .getAccountInfo(transactionPda, { encoding: "base64" })
     .send();
 
+  const parsedTransactionPdaInfo = parseBase64RpcAccount(
+    transactionPda,
+    transactionPdaInfo.value,
+  ) as EncodedAccount;
+
   const vaultTransaction = getVaultTransactionCodec().decode(
-    parseBase64RpcAccount(transactionPda, transactionPdaInfo.value).data,
+    parsedTransactionPdaInfo.data,
   );
 
   const vaultPda = await getVaultPda({

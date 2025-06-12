@@ -1,14 +1,25 @@
-import { AnimatePresence, motion } from "motion/react";
+import { Address } from "gill";
 import { useTokenInfo } from "~/hooks/resources";
+import { AnimatePresence, motion } from "motion/react";
 
 import { useDialog } from "~/state/dialog";
+import { useWalletStore } from "~/state/wallet";
 import { useWithdrawStore } from "~/state/withdraw";
 
-import { Address } from "~/model/web3js";
 import { roundCoin } from "~/utils/amount";
 
+import { hasCloudPermission } from "~/program/multisig/utils/member";
+
 export default function CoinsMain({ vaultAddress }: { vaultAddress: Address }) {
+  const { set } = useWithdrawStore();
+  const { onOpenChange } = useDialog("withdraw");
+  const { walletStorage, multisigStorage } = useWalletStore();
   const { data, isLoading, isError } = useTokenInfo(vaultAddress);
+
+  const hasAllPermissions = hasCloudPermission(
+    multisigStorage?.account?.members || [],
+    walletStorage?.address as Address,
+  );
 
   return (
     <div className="flex flex-1 flex-col gap-0 overflow-y-auto scroll-smooth scrollbar-hidden">
@@ -27,6 +38,11 @@ export default function CoinsMain({ vaultAddress }: { vaultAddress: Address }) {
               <Coin
                 key={token.mint}
                 token={token}
+                onClick={() => {
+                  if (!hasAllPermissions) return;
+                  set("token", token);
+                  onOpenChange(true);
+                }}
                 isLoading={isLoading || isError}
               />
             </motion.div>
@@ -37,10 +53,15 @@ export default function CoinsMain({ vaultAddress }: { vaultAddress: Address }) {
   );
 }
 
-function Coin({ token, isLoading }: { token: any; isLoading: boolean }) {
-  const { set } = useWithdrawStore();
-  const { onOpenChange } = useDialog("withdraw");
-
+function Coin({
+  token,
+  isLoading,
+  onClick,
+}: {
+  token: any;
+  isLoading: boolean;
+  onClick: () => void;
+}) {
   const { name, symbol, logoURI, amount, usdAmount } = token;
   const roundedAmount = amount ? roundCoin("token", Number(amount)) : "0.00";
   const roundedUsdAmount = usdAmount
@@ -49,10 +70,7 @@ function Coin({ token, isLoading }: { token: any; isLoading: boolean }) {
 
   return (
     <motion.div
-      onClick={() => {
-        set("token", token);
-        onOpenChange(true);
-      }}
+      onClick={onClick}
       whileHover={{
         backgroundColor: "var(--color-trn-hover)",
         transition: { duration: 0.6, delay: 0 },
@@ -74,8 +92,8 @@ function Coin({ token, isLoading }: { token: any; isLoading: boolean }) {
           <span className="font-semibold">
             {name === "Wrapped SOL" ? "Solana" : name}
           </span>
-          <span className="opacity-40 font-medium">
-            {roundedAmount}
+          <span className="opacity-40 font-medium flex flex-row gap-1">
+            <span>{roundedAmount}</span>
             <span>{symbol}</span>
           </span>
         </motion.span>

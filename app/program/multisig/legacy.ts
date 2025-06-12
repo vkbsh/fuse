@@ -1,5 +1,8 @@
 import * as multisig from "@sqds/multisig";
+import { PublicKey, TransactionMessage, TransactionInstruction } from "web3js1";
+
 import {
+  Address,
   AccountRole,
   IAccountMeta,
   IInstruction,
@@ -8,11 +11,6 @@ import {
   upgradeRoleToSigner,
   upgradeRoleToWritable,
 } from "gill";
-
-import { PublicKey, TransactionMessage, TransactionInstruction } from "web3js1";
-
-import { Address } from "~/model/web3js";
-
 // export type CompiledMsInstruction = {
 //   data: number[];
 //   programIdIndex: number;
@@ -33,6 +31,12 @@ import { Address } from "~/model/web3js";
 //   instructions: CompiledMsInstruction[];
 //   addressTableLookups: MessageAddressTableLookup[];
 // };
+
+export function addressFromLegacyPublicKey(
+  legacyPublicKey: PublicKey,
+): Address {
+  return getAddressDecoder().decode(legacyPublicKey.toBytes());
+}
 
 export function instructionFromLegacyInstruction(
   legacyInstruction: TransactionInstruction,
@@ -55,16 +59,6 @@ export function instructionFromLegacyInstruction(
     }),
     data: legacyInstruction.data,
   };
-}
-
-export function abbreviateAddress(address: Address) {
-  return `${address.slice(0, 4)}...${address.slice(-4)}`;
-}
-
-export function addressFromLegacyPublicKey(
-  legacyPublicKey: PublicKey,
-): Address {
-  return getAddressDecoder().decode(legacyPublicKey.toBytes());
 }
 
 export const { Permission, Permissions } = multisig.types;

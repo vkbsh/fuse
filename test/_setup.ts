@@ -1,4 +1,5 @@
 import * as multisig from "@sqds/multisig";
+import { Connection, Keypair, PublicKey, Signer } from "web3js1";
 
 import {
   getMintSize,
@@ -12,6 +13,7 @@ import {
 import {
   pipe,
   address,
+  Address,
   lamports,
   Commitment,
   KeyPairSigner,
@@ -31,9 +33,7 @@ import {
 } from "gill";
 
 import { getCreateAccountInstruction } from "gill/programs";
-import { Connection, Keypair, PublicKey, Signer } from "web3js1";
 
-import { Address } from "~/model/web3js";
 import { useRpcStore } from "~/state/rpc";
 
 type Permissions = {

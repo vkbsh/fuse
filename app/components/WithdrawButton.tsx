@@ -1,21 +1,20 @@
+import { Address } from "gill";
+
 import Button from "~/components/ui/Button";
 import { IconCircleArrow } from "~/components/ui/icons/IconCircleArrow";
 
-import { MemberPermissions } from "~/program/multisig/utils/parse-transaction";
-
 import { useDialog } from "~/state/dialog";
 import { useWalletStore } from "~/state/wallet";
+
+import { hasCloudPermission } from "~/program/multisig/utils/member";
 
 export default function WithdrawButton() {
   const { onOpenChange } = useDialog("withdraw");
   const { multisigStorage, walletStorage } = useWalletStore();
 
-  // TODO: Reuse in AutoReconnectWallet
-  const members = multisigStorage?.account?.members || [];
-  const hasAllPermissions = members.some(
-    (m) =>
-      m.key === walletStorage?.address &&
-      m.permissions?.mask === MemberPermissions.All,
+  const hasAllPermissions = hasCloudPermission(
+    multisigStorage?.account?.members || [],
+    walletStorage?.address as Address,
   );
 
   return (

@@ -1,6 +1,6 @@
-import * as React from "react";
+import { useState, useRef, useLayoutEffect } from "react";
+import { motion } from "motion/react";
 import * as ToastPrimitive from "@radix-ui/react-toast";
-import { motion, AnimatePresence } from "motion/react";
 
 import { IconClose } from "~/components/ui/icons/IconClose";
 import { useToastStore } from "~/state/toast";
@@ -10,8 +10,8 @@ const ANIMATION_OUT_DURATION = 350;
 
 export const Toasts = () => {
   const { toasts, removeToast } = useToastStore();
-  const viewportRef = React.useRef<HTMLDivElement>(null);
-  const [isHovering, setIsHovering] = React.useState(false);
+  const viewportRef = useRef(null);
+  const [isHovering, setIsHovering] = useState(false);
 
   const toastsArray = Array.from(toasts);
 
@@ -66,7 +66,6 @@ const ToastStatusIcon = ({
 type Toast = {
   status: "default" | "success" | "error";
   open: boolean;
-  type?: string;
   duration?: number;
   description: string;
 };
@@ -81,10 +80,10 @@ const Toast = (props: {
 }) => {
   const { onOpenChange, toast, id, index, isHovering, total, ...toastProps } =
     props;
-  const ref = React.useRef<HTMLDivElement>(null);
+  const ref = useRef(null);
   const isFront = index === 0;
 
-  React.useLayoutEffect(() => {
+  useLayoutEffect(() => {
     if (ref.current) {
       useToastStore.getState().setToastElement(id, ref.current);
     }
@@ -100,7 +99,6 @@ const Toast = (props: {
     <ToastPrimitive.Root
       {...toastProps}
       ref={ref}
-      type={toast.type}
       duration={toast.duration || 3000}
       onOpenChange={onOpenChange}
       asChild

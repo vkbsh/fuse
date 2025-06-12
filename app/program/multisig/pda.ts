@@ -1,4 +1,5 @@
 import {
+  Address,
   getU8Codec,
   getU64Codec,
   getU8Encoder,
@@ -7,7 +8,6 @@ import {
   getProgramDerivedAddress,
 } from "gill";
 
-import { Address } from "~/model/web3js";
 import { SQUADS_PROGRAM_ID } from "~/program/multisig/address";
 
 export const SEED_VAULT = getUtf8Encoder().encode("vault");

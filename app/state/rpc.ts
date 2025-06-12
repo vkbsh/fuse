@@ -7,7 +7,7 @@ import {
   createSolanaClient,
   SolanaRpcApiFromTransport,
   RpcTransportFromClusterUrl,
-  SendAndConfirmTransactionWithBlockhashLifetimeFunction,
+  SendAndConfirmTransactionWithSignersFunction,
 } from "gill";
 
 const VITE_RPC_URL = import.meta.env.VITE_RPC_URL;
@@ -20,7 +20,7 @@ type RpcState = {
     RpcTransportFromClusterUrl<ModifiedClusterUrl>
   >;
   setRpc: (rpc: Rpc<SolanaRpcApi>) => void;
-  sendAndConfirmTransaction: SendAndConfirmTransactionWithBlockhashLifetimeFunction;
+  sendAndConfirmTransaction: SendAndConfirmTransactionWithSignersFunction;
 };
 
 export const useRpcStore = create<RpcState>((set) => {

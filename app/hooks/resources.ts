@@ -1,4 +1,4 @@
-import { address } from "gill";
+import { address, Address } from "gill";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -10,7 +10,6 @@ import {
 import { getBalance } from "~/service/balance";
 import { fetchTokenMeta, fetchTokenPrice } from "~/service/token";
 
-import { Address } from "~/model/web3js";
 import { getAmount } from "~/utils/amount";
 
 export type QueryKey =
@@ -63,22 +62,9 @@ export function useTransactions(multisigAddress: Address) {
     queryKey: [queryKeys.transaction, multisigAddress],
     staleTime: Infinity,
     queryFn: async () => {
-      console.log("Fetching transactions");
       return getTransactionsByMultisig(multisigAddress);
     },
   });
-}
-
-export function refetchTransactions(multisigAddress: Address) {
-  const queryClient = useQueryClient();
-  console.log("Refetching transactions");
-
-  return async () => {
-    console.log("Refetching inside");
-    return queryClient.refetchQueries({
-      queryKey: [queryKeys.transaction, multisigAddress],
-    });
-  };
 }
 
 export function useBalance(vaultAddress: Address) {
@@ -153,16 +139,15 @@ export const useTokenInfo = (vaultAddress: Address) => {
   const data = meta.map((m, i) => {
     return {
       ...m.data,
-      isAllFetched,
       ata: tokens[i].ata,
       mint: tokens[i].mint,
       amount: getAmount({
-        decimals: m.data?.decimals,
+        decimals: Number(m.data?.decimals) || 0,
         amount: tokens[i].amount ? Number(tokens[i].amount) : 0,
       }),
       usdAmount: getAmount({
         price: price[i].data || 0,
-        decimals: m.data?.decimals,
+        decimals: Number(m.data?.decimals) || 0,
         amount: tokens[i].amount ? Number(tokens[i].amount) : 0,
       }),
     };
@@ -175,8 +160,38 @@ export const useTokenInfo = (vaultAddress: Address) => {
 
   return {
     data,
+    totalAmount,
     isError,
     isLoading,
-    totalAmount,
+    isAllFetched,
   };
 };
+
+export function refetchTransactions(multisigAddress: Address) {
+  const queryClient = useQueryClient();
+
+  return async () => {
+    console.log("Refetching transactions");
+
+    return queryClient.refetchQueries({
+      queryKey: [queryKeys.transaction, multisigAddress],
+    });
+  };
+}
+
+export function refetchBalance(vaultAddress: Address) {
+  const queryClient = useQueryClient();
+
+  return async () => {
+    console.log("Refetching balance");
+
+    return Promise.all([
+      queryClient.refetchQueries({
+        queryKey: [queryKeys.balance, vaultAddress],
+      }),
+      queryClient.refetchQueries({
+        queryKey: [queryKeys.tokenPrice],
+      }),
+    ]);
+  };
+}

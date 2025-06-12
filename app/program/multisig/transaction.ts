@@ -9,6 +9,7 @@ import {
 import {
   pipe,
   address,
+  Address,
   IInstruction,
   compileTransaction,
   createTransactionMessage,
@@ -35,7 +36,6 @@ import {
 
 import { createVaultInstruction } from "~/program/multisig/legacy";
 
-import { Address } from "~/model/web3js";
 import { useRpcStore } from "~/state/rpc";
 
 const rpc = useRpcStore.getState().rpc;
@@ -148,9 +148,9 @@ export async function createTransferTokenInnerMessage({
 
   const createATAIx = getCreateAssociatedTokenIdempotentInstruction({
     ata: toAta,
-    payer: authority,
     owner: toAddress,
     mint: fromToken.mint,
+    payer: address(authority),
     tokenProgram: address(mintInfo?.owner as Address),
   });
 
@@ -262,15 +262,10 @@ export async function proposalApprove({
   memberAddress: Address;
   transactionIndex: bigint;
 }) {
-  const proposalPda = await getProposalPda({
-    multisigAddress: multisigPda,
-    transactionIndex,
-  });
-
-  const proposalApproveTransactionIx = createProposalApproveInstruction({
+  const proposalApproveTransactionIx = await createProposalApproveInstruction({
     multisigPda,
-    proposalPda,
     memberAddress,
+    transactionIndex,
   });
 
   return compileTransactionWithIx({

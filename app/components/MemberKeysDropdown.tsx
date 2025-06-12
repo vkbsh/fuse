@@ -7,27 +7,16 @@ import { IconConnect } from "~/components/ui/icons/IconConnect";
 import { IconDisconnect } from "~/components/ui/icons/IconDisconnect";
 import { IconChevronDown } from "~/components/ui/icons/IconChevronDown";
 
-import { MemberPermissions } from "~/program/multisig/utils/parse-transaction";
-
 import { useDialog } from "~/state/dialog";
 import { LSWallet, useWalletStore } from "~/state/wallet";
 
 import { abbreviateAddress } from "~/utils/address";
 
-const CLOUD_KEY = "Cloud Key";
-const RECOVERY_KEY = "Recovery Key";
-
-function getPermissionLabel(permissions?: number) {
-  const isAllPermissions = MemberPermissions.All === permissions;
-  const isVotePermissions = MemberPermissions.Vote === permissions;
-  const permissionLabel = isAllPermissions
-    ? CLOUD_KEY
-    : isVotePermissions
-      ? RECOVERY_KEY
-      : "";
-
-  return permissionLabel;
-}
+import {
+  getPermissionLabel,
+  CLOUD_KEY_LABEL,
+  RECOVERY_KEY_LABEL,
+} from "~/program/multisig/utils/member";
 
 export default function MemberKeysDropdown() {
   const { onOpenChange } = useDialog("connectWallet");
@@ -37,10 +26,8 @@ export default function MemberKeysDropdown() {
     ...(walletHistory || [])
       .map((wallet) => {
         const members = multisigStorage?.account?.members || [];
-        const member = members.find((m) => m.key === wallet.address);
 
-        const permission = member?.permissions?.mask;
-        const permissionLabel = getPermissionLabel(permission);
+        const permissionLabel = getPermissionLabel(members, wallet.address);
 
         return {
           ...wallet,
@@ -50,9 +37,9 @@ export default function MemberKeysDropdown() {
       })
       .sort((a, b) => a.name.localeCompare(b.name))
       .sort((a, b) => {
-        const order = {
-          [CLOUD_KEY]: 0,
-          [RECOVERY_KEY]: 1,
+        const order: { [key: string]: number } = {
+          [CLOUD_KEY_LABEL]: 0,
+          [RECOVERY_KEY_LABEL]: 1,
         };
 
         return order[a.permissionLabel] - order[b.permissionLabel];

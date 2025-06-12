@@ -1,6 +1,7 @@
 import { AccountMeta, PublicKey } from "web3js1";
 
 import {
+  Address,
   AccountRole,
   IInstruction,
   isWritableRole,
@@ -20,7 +21,6 @@ import { SQUADS_PROGRAM_ID } from "~/program/multisig/address";
 
 import { getEphemeralSignerPda, getProposalPda } from "~/program/multisig/pda";
 
-import { Address } from "~/model/web3js";
 import { VaultTransactionMessage } from "./legacy";
 
 const discriminator = {

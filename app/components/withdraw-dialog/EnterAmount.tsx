@@ -1,3 +1,4 @@
+import { Address } from "gill";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useDebounce } from "@uidotdev/usehooks";
@@ -9,7 +10,6 @@ import SelectToken from "~/components/SelectToken";
 import { useTokenPrice } from "~/hooks/resources";
 import { useWithdrawStore } from "~/state/withdraw";
 
-import { Address } from "~/model/web3js";
 import { getRoundedToken, getRoundedSOL } from "~/utils/amount";
 
 const EnterAmount = ({ vaultAddress }: { vaultAddress: Address }) => {
@@ -19,7 +19,9 @@ const EnterAmount = ({ vaultAddress }: { vaultAddress: Address }) => {
   const debounceValue = useDebounce(value, 700);
 
   const { data: price } = useTokenPrice(token?.mint as Address) || {};
-  const calculatedAmount = !error ? Number(debounceValue) * price : 0;
+  const calculatedAmount = !error
+    ? Number(debounceValue) * Number(price || 0)
+    : 0;
 
   const tokenAmount = Number(token?.amount);
   const maxAmount =

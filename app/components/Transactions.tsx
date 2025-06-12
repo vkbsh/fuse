@@ -1,9 +1,12 @@
+import { Address } from "gill";
 import { motion, AnimatePresence } from "motion/react";
 
 import Transaction from "~/components/Transaction";
-import { useTransactions, useMultisigAccount } from "~/hooks/resources";
-
-import { Address } from "~/model/web3js";
+import {
+  useTokensMeta,
+  useTransactions,
+  useMultisigAccount,
+} from "~/hooks/resources";
 
 export type Status = "ready" | "executed" | "cancelled";
 
@@ -15,23 +18,47 @@ export default function Transactions({
   const { data, isLoading } = useTransactions(multisigAddress);
   const { data: multisigAccount } = useMultisigAccount(multisigAddress);
 
-  let transactions =
+  let _transactions =
+    // TODO: Move to useTransactions
     data
       ?.flat()
       .filter(Boolean)
       .sort((a, b) => {
-        return Number(b.timestamp) - Number(a.timestamp);
+        return Number(b?.transactionIndex) - Number(a?.transactionIndex);
       }) || [];
 
   if (multisigAccount?.staleTransactionIndex) {
-    transactions = transactions.filter((txData) =>
-      txData?.transactionIndex > multisigAccount?.staleTransactionIndex
+    // TODO: Move to useTransactions
+    _transactions = _transactions.filter((txData) =>
+      Number(txData?.transactionIndex) > multisigAccount?.staleTransactionIndex
         ? true
         : false,
     );
   }
 
-  console.log("isLoading", isLoading);
+  const tokens: Set<Address> = new Set();
+
+  _transactions.forEach((txData) => {
+    const { mintAddress } = txData?.message;
+
+    tokens.add(mintAddress);
+  });
+
+  const tokensMeta = useTokensMeta(Array.from(tokens));
+
+  const transactions = _transactions.map((txData) => {
+    const { mintAddress } = txData?.message;
+    const tokenMeta = tokensMeta.find((t) => t.data?.address === mintAddress);
+
+    return {
+      ...txData,
+      message: {
+        ...txData?.message,
+        mint: tokenMeta?.data,
+        amount: txData?.message?.amount / 10 ** tokenMeta?.data?.decimals,
+      },
+    };
+  });
 
   const rentCollectorAddress = multisigAccount?.rentCollector as Address;
 
@@ -61,7 +88,7 @@ export default function Transactions({
         {transactions?.map((txData, i) => {
           return (
             <motion.div
-              key={i}
+              key={txData.timestamp + txData.status}
               layout
               initial={{
                 y: -10,
@@ -77,14 +104,14 @@ export default function Transactions({
               }}
             >
               <Transaction
-                status={txData?.status}
-                creator={txData?.creator}
-                message={txData?.message}
-                approved={txData?.approved}
-                rejected={txData?.rejected}
-                cancelled={txData?.cancelled}
-                timestamp={txData?.timestamp}
-                transactionIndex={txData?.transactionIndex}
+                status={txData.status}
+                creator={txData.creator as Address}
+                message={txData.message}
+                rejected={txData.rejected || []}
+                approved={txData.approved || []}
+                cancelled={txData.cancelled || []}
+                timestamp={txData.timestamp || 0}
+                transactionIndex={txData.transactionIndex || 0}
                 rentCollectorAddress={rentCollectorAddress}
               />
             </motion.div>

@@ -1,5 +1,6 @@
-import { AnimatePresence, motion } from "motion/react";
+import { Address } from "gill";
 import { ReactNode, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { UiWalletAccount } from "@wallet-standard/react";
 import { useWalletAccountTransactionSendingSigner } from "@solana/react";
 import { address, signAndSendTransactionMessageWithSigners } from "gill";
@@ -25,7 +26,6 @@ import { refetchTransactions } from "~/hooks/resources";
 
 import { cn } from "~/utils/tw";
 import { toast } from "~/state/toast";
-import { Address } from "~/model/web3js";
 import { abbreviateAddress } from "~/utils/address";
 
 export type Token = {
@@ -41,6 +41,7 @@ export default function Transaction({
   message,
   approved,
   cancelled,
+  rejected,
   timestamp,
   transactionIndex,
   rentCollectorAddress,
@@ -52,6 +53,7 @@ export default function Transaction({
   rentCollectorAddress: Address;
   approved: Address[];
   cancelled: Address[];
+  rejected: Address[];
   transactionIndex: number;
 }) {
   const { walletStorage, multisigStorage } = useWalletStore();

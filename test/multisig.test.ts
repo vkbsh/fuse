@@ -2,6 +2,7 @@ import { describe, test, assert, beforeAll } from "vitest";
 
 import {
   address,
+  Address,
   parseBase64RpcAccount,
   createKeyPairFromBytes,
   createSignerFromKeyPair,
@@ -43,7 +44,6 @@ import {
   generateLegacyKeyPair,
 } from "./_setup";
 
-import { Address } from "~/model/web3js";
 // TODO: Add correct assertions
 // TODO: Use rpc.getAccountInfo, getBalance, etc.  to retrieve accounts and check balances
 describe("Interacting with the Multisig Program", async () => {

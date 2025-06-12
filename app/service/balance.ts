@@ -1,11 +1,25 @@
-import { address } from "gill";
+import { address, Address } from "gill";
 import { TOKEN_PROGRAM_ADDRESS } from "@solana-program/token";
 
-import type { Address } from "~/model/web3js";
-import { Balance, SplTokenBalance, SplTokenBalances } from "~/model/balance";
 import { useRpcStore } from "~/state/rpc";
 
 const { rpc } = useRpcStore.getState();
+
+type SplTokenBalance = {
+  amount: number;
+  decimals: number;
+  address: Address;
+  mint: Address;
+  programId: Address;
+};
+
+type SplTokenBalances = {
+  [mintAddress: string]: SplTokenBalance;
+};
+
+type Balance = {
+  spl: SplTokenBalances;
+};
 
 export async function getBalance(vault: Address): Promise<Balance> {
   const [lamports, tokenAccounts] = await Promise.all([
