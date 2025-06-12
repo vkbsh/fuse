@@ -2,10 +2,9 @@ import { address } from "gill";
 import { useEffect } from "react";
 import { useConnect, useWallets } from "@wallet-standard/react";
 
+import { toast } from "~/state/toast";
 import { useWalletStore } from "~/state/wallet";
 import { useWalletByName } from "~/hooks/wallet";
-
-import { toast } from "~/state/toast";
 import { abbreviateAddress } from "~/utils/address";
 
 export default function AutoReconnectWallet({ name }: { name: string }) {

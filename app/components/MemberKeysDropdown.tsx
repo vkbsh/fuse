@@ -13,9 +13,9 @@ import { LSWallet, useWalletStore } from "~/state/wallet";
 import { abbreviateAddress } from "~/utils/address";
 
 import {
-  getPermissionLabel,
   CLOUD_KEY_LABEL,
   RECOVERY_KEY_LABEL,
+  getPermissionLabel,
 } from "~/program/multisig/utils/member";
 
 export default function MemberKeysDropdown() {
@@ -26,7 +26,6 @@ export default function MemberKeysDropdown() {
     ...(walletHistory || [])
       .map((wallet) => {
         const members = multisigStorage?.account?.members || [];
-
         const permissionLabel = getPermissionLabel(members, wallet.address);
 
         return {

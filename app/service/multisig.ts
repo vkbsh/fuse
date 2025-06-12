@@ -11,6 +11,7 @@ import {
 } from "gill";
 
 import {
+  MultisigAccount,
   getMultisigAccountCodec,
   getProposalAccountCodec,
   getVaultTransactionCodec,
@@ -30,10 +31,15 @@ import {
 
 import { parseTransactionMessage } from "~/program/multisig/utils/parse-transaction";
 
-import { Wallet } from "~/model/wallet";
 import { useRpcStore } from "~/state/rpc";
 
 const { rpc } = useRpcStore.getState();
+
+export type Wallet = {
+  address: Address;
+  defaultVault: Address;
+  account: MultisigAccount;
+};
 
 export async function getMultisigAccount(multisigAddress: Address) {
   const multisigAccountInfo = await rpc

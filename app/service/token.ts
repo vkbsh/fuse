@@ -1,24 +1,16 @@
 import { Address } from "gill";
 
+export type TokenMeta = {
+  name: string;
+  symbol: string;
+  logoURI: string;
+  decimals: number;
+  address: Address;
+};
+
 const tokenBaseUrl = "https://lite-api.jup.ag";
 const tokenMetaUrl = `${tokenBaseUrl}/tokens/v1/token`;
 const tokenPriceUrl = `${tokenBaseUrl}/price/v2`;
-
-export type TokenMeta = {
-  address: Address;
-  name: string;
-  symbol: string;
-  decimals: number;
-  logoURI: string;
-  tags: string[];
-  daily_volume: number;
-  created_at: string;
-  freeze_authority: null;
-  mint_authority: null;
-  permanent_delegate: null;
-  minted_at: string;
-  extensions: { coingeckoId: string };
-};
 
 export const fetchTokenMeta = async (
   mint: string,
