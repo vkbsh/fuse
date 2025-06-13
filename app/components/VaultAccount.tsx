@@ -1,7 +1,6 @@
 import { Address } from "gill";
 
 import { IconLogo } from "~/components/ui/icons/IconLogo";
-
 import { abbreviateAddress } from "~/utils/address";
 
 export default function VaultAccount({

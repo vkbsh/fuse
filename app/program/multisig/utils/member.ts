@@ -1,16 +1,28 @@
 import { Address } from "gill";
 
-import { Member, MemberPermissions } from "~/program/multisig/codec";
+export const MemberPermissions = {
+  All: 7, // Cloud Key
+  Vote: 2, // Recovery Key
+};
+
+export type Permissions = {
+  mask: number;
+};
+
+export type Member = {
+  key: Address;
+  permissions: Permissions;
+};
 
 export const CLOUD_KEY_LABEL = "Cloud Key";
 export const RECOVERY_KEY_LABEL = "Recovery Key";
 
-export function isMember(members: Member[], address: Address) {
+export function isKeyMember(members: Member[], address: Address) {
   return members.some((m) => m.key === address);
 }
 
 export function hasCloudPermission(members: Member[], address: Address) {
-  if (!isMember(members, address)) return false;
+  if (!isKeyMember(members, address)) return false;
 
   const member = members.find((m) => m.key === address);
 
@@ -20,7 +32,7 @@ export function hasCloudPermission(members: Member[], address: Address) {
 }
 
 export function hasRecoveryPermission(members: Member[], address: Address) {
-  if (!isMember(members, address)) return false;
+  if (!isKeyMember(members, address)) return false;
 
   const member = members.find((m) => m.key === address);
 
@@ -33,7 +45,7 @@ export function getPermissionLabel(
   members: Member[],
   address: Address,
 ): string {
-  if (!isMember(members, address)) return "";
+  if (!isKeyMember(members, address)) return "";
   const member = members.find((m) => m.key === address);
   const permission = member?.permissions?.mask;
 

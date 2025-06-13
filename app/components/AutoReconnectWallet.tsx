@@ -7,6 +7,8 @@ import { useWalletStore } from "~/state/wallet";
 import { useWalletByName } from "~/hooks/wallet";
 import { abbreviateAddress } from "~/utils/address";
 
+import { isKeyMember } from "~/program/multisig/utils/member";
+
 export default function AutoReconnectWallet({ name }: { name: string }) {
   const {
     walletHistory,
@@ -18,7 +20,6 @@ export default function AutoReconnectWallet({ name }: { name: string }) {
     removewalletStorage,
   } = useWalletStore();
   const wallets = useWallets();
-
   const wallet = useWalletByName(name);
 
   if (!wallet) {
@@ -56,7 +57,7 @@ export default function AutoReconnectWallet({ name }: { name: string }) {
         const [account] = await connect({ silent: true });
 
         if (wallet && account?.address) {
-          const isMember = members.some((m) => m.key === account.address);
+          const isMember = isKeyMember(members, address(account.address));
 
           if (isMember) {
             if (account.address !== walletStorage?.address) {

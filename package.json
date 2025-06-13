@@ -1,18 +1,11 @@
 {
-  "name": "fuse-web-ui",
-  "private": true,
+  "name": "fuse-web",
   "type": "module",
-  "author": "Vitaly Kibish <vitalykibish@gmail.com>",
-  "homepage": "https://github.com/vkbsh/fuse#readme",
-  "bugs": {
-    "url": "https://github.com/vkbsh/fuse/issues"
+  "private": true,
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=20.0.0"
   },
-  "contributors": [
-    {
-      "name": "Vitaly Kibish",
-      "url": "https://github.com/vkbsh"
-    }
-  ],
   "scripts": {
     "build": "remix vite:build",
     "dev": "remix vite:dev",
@@ -71,7 +64,33 @@
     "vite-plugin-node-polyfills": "^0.23.0",
     "typescript": "^5.1.6"
   },
-  "engines": {
-    "node": ">=20.0.0"
+  "keywords": [
+    "fuse",
+    "web",
+    "smart",
+    "wallet",
+    "multisig",
+    "solana"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/vkbsh/fuse#readme",
+  "description": "Web client for Fuse - Smart Wallet",
+  "author": {
+    "name": "Vitaly Kibish",
+    "email": "vitalykibish@gmail.com",
+    "url": "https://github.com/vkbsh"
+  },
+  "contributors": [
+    {
+      "name": "Vitaly Kibish",
+      "url": "https://github.com/vkbsh"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vkbsh/fuse"
+  },
+  "bugs": {
+    "url": "https://github.com/vkbsh/fuse/issues"
   }
 }

@@ -25,6 +25,7 @@ export const meta: MetaFunction = () => {
 
 export default function Index() {
   const { multisigStorage, walletStorage } = useWalletStore();
+
   const multisigAddress = multisigStorage?.address as Address;
   const vaultAddress = multisigStorage?.defaultVault as Address;
 

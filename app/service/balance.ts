@@ -6,10 +6,10 @@ import { useRpcStore } from "~/state/rpc";
 const { rpc } = useRpcStore.getState();
 
 type SplTokenBalance = {
+  mint: Address;
   amount: number;
   decimals: number;
   address: Address;
-  mint: Address;
   programId: Address;
 };
 
@@ -20,6 +20,10 @@ type SplTokenBalances = {
 type Balance = {
   spl: SplTokenBalances;
 };
+
+export const SOL_MINT_ADDRESS = address(
+  "So11111111111111111111111111111111111111112",
+);
 
 export async function getBalance(vault: Address): Promise<Balance> {
   const [lamports, tokenAccounts] = await Promise.all([
@@ -48,7 +52,7 @@ export async function getBalance(vault: Address): Promise<Balance> {
         data: {
           parsed: {
             info: {
-              mint: "So11111111111111111111111111111111111111112",
+              mint: SOL_MINT_ADDRESS,
               tokenAmount: {
                 amount: Number(lamports),
                 decimals: 9,

@@ -10,7 +10,7 @@ import { roundCoin } from "~/utils/amount";
 
 import { hasCloudPermission } from "~/program/multisig/utils/member";
 
-export default function CoinsMain({ vaultAddress }: { vaultAddress: Address }) {
+export default function Coins({ vaultAddress }: { vaultAddress: Address }) {
   const { set } = useWithdrawStore();
   const { onOpenChange } = useDialog("withdraw");
   const { walletStorage, multisigStorage } = useWalletStore();
@@ -40,6 +40,7 @@ export default function CoinsMain({ vaultAddress }: { vaultAddress: Address }) {
                 token={token}
                 onClick={() => {
                   if (!hasAllPermissions) return;
+
                   set("token", token);
                   onOpenChange(true);
                 }}

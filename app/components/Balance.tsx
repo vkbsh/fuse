@@ -2,7 +2,6 @@ import { Address } from "gill";
 import { motion, AnimatePresence } from "motion/react";
 
 import { useTokenInfo } from "~/hooks/resources";
-
 import { roundCoin } from "~/utils/amount";
 
 export default function BalanceComponent({
@@ -21,10 +20,9 @@ export default function BalanceComponent({
 function TotalBalance({ vaultAddress }: { vaultAddress: Address }) {
   const { totalAmount, isLoading, isError } = useTokenInfo(vaultAddress);
 
+  const isLoadingOrError = isLoading || isError;
   const roundedAmount = totalAmount ? roundCoin("usd", totalAmount) : "0.00";
   const roundedAmounArray = String(roundedAmount).split("");
-
-  const isLoadingOrError = isLoading || isError;
 
   return (
     <div className="text-[45px] font-bold">

@@ -48,6 +48,7 @@ export async function getMultisigInfo({
   multisigPda: PublicKey;
 }) {
   const multisigInfo = await multisig.accounts.Multisig.fromAccountAddress(
+    // @ts-expect-error: incompatible type of Connection (solana web3js1 squads vs fuse)
     connection,
     multisigPda,
   );
@@ -73,7 +74,7 @@ export async function createMultisig({
   createKey,
   multisigPda,
 }: {
-  members: Array<{ key: Address; permissions: Permissions }>;
+  members: Array<{ key: Address; permissions: { mask: number } }>;
   creator: Signer;
   createKey: Signer;
   multisigPda: PublicKey;
@@ -82,6 +83,7 @@ export async function createMultisig({
 
   const programConfig =
     await multisig.accounts.ProgramConfig.fromAccountAddress(
+      // @ts-expect-error: incompatible type of Connection (solana web3js1 squads vs fuse)
       connection,
       programConfigPda,
     );
@@ -95,6 +97,7 @@ export async function createMultisig({
     const signature = await multisig.rpc.multisigCreateV2({
       creator,
       createKey,
+      // @ts-expect-error: incompatible type of Connection (solana web3js1 squads vs fuse)
       connection,
       multisigPda,
       timeLock: 0,
@@ -115,6 +118,7 @@ export const airdrop = async (
   recipientAddress: Address,
   putativeLamports: bigint = lamports(BigInt(LAMPORTS_PER_SOL)),
 ) => {
+  // @ts-expect-error: incompatible type of Connection (solana web3js1 squads vs fuse)
   await airdropFactory(client)({
     recipientAddress,
     commitment: "confirmed",
@@ -227,6 +231,7 @@ const signAndSendTransaction = async (
   const signedTransaction =
     await signTransactionMessageWithSigners(transactionMessage);
   const signature = getSignatureFromTransaction(signedTransaction);
+  // @ts-expect-error: incompatible type of Connection (solana web3js1 squads vs fuse)
   await sendAndConfirmTransactionFactory(client)(signedTransaction, {
     commitment,
   });

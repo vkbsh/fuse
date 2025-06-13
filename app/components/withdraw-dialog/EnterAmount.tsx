@@ -1,6 +1,6 @@
+import { useState } from "react";
 import { Address } from "gill";
 import { motion } from "motion/react";
-import { useEffect, useState } from "react";
 import { useDebounce } from "@uidotdev/usehooks";
 
 import Input from "~/components/ui/Input";
@@ -9,22 +9,21 @@ import SelectToken from "~/components/SelectToken";
 
 import { useTokenPrice } from "~/hooks/resources";
 import { useWithdrawStore } from "~/state/withdraw";
-
 import { getRoundedToken, getRoundedSOL } from "~/utils/amount";
 
 const EnterAmount = ({ vaultAddress }: { vaultAddress: Address }) => {
-  const [error, setError] = useState("");
-  const { set, amount, token } = useWithdrawStore();
+  const { set, amount, token, addError, removeError, errors } =
+    useWithdrawStore();
   const [value, setValue] = useState(amount ? amount + "" : "");
   const debounceValue = useDebounce(value, 700);
 
   const { data: price } = useTokenPrice(token?.mint as Address) || {};
-  const calculatedAmount = !error
+  const calculatedAmount = !errors?.amount
     ? Number(debounceValue) * Number(price || 0)
     : 0;
 
   const tokenAmount = Number(token?.amount);
-  const maxAmount =
+  const maxAmountLabel =
     token?.symbol?.toLocaleLowerCase() === "sol"
       ? getRoundedSOL(tokenAmount)
       : getRoundedToken(tokenAmount);
@@ -42,34 +41,39 @@ const EnterAmount = ({ vaultAddress }: { vaultAddress: Address }) => {
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const validatedValue = validateInput(e.target.value);
 
-    setError("");
+    removeError("amount");
     setValue(validatedValue);
-    set("amount", Number(validatedValue));
   };
 
   const setMax = () => {
     const max = Number(token?.amount);
     if (!max) return;
 
-    set("amount", max);
     setValue(token?.amount + "");
   };
 
   const validateAmount = () => {
+    let error = "";
+
     if (Number(value) > Number(token?.amount)) {
-      return "Invalid amount (not enough balance)";
+      error = "Invalid amount (not enough balance)";
     }
 
-    if (Number(value) < 1 / 10 ** (token?.decimals || 6)) {
-      return "Invalid amount (too small)";
+    if (Number(value) < 1 / 10 ** Number(token?.decimals) || 0) {
+      error = "Invalid amount (too small)";
     }
 
-    return "";
+    if (Number(value) === 0) {
+      error = "Invalid amount (zero)";
+    }
+
+    if (error) {
+      addError("amount", error);
+    } else {
+      set("amount", Number(value));
+      removeError("amount");
+    }
   };
-
-  useEffect(() => {
-    setError(validateAmount());
-  }, [value]);
 
   return (
     <>
@@ -81,30 +85,32 @@ const EnterAmount = ({ vaultAddress }: { vaultAddress: Address }) => {
               id="amount"
               value={value}
               onChange={onChange}
+              onBlur={validateAmount}
               className="text-2xl"
               placeholder="0.00"
+              error={!!errors?.amount}
             />
+            {errors?.amount && (
+              <motion.span
+                initial={{
+                  y: -10,
+                  opacity: 0,
+                }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{
+                  y: 10,
+                  opacity: 0,
+                }}
+                className="absolute w-full text-xs text-status-error -bottom-6 text-nowrap"
+              >
+                {errors?.amount}
+              </motion.span>
+            )}
           </div>
         </label>
         <Button onClick={setMax} size="md" variant="max">
           MAX
         </Button>
-        {error && (
-          <motion.span
-            initial={{
-              opacity: 0,
-              y: -10,
-            }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{
-              opacity: 0,
-              y: 10,
-            }}
-            className="absolute w-full text-xs text-status-error -bottom-6"
-          >
-            {error}
-          </motion.span>
-        )}
       </div>
       <div className="flex flex-row gap-2 items-center justify-between mt-2 text-white/60">
         <motion.span
@@ -125,7 +131,7 @@ const EnterAmount = ({ vaultAddress }: { vaultAddress: Address }) => {
         >
           ${calculatedAmount?.toFixed(2)}{" "}
         </motion.span>
-        <span>{maxAmount}</span>
+        <span>{maxAmountLabel}</span>
       </div>
     </>
   );

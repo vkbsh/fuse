@@ -11,7 +11,6 @@ import {
 } from "gill";
 
 import {
-  MultisigAccount,
   getMultisigAccountCodec,
   getProposalAccountCodec,
   getVaultTransactionCodec,
@@ -35,10 +34,17 @@ import { useRpcStore } from "~/state/rpc";
 
 const { rpc } = useRpcStore.getState();
 
-export type Wallet = {
+type Member = {
+  key: Address;
+  permissions: { mask: number };
+};
+
+type Wallet = {
   address: Address;
   defaultVault: Address;
-  account: MultisigAccount;
+  account: {
+    members: Member[];
+  };
 };
 
 export async function getMultisigAccount(multisigAddress: Address) {
@@ -66,10 +72,10 @@ type Transaction = {
   status: any;
   message: any;
   timestamp: number;
-  creator: Address | null;
   approved: Address[];
   rejected: Address[];
   cancelled: Address[];
+  creator: Address | null;
   transactionIndex: number;
 };
 
@@ -88,8 +94,6 @@ export async function getTransactionsByMultisig(keyAddress: Address | null) {
       await getTransactionsByMultisigAndIndex(keyAddress, 1),
       await getTransactionsByMultisigAndIndex(keyAddress, 2),
       await getTransactionsByMultisigAndIndex(keyAddress, 3),
-      await getTransactionsByMultisigAndIndex(keyAddress, 4),
-      await getTransactionsByMultisigAndIndex(keyAddress, 5),
     ]);
 
     return transactions;

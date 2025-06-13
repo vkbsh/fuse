@@ -7,10 +7,16 @@ import {
   getTransactionsByMultisig,
 } from "~/service/multisig";
 
-import { getBalance } from "~/service/balance";
-import { fetchTokenMeta, fetchTokenPrice } from "~/service/token";
-
 import { getAmount } from "~/utils/amount";
+import { getBalance } from "~/service/balance";
+import { fetchTokenMeta, fetchTokenPrice, TokenMeta } from "~/service/token";
+
+export type TokenData = TokenMeta & {
+  ata: Address;
+  mint: Address;
+  amount: number;
+  usdAmount: number;
+};
 
 export type QueryKey =
   | "balance"
@@ -126,8 +132,6 @@ export const useTokenInfo = (vaultAddress: Address) => {
       };
     });
 
-  tokens;
-
   const meta = useTokensMeta(tokens.map((t) => t.mint));
   const price = useTokensPrice(tokens.map((t) => t.mint));
 
@@ -151,7 +155,7 @@ export const useTokenInfo = (vaultAddress: Address) => {
         amount: tokens[i].amount ? Number(tokens[i].amount) : 0,
       }),
     };
-  });
+  }) as TokenData[];
 
   const totalAmount = data.reduce(
     (acc, token) => acc + (token?.usdAmount || 0),
@@ -160,9 +164,9 @@ export const useTokenInfo = (vaultAddress: Address) => {
 
   return {
     data,
-    totalAmount,
     isError,
     isLoading,
+    totalAmount,
     isAllFetched,
   };
 };

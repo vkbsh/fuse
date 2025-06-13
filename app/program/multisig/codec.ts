@@ -1,6 +1,4 @@
 import {
-  Codec,
-  Address,
   getU8Codec,
   getU16Codec,
   getU32Codec,
@@ -13,52 +11,23 @@ import {
   getStructCodec,
   getBooleanCodec,
   getAddressCodec,
-  OptionOrNullable,
   getNullableCodec,
-  ReadonlyUint8Array,
   addCodecSizePrefix,
   getDiscriminatedUnionCodec,
 } from "gill";
 
-export const MemberPermissions = {
-  All: 7, // Cloud Key
-  Vote: 2, // Recovery Key
-};
-
-export type Permissions = {
-  mask: number;
-};
-
-export type Member = {
-  key: Address;
-  permissions: Permissions;
-};
-
-function getPermissionsCodec(): Codec<Permissions> {
+function getPermissionsCodec() {
   return getStructCodec([["mask", getU8Codec()]]);
 }
 
-function getMemberCodec(): Codec<Member> {
+function getMemberCodec() {
   return getStructCodec([
     ["key", getAddressCodec()],
     ["permissions", getPermissionsCodec()],
   ]);
 }
 
-export type MultisigAccount = {
-  accountDiscriminator: number[];
-  createKey: Address;
-  configAuthority: Address;
-  threshold: number;
-  timeLock: number;
-  transactionIndex: bigint;
-  staleTransactionIndex: bigint;
-  rentCollector: Address | null;
-  bump: number;
-  members: Member[];
-};
-
-export function getMultisigAccountCodec(): Codec<MultisigAccount> {
+export function getMultisigAccountCodec() {
   return getStructCodec([
     ["accountDiscriminator", getArrayCodec(getU8Codec(), { size: 8 })],
     ["createKey", getAddressCodec()],
@@ -73,15 +42,7 @@ export function getMultisigAccountCodec(): Codec<MultisigAccount> {
   ]);
 }
 
-export type ProposalStatus =
-  | { __kind: "Draft"; timestamp: number | bigint }
-  | { __kind: "Active"; timestamp: number | bigint }
-  | { __kind: "Rejected"; timestamp: number | bigint }
-  | { __kind: "Approved"; timestamp: number | bigint }
-  | { __kind: "Executed"; timestamp: number | bigint }
-  | { __kind: "Cancelled"; timestamp: number | bigint };
-
-export function getProposalStatusCodec(): Codec<ProposalStatus> {
+export function getProposalStatusCodec() {
   return getDiscriminatedUnionCodec([
     ["Draft", getStructCodec([["timestamp", getI64Codec()]])],
     ["Active", getStructCodec([["timestamp", getI64Codec()]])],
@@ -92,18 +53,7 @@ export function getProposalStatusCodec(): Codec<ProposalStatus> {
   ]);
 }
 
-export type ProposalAccount = {
-  accountDiscriminator: number[];
-  multisig: Address;
-  transactionIndex: bigint;
-  status: ProposalStatus;
-  bump: number;
-  approved: Address[];
-  rejected: Address[];
-  cancelled: Address[];
-};
-
-export function getProposalAccountCodec(): Codec<ProposalAccount> {
+export function getProposalAccountCodec() {
   return getStructCodec([
     ["accountDiscriminator", getArrayCodec(getU8Codec(), { size: 8 })],
     ["multisig", getAddressCodec()],
@@ -116,13 +66,7 @@ export function getProposalAccountCodec(): Codec<ProposalAccount> {
   ]);
 }
 
-export type ProposalCreate = {
-  draft: boolean;
-  transactionIndex: bigint;
-  instructionDiscriminator: number[];
-};
-
-export function getProposalCreateCodec(): Codec<ProposalCreate> {
+export function getProposalCreateCodec() {
   return getStructCodec([
     ["instructionDiscriminator", getArrayCodec(getU8Codec(), { size: 8 })],
     ["transactionIndex", getU64Codec()],
@@ -130,62 +74,33 @@ export function getProposalCreateCodec(): Codec<ProposalCreate> {
   ]);
 }
 
-type ProposalApproveArgs = {
-  memo: OptionOrNullable<string>;
-};
-
-const getProposalArgsCodec = (): Codec<ProposalApproveArgs> => {
+const getProposalArgsCodec = () => {
   return getStructCodec([
     ["memo", getOptionCodec(addCodecSizePrefix(getUtf8Codec(), getU32Codec()))],
   ]);
 };
 
-type ProposalApprove = {
-  args: ProposalApproveArgs;
-  instructionDiscriminator: number[];
-};
-
-export function getProposalApproveCodec(): Codec<ProposalApprove> {
+export function getProposalApproveCodec() {
   return getStructCodec([
     ["instructionDiscriminator", getArrayCodec(getU8Codec(), { size: 8 })],
     ["args", getProposalArgsCodec()],
   ]);
 }
 
-type Proposal = {
-  memo: OptionOrNullable<string>;
-  instructionDiscriminator: number[];
-};
-export function getProposalCodec(): Codec<Proposal> {
+export function getProposalCodec() {
   return getStructCodec([
     ["instructionDiscriminator", getArrayCodec(getU8Codec(), { size: 8 })],
     ["memo", getOptionCodec(addCodecSizePrefix(getUtf8Codec(), getU32Codec()))],
   ]);
 }
 
-type VaultExecute = {
-  instructionDiscriminator: number[];
-};
-
-export function getVaultExecuteCodec(): Codec<VaultExecute> {
+export function getVaultExecuteCodec() {
   return getStructCodec([
     ["instructionDiscriminator", getArrayCodec(getU8Codec(), { size: 8 })],
   ]);
 }
 
-type VaultTransaction = {
-  accountDiscriminator: number[];
-  multisig: Address;
-  creator: Address;
-  index: bigint;
-  bump: number;
-  vaultIndex: number;
-  vaultBump: number;
-  ephemeralSignerBumps: ReadonlyUint8Array;
-  message: VaultTransactionMessage;
-};
-
-export function getVaultTransactionCodec(): Codec<VaultTransaction> {
+export function getVaultTransactionCodec() {
   return getStructCodec([
     ["accountDiscriminator", getArrayCodec(getU8Codec(), { size: 8 })],
     ["multisig", getAddressCodec()],
@@ -196,22 +111,14 @@ export function getVaultTransactionCodec(): Codec<VaultTransaction> {
     ["vaultBump", getU8Codec()],
     [
       "ephemeralSignerBumps",
-      addCodecSizePrefix(getBytesCodec(), getU32Codec()),
+      getArrayCodec(getU8Codec()),
+      // addCodecSizePrefix(getBytesCodec(), getU32Codec()),
     ],
     ["message", getVaultTransactionMessageCodec()],
   ]);
 }
 
-type VaultTransactionMessage = {
-  numSigners: number;
-  numWritableSigners: number;
-  numWritableNonSigners: number;
-  accountKeys: Address[];
-  instructions: MultisigCompiledInstruction[];
-  addressTableLookups: MultisigMessageAddressTableLookup[];
-};
-
-export function getVaultTransactionMessageCodec(): Codec<VaultTransactionMessage> {
+export function getVaultTransactionMessageCodec() {
   return getStructCodec([
     ["numSigners", getU8Codec()],
     ["numWritableSigners", getU8Codec()],
@@ -225,13 +132,7 @@ export function getVaultTransactionMessageCodec(): Codec<VaultTransactionMessage
   ]);
 }
 
-type MultisigCompiledInstruction = {
-  data: number[];
-  programIdIndex: number;
-  accountIndexes: number[];
-};
-
-export function getMultisigCompiledInstructionCodec(): Codec<MultisigCompiledInstruction> {
+export function getMultisigCompiledInstructionCodec() {
   return getStructCodec([
     ["programIdIndex", getU8Codec()],
     ["accountIndexes", getArrayCodec(getU8Codec())],
@@ -239,13 +140,7 @@ export function getMultisigCompiledInstructionCodec(): Codec<MultisigCompiledIns
   ]);
 }
 
-type MultisigMessageAddressTableLookup = {
-  accountKey: Address;
-  writableIndexes: ReadonlyUint8Array;
-  readonlyIndexes: ReadonlyUint8Array;
-};
-
-export function getMultisigMessageAddressTableLookupCodec(): Codec<MultisigMessageAddressTableLookup> {
+export function getMultisigMessageAddressTableLookupCodec() {
   return getStructCodec([
     ["accountKey", getAddressCodec()],
     ["writableIndexes", addCodecSizePrefix(getBytesCodec(), getU32Codec())],

@@ -28,6 +28,7 @@
   /* Status */
   --color-status-primary: #2685e1;
   --color-status-success: #41be6b;
+  --color-status-warning: #e0a100;
   --color-status-error: #ff4a4a;
 }
 

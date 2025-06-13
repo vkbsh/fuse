@@ -7,7 +7,6 @@ import {
   IAccountMeta,
   IInstruction,
   getAddressDecoder,
-  ReadonlyUint8Array,
   upgradeRoleToSigner,
   upgradeRoleToWritable,
 } from "gill";
@@ -61,51 +60,6 @@ export function instructionFromLegacyInstruction(
   };
 }
 
-export const { Permission, Permissions } = multisig.types;
-
-type Permission = (typeof Permission)[keyof typeof Permission];
-type Permissions = {
-  mask: number;
-};
-
-export type Member = {
-  key: PublicKey;
-  permissions: Permissions;
-};
-
-export type VaultTransaction = {
-  bump: number;
-  index: bigint;
-  creator: Address;
-  multisig: Address;
-  vaultBump: number;
-  vaultIndex: number;
-  message: VaultTransactionMessage;
-  discriminator: ReadonlyUint8Array;
-  ephemeralSignerBumps: ReadonlyUint8Array;
-};
-
-export type MultisigCompiledInstruction = {
-  programIdIndex: number;
-  accountIndexes: Uint8Array;
-  data: Uint8Array;
-};
-
-export type MultisigMessageAddressTableLookup = {
-  accountKey: PublicKey;
-  writableIndexes: Uint8Array;
-  readonlyIndexes: Uint8Array;
-};
-
-export type VaultTransactionMessage = {
-  numSigners: number;
-  numWritableSigners: number;
-  accountKeys: Array<Address>;
-  numWritableNonSigners: number;
-  instructions: Array<MultisigCompiledInstruction>;
-  addressTableLookups: Array<MultisigMessageAddressTableLookup>;
-};
-
 export function createVaultInstruction({
   memo,
   creator,
@@ -129,6 +83,7 @@ export function createVaultInstruction({
       vaultIndex,
       ephemeralSigners,
       transactionIndex,
+      // @ts-expect-error: incompatible type of TransactionMessage (solana web3js1 squads vs fuse)
       transactionMessage,
       creator: new PublicKey(creator),
       multisigPda: new PublicKey(multisigPda),

@@ -3,34 +3,22 @@ import { describe, test, assert, beforeAll } from "vitest";
 import {
   address,
   Address,
-  parseBase64RpcAccount,
   createKeyPairFromBytes,
   createSignerFromKeyPair,
   signTransactionMessageWithSigners,
 } from "gill";
 
 import {
-  getVaultPda,
-  getProposalPda,
-  getTransactionPda,
-} from "~/program/multisig/pda";
-
-import { createMessageWithSigner } from "~/program/multisig/transaction";
-
-import {
   createProposalApproveInstruction,
   createVaultTransactionExecuteInstruction,
 } from "~/program/multisig/instruction";
-
 import {
   createTransferSolMessage,
   createTransferTokenMessage,
   createMessageExecuteAndCloseAccounts,
 } from "~/program/multisig/utils/message";
-
-import { Permission, Permissions } from "~/program/multisig/legacy";
-
-import { getVaultTransactionCodec } from "~/program/multisig/codec";
+import { getVaultPda } from "~/program/multisig/pda";
+import { createMessageWithSigner } from "~/program/multisig/transaction";
 
 import { useRpcStore } from "~/state/rpc";
 
@@ -47,7 +35,7 @@ import {
 // TODO: Add correct assertions
 // TODO: Use rpc.getAccountInfo, getBalance, etc.  to retrieve accounts and check balances
 describe("Interacting with the Multisig Program", async () => {
-  const { rpc, sendAndConfirmTransaction } = useRpcStore.getState();
+  const { sendAndConfirmTransaction } = useRpcStore.getState();
 
   const creatorKeyPair = generateLegacyKeyPair();
   const createKeyKeyPair = generateLegacyKeyPair();
@@ -56,6 +44,7 @@ describe("Interacting with the Multisig Program", async () => {
   const createKey = await createSignerFromKeyPair(
     await createKeyPairFromBytes(createKeyKeyPair.secretKey),
   );
+
   const creator = await createSignerFromKeyPair(
     await createKeyPairFromBytes(creatorKeyPair.secretKey),
   );
@@ -85,11 +74,11 @@ describe("Interacting with the Multisig Program", async () => {
       members: [
         {
           key: creator.address,
-          permissions: Permissions.all(),
+          permissions: { mask: 7 },
         },
         {
           key: secondMember.address,
-          permissions: Permissions.fromPermissions([Permission.Vote]),
+          permissions: { mask: 2 },
         },
       ],
     });
@@ -98,10 +87,11 @@ describe("Interacting with the Multisig Program", async () => {
   describe("Transfer SOL", async () => {
     test("Create VaultTransaction with: [TransferSOL, ProposalCreate, ProposalApprove]", async () => {
       const message = await createTransferSolMessage({
-        feePayer: creator,
-        creator: creator.address,
+        vaultPda,
         amount: 0.07,
         transactionIndex,
+        feePayer: creator,
+        creator: creator.address,
         toAddress: creator.address,
         multisigPda: multisigAddress,
         memo: "approve from test by the creator",
@@ -169,16 +159,6 @@ describe("Interacting with the Multisig Program", async () => {
     let fromToken: { decimals: number; mint: Address; ata: Address };
     const transactionIndex = 2n;
 
-    const proposalPda = await getProposalPda({
-      multisigAddress,
-      transactionIndex,
-    });
-
-    const transactionPda = await getTransactionPda({
-      multisigAddress,
-      transactionIndex,
-    });
-
     beforeAll(async () => {
       fromToken = await getMockToken({
         creator,
@@ -233,30 +213,13 @@ describe("Interacting with the Multisig Program", async () => {
       }
     });
     test("Execute VaultTransaction by Creator", async () => {
-      const transactionPdaInfo = await rpc
-        .getAccountInfo(transactionPda, { encoding: "base64" })
-        .send();
-
-      const vaultTransaction = getVaultTransactionCodec().decode(
-        parseBase64RpcAccount(transactionPda, transactionPdaInfo.value).data,
-      );
-
-      const vaultPda = await getVaultPda({
-        vaultIndex: 0,
-        multisigAddress: multisigAddress,
-      });
-
       try {
         const tx = await createMessageWithSigner({
           instructions: [
-            createVaultTransactionExecuteInstruction({
-              vaultPda,
-              proposalPda,
-              transactionPda,
+            await createVaultTransactionExecuteInstruction({
+              transactionIndex,
               multisigPda: multisigAddress,
               memberAddress: creator.address,
-              message: vaultTransaction.message,
-              ephemeralSignerBumps: vaultTransaction.ephemeralSignerBumps,
             }),
           ],
           feePayer: creator,

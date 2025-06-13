@@ -1,23 +1,23 @@
-import { UiWalletAccount } from "@wallet-standard/react";
-import { useWalletAccountTransactionSendingSigner } from "@solana/react";
 import {
   address,
   Address,
   LAMPORTS_PER_SOL,
   signAndSendTransactionMessageWithSigners,
 } from "gill";
+import { UiWalletAccount } from "@wallet-standard/react";
+import { useWalletAccountTransactionSendingSigner } from "@solana/react";
+
+import Button from "~/components/ui/Button";
 
 import {
   createTransferSolMessage,
   createTransferTokenMessage,
 } from "~/program/multisig/utils/message";
 
-import Button from "~/components/ui/Button";
-
-import { refetchTransactions } from "~/hooks/resources";
-
 import { toast } from "~/state/toast";
-import { Token, useWithdrawStore } from "~/state/withdraw";
+import { refetchTransactions } from "~/hooks/resources";
+import { useWithdrawStore } from "~/state/withdraw";
+import { SOL_MINT_ADDRESS } from "~/service/balance";
 
 const Review = ({
   onClose,
@@ -32,7 +32,7 @@ const Review = ({
   transactionIndex: number;
   walletAccount: UiWalletAccount;
 }) => {
-  const { toAddress, token, amount, errors, reset } = useWithdrawStore();
+  const { toAddress, token, amount, addError, reset } = useWithdrawStore();
 
   const refetch = refetchTransactions(multisigAddress);
 
@@ -42,8 +42,17 @@ const Review = ({
   );
 
   const handleTx = async () => {
-    if (errors.length || !toAddress || !token || !amount) {
-      // TODO: add validation
+    if (!toAddress || !token || !amount) {
+      if (!toAddress) {
+        addError("toAddress", "Invalid address");
+      }
+      if (!token) {
+        addError("token", "Invalid token");
+      }
+      if (!amount) {
+        addError("amount", "Invalid amount");
+      }
+
       return;
     }
 
@@ -51,15 +60,14 @@ const Review = ({
 
     let message = null;
     const memo = "auto approve";
-    const isNative =
-      token?.mint === "So11111111111111111111111111111111111111112";
+    const isNative = token?.mint === SOL_MINT_ADDRESS;
 
     if (!isNative) {
       message = await createTransferTokenMessage({
         memo,
         feePayer: signer,
+        fromToken: token,
         authority: vaultAddress,
-        fromToken: token as Token,
         multisigPda: multisigAddress,
         transactionIndex: nextTxIndex,
         toAddress: address(toAddress as string),
@@ -70,6 +78,7 @@ const Review = ({
       message = await createTransferSolMessage({
         memo,
         feePayer: signer,
+        vaultPda: vaultAddress,
         multisigPda: multisigAddress,
         transactionIndex: nextTxIndex,
         toAddress: address(toAddress as string),
@@ -80,14 +89,14 @@ const Review = ({
 
     try {
       const signature = await signAndSendTransactionMessageWithSigners(message);
-      // TODO: Check status of transaction
+      // TODO: *Check status of transaction
       console.log("Signature", signature);
       reset();
       await refetch();
       onClose();
     } catch (e: any) {
-      toast.error(e?.message);
-      console.error("Error [Initiate, Proposal, Approve]:", e.message);
+      toast.error("Failed to initiate transaction");
+      console.error("Error [Initiate, Proposal, Approve]:", e);
       onClose();
     }
   };

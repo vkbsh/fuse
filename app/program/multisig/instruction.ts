@@ -1,27 +1,33 @@
-import { AccountMeta, PublicKey } from "web3js1";
-
 import {
+  address,
   Address,
   AccountRole,
   IInstruction,
+  EncodedAccount,
   isWritableRole,
   ReadonlyUint8Array,
+  parseBase64RpcAccount,
 } from "gill";
-
 import { SYSTEM_PROGRAM_ADDRESS } from "gill/programs";
 
+import {
+  getVaultPda,
+  getProposalPda,
+  getTransactionPda,
+  getEphemeralSignerPda,
+} from "~/program/multisig/pda";
 import {
   getProposalCodec,
   getVaultExecuteCodec,
   getProposalCreateCodec,
   getProposalApproveCodec,
+  getVaultTransactionCodec,
 } from "~/program/multisig/codec";
-
 import { SQUADS_PROGRAM_ID } from "~/program/multisig/address";
 
-import { getEphemeralSignerPda, getProposalPda } from "~/program/multisig/pda";
+import { useRpcStore } from "~/state/rpc";
 
-import { VaultTransactionMessage } from "./legacy";
+const rpc = useRpcStore.getState().rpc;
 
 const discriminator = {
   proposalCreate: [220, 60, 73, 224, 30, 108, 79, 159],
@@ -34,6 +40,12 @@ const discriminator = {
 };
 
 const { READONLY, WRITABLE, READONLY_SIGNER, WRITABLE_SIGNER } = AccountRole;
+
+type AccountMeta = {
+  pubkey: Address;
+  isSigner: boolean;
+  isWritable: boolean;
+};
 
 export function createInstruction({
   data,
@@ -49,10 +61,7 @@ export function createInstruction({
   };
 }
 
-export function isStaticWritableIndex(
-  index: number,
-  message: VaultTransactionMessage,
-): boolean {
+export function isStaticWritableIndex(index: number, message: any): boolean {
   const numAccountKeys = message.accountKeys.length;
   const { numSigners, numWritableSigners, numWritableNonSigners } = message;
 
@@ -67,13 +76,13 @@ export function isStaticWritableIndex(
   return isWritableSigner || isWritableNonSigner;
 }
 
-export function isSignerIndex(message: VaultTransactionMessage, index: number) {
+export function isSignerIndex(message: any, index: number) {
   return index < message.numSigners;
 }
 
 function convertRoles(
   accountMetas: AccountMeta[],
-): Array<[PublicKey, AccountRole]> {
+): Array<[Address, AccountRole]> {
   return accountMetas.map((meta) => {
     let role = READONLY;
     if (meta.isWritable) {
@@ -82,49 +91,76 @@ function convertRoles(
     if (meta.isSigner) {
       role = isWritableRole(role) ? WRITABLE_SIGNER : READONLY_SIGNER;
     }
-    return [meta.pubkey, role];
+    return [address(meta.pubkey.toString()), role];
   });
 }
 
-export function createVaultTransactionExecuteInstruction({
-  message,
-  vaultPda,
+export async function createVaultTransactionExecuteInstruction({
   multisigPda,
-  proposalPda,
   memberAddress,
-  transactionPda,
-  ephemeralSignerBumps,
+  transactionIndex,
+  // message,
+  // ephemeralSignerBumps,
 }: {
-  vaultPda: Address;
   multisigPda: Address;
-  proposalPda: Address;
   memberAddress: Address;
-  transactionPda: Address;
-  message: VaultTransactionMessage;
-  ephemeralSignerBumps: ReadonlyUint8Array;
-}) {
+  transactionIndex: bigint;
+  // message: VaultTransactionMessage;
+  // ephemeralSignerBumps: number[];
+}): Promise<IInstruction> {
   const accountMetas: AccountMeta[] = [];
 
-  const ephemeralSignerPdas = ephemeralSignerBumps.map(
-    async (_, additionalSignerIndex) => {
+  const transactionPda = await getTransactionPda({
+    transactionIndex,
+    multisigAddress: multisigPda,
+  });
+
+  const vaultPda = await getVaultPda({
+    vaultIndex: 0,
+    multisigAddress: multisigPda,
+  });
+
+  const transactionPdaInfo = await rpc
+    .getAccountInfo(transactionPda, { encoding: "base64" })
+    .send();
+
+  const parsedTransaction = parseBase64RpcAccount(
+    transactionPda,
+    transactionPdaInfo.value,
+  ) as EncodedAccount;
+
+  const vaultTransaction = getVaultTransactionCodec().decode(
+    parsedTransaction.data,
+  );
+
+  const proposalPda = await getProposalPda({
+    transactionIndex,
+    multisigAddress: multisigPda,
+  });
+
+  const message = vaultTransaction.message;
+  const ephemeralSignerBumps = vaultTransaction.ephemeralSignerBumps;
+
+  const ephemeralSignerPdas = await Promise.all(
+    ephemeralSignerBumps.map(async (_, additionalSignerIndex) => {
       return await getEphemeralSignerPda({
         transactionPda,
-        ephemeralSignerIndex: additionalSignerIndex,
+        ephemeralSignerIndex: BigInt(additionalSignerIndex),
       });
-    },
+    }),
   );
 
   // Then add static account keys included into the message.
   for (const [accountIndex, accountKey] of message.accountKeys.entries()) {
     accountMetas.push({
-      pubkey: new PublicKey(accountKey),
+      pubkey: accountKey,
       isWritable: isStaticWritableIndex(accountIndex, message),
       // NOTE: vaultPda and ephemeralSignerPdas cannot be marked as signers,
       // because they are PDAs and hence won't have their signatures on the transaction.
       isSigner:
-        isSignerIndex(accountIndex, message) &&
+        isSignerIndex(message, accountIndex) &&
         !(accountKey === vaultPda) &&
-        !ephemeralSignerPdas.find((k) => accountKey.equals(k)),
+        !ephemeralSignerPdas.find((k) => k === accountKey),
     });
   }
 
@@ -146,17 +182,20 @@ export function createVaultTransactionExecuteInstruction({
   });
 }
 
-export function createProposalCreateInstruction({
+export async function createProposalCreateInstruction({
   creator,
   multisigPda,
-  proposalPda,
   transactionIndex,
 }: {
   creator: Address;
   multisigPda: Address;
-  proposalPda: Address;
+
   transactionIndex: bigint;
-}): IInstruction {
+}): Promise<IInstruction> {
+  const proposalPda = await getProposalPda({
+    transactionIndex,
+    multisigAddress: multisigPda,
+  });
   return createInstruction({
     data: getProposalCreateCodec().encode({
       draft: false,
@@ -205,17 +244,22 @@ export async function createProposalApproveInstruction({
   });
 }
 
-export function createProposalCancelInstruction({
+export async function createProposalCancelInstruction({
   memo,
   multisigPda,
-  proposalPda,
   memberAddress,
+  transactionIndex,
 }: {
   memo?: string;
   multisigPda: Address;
-  proposalPda: Address;
   memberAddress: Address;
-}): IInstruction {
+  transactionIndex: bigint;
+}): Promise<IInstruction> {
+  const proposalPda = await getProposalPda({
+    multisigAddress: multisigPda,
+    transactionIndex: BigInt(transactionIndex),
+  });
+
   return createInstruction({
     data: getProposalCodec().encode({
       memo: memo ?? "",
@@ -225,21 +269,30 @@ export function createProposalCancelInstruction({
       [multisigPda, READONLY],
       [memberAddress, WRITABLE_SIGNER],
       [proposalPda, READONLY_SIGNER],
+      [SYSTEM_PROGRAM_ADDRESS, READONLY],
     ],
   });
 }
 
-export function createVaultTransactionAccountsCloseInstruction({
+export async function createVaultTransactionAccountsCloseInstruction({
   multisigPda,
-  proposalPda,
-  transactionPda,
   rentCollectorPda,
+  transactionIndex,
 }: {
   multisigPda: Address;
-  proposalPda: Address;
-  transactionPda: Address;
+  transactionIndex: bigint;
   rentCollectorPda: Address;
-}): IInstruction {
+}): Promise<IInstruction> {
+  const transactionPda = await getTransactionPda({
+    transactionIndex,
+    multisigAddress: multisigPda,
+  });
+
+  const proposalPda = await getProposalPda({
+    transactionIndex,
+    multisigAddress: multisigPda,
+  });
+
   return createInstruction({
     data: getVaultExecuteCodec().encode({
       instructionDiscriminator: discriminator.vaultTransactionCloseAccounts,
@@ -249,8 +302,37 @@ export function createVaultTransactionAccountsCloseInstruction({
       [proposalPda, WRITABLE],
       [transactionPda, WRITABLE],
       [rentCollectorPda, WRITABLE],
-      // [SQUADS_PROGRAM_ID, READONLY],
       [SYSTEM_PROGRAM_ADDRESS, READONLY],
+    ],
+  });
+}
+
+export async function createProposalRejectInstruction({
+  memo,
+  multisigPda,
+  memberAddress,
+  transactionIndex,
+}: {
+  memo?: string;
+  multisigPda: Address;
+  memberAddress: Address;
+  transactionIndex: bigint;
+}): Promise<IInstruction> {
+  const proposalPda = await getProposalPda({
+    multisigAddress: multisigPda,
+    transactionIndex: BigInt(transactionIndex),
+  });
+
+  return createInstruction({
+    data: getProposalCodec().encode({
+      memo: memo ?? "",
+      instructionDiscriminator: discriminator.proposalReject,
+    }),
+    accounts: [
+      // TODO: Check anchorRemainingAccounts
+      [multisigPda, READONLY],
+      [memberAddress, WRITABLE_SIGNER],
+      [proposalPda, READONLY_SIGNER],
     ],
   });
 }

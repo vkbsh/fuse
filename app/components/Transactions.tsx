@@ -30,7 +30,8 @@ export default function Transactions({
   if (multisigAccount?.staleTransactionIndex) {
     // TODO: Move to useTransactions
     _transactions = _transactions.filter((txData) =>
-      Number(txData?.transactionIndex) > multisigAccount?.staleTransactionIndex
+      Number(txData?.transactionIndex) >
+      Number(multisigAccount?.staleTransactionIndex)
         ? true
         : false,
     );
@@ -55,7 +56,8 @@ export default function Transactions({
       message: {
         ...txData?.message,
         mint: tokenMeta?.data,
-        amount: txData?.message?.amount / 10 ** tokenMeta?.data?.decimals,
+        amount:
+          txData?.message?.amount / 10 ** (tokenMeta?.data?.decimals || 0),
       },
     };
   });

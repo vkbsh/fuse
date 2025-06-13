@@ -80,7 +80,7 @@ export async function getProposalPda({
   ]);
 }
 
-export function getEphemeralSignerPda({
+export async function getEphemeralSignerPda({
   transactionPda,
   ephemeralSignerIndex,
 }: {

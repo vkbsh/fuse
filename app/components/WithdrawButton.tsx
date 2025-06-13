@@ -5,7 +5,6 @@ import { IconCircleArrow } from "~/components/ui/icons/IconCircleArrow";
 
 import { useDialog } from "~/state/dialog";
 import { useWalletStore } from "~/state/wallet";
-
 import { hasCloudPermission } from "~/program/multisig/utils/member";
 
 export default function WithdrawButton() {

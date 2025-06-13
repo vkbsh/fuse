@@ -12,18 +12,15 @@ import { useMultisigAccount } from "~/hooks/resources";
 
 export default function WithdrawDialog() {
   const { walletStorage } = useWalletStore();
+  const { multisigStorage } = useWalletStore();
   const { isOpen, onOpenChange } = useDialog("withdraw");
 
-  const { multisigStorage } = useWalletStore();
-  const { data: multisigAccount } = useMultisigAccount(
-    multisigStorage?.address as Address,
-  );
-
-  const vaultAddress = multisigStorage?.defaultVault as Address;
-  const transactionIndex = Number(multisigAccount?.transactionIndex);
   const multisigAddress = multisigStorage?.address as Address;
+  const vaultAddress = multisigStorage?.defaultVault as Address;
+
+  const { data: multisigAccount } = useMultisigAccount(multisigAddress);
   const walletAccount = useWalletByName(walletStorage?.name as string)
-    ?.accounts[0];
+    ?.accounts?.[0];
 
   return (
     <Dialog isOpen={isOpen} onOpenChange={onOpenChange}>
@@ -37,8 +34,8 @@ export default function WithdrawDialog() {
               vaultAddress={vaultAddress}
               walletAccount={walletAccount}
               multisigAddress={multisigAddress}
-              transactionIndex={transactionIndex}
               onClose={() => onOpenChange(false)}
+              transactionIndex={Number(multisigAccount?.transactionIndex)}
             />
           </>
         )}

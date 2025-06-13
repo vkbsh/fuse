@@ -1,36 +1,33 @@
-import { address, Address, isAddress } from "gill";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { Address, isAddress } from "gill";
 import { motion, AnimatePresence } from "motion/react";
 
 import Input from "~/components/ui/Input";
 import { IconLogo } from "~/components/ui/icons/IconLogo";
 
 import { useTokenInfo } from "~/hooks/resources";
-import { useWithdrawStore } from "~/state/withdraw";
-
 import { getRoundedUSD } from "~/utils/amount";
+import { useWithdrawStore } from "~/state/withdraw";
 import { abbreviateAddress } from "~/utils/address";
 
 const ChooseWallet = ({ vaultAddress }: { vaultAddress: Address }) => {
-  const { toAddress, set } = useWithdrawStore();
+  const { toAddress, addError, set, removeError, errors } = useWithdrawStore();
   const { totalAmount } = useTokenInfo(vaultAddress);
-  const [error, setError] = useState<string | null>(null);
   const [value, setValue] = useState<string | Address>(toAddress || "");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValue(e.target.value);
+    removeError("toAddress");
   };
 
-  useEffect(() => {
-    if (!value) return;
-
+  const handleBlur = () => {
     if (isAddress(value)) {
-      setError("");
+      removeError("toAddress");
       set("toAddress", value);
     } else {
-      setError("Invalid address");
+      addError("toAddress", "Invalid address");
     }
-  }, [value]);
+  };
 
   return (
     <>
@@ -60,20 +57,22 @@ const ChooseWallet = ({ vaultAddress }: { vaultAddress: Address }) => {
           value={value}
           tabIndex={-1}
           onChange={handleChange}
-          placeholder="Enter wallet address"
           className="text-sm"
+          onBlur={handleBlur}
+          error={!!errors?.toAddress}
+          placeholder="Enter wallet address"
         />
         <AnimatePresence>
-          {error && (
+          {errors?.toAddress && (
             <motion.span
               key="error"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.3 }}
-              className="absolute text-xs -bottom-5 w-full text-red-500"
+              className="absolute text-xs -bottom-5 w-full text-status-error"
             >
-              {error}
+              {errors.toAddress}
             </motion.span>
           )}
         </AnimatePresence>

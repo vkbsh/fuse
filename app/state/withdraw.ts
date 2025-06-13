@@ -1,22 +1,18 @@
 import { Address } from "gill";
 import { create } from "zustand";
 
-export type Token = {
-  ata: Address;
-  mint: Address;
-  name: string;
-  symbol: string;
-  amount: number;
-  logoURI: string;
-  decimals: number;
-};
+import { TokenData } from "~/hooks/resources";
+
+type Keys = "toAddress" | "token" | "amount" | "memo";
 
 type WithdrawState = {
-  token: Token | null;
+  token: TokenData | null;
   memo: string | null;
   amount: number | null;
   toAddress: Address | null;
-  errors: { type: string; message: string }[] | [];
+  errors: { [key: string]: string } | null;
+  addError: (key: string, message: string) => void;
+  removeError: (key: Keys) => void;
 };
 
 type WithdrawActions = {
@@ -27,7 +23,7 @@ type WithdrawActions = {
 type WithdrawStore = WithdrawState & WithdrawActions;
 
 export const useWithdrawStore = create<WithdrawStore>((set) => ({
-  errors: [],
+  errors: null,
   memo: null,
   token: null,
   amount: null,
@@ -39,16 +35,18 @@ export const useWithdrawStore = create<WithdrawStore>((set) => ({
       token: null,
       toAddress: null,
       fromAddress: null,
+      errors: null,
     })),
   set: (key, value) => set(() => ({ [key]: value })),
-  addError: (type: string, message: string) =>
+  addError: (key: string, message: string) =>
     set((state) => {
-      return { errors: [...state.errors, { type, message }] };
+      return { errors: { ...(state.errors || {}), [key]: message } };
     }),
   removeError: (type: string) =>
     set((state) => {
-      const errors = state.errors || [];
-      const newErrors = errors.filter((e) => e.type !== type);
-      return { errors: newErrors };
+      const errors = state.errors || {};
+      delete errors[type];
+
+      return { errors };
     }),
 }));

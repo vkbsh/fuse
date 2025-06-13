@@ -11,9 +11,9 @@ import {
   address,
   Address,
   IInstruction,
+  TransactionSigner,
   compileTransaction,
   createTransactionMessage,
-  TransactionSendingSigner,
   setTransactionMessageFeePayer,
   setTransactionMessageFeePayerSigner,
   appendTransactionMessageInstructions,
@@ -28,24 +28,22 @@ import {
   createVaultTransactionAccountsCloseInstruction,
 } from "~/program/multisig/instruction";
 
-import {
-  getVaultPda,
-  getProposalPda,
-  getTransactionPda,
-} from "~/program/multisig/pda";
-
 import { createVaultInstruction } from "~/program/multisig/legacy";
 
 import { useRpcStore } from "~/state/rpc";
 
 const rpc = useRpcStore.getState().rpc;
 
+export type Signer = TransactionSigner & {
+  keyPair?: CryptoKeyPair;
+};
+
 export async function createMessageWithSigner({
   feePayer,
   instructions,
 }: {
   instructions: IInstruction[];
-  feePayer: TransactionSendingSigner;
+  feePayer: Signer;
 }) {
   const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
 
@@ -125,13 +123,13 @@ export async function createTransferInnerMessage({
 
 export async function createTransferTokenInnerMessage({
   amount,
+  feePayer,
   toAddress,
   fromToken,
-  authority,
 }: {
   amount: number;
-  authority: Address;
   toAddress: Address;
+  feePayer: Signer;
   fromToken: { decimals: number; mint: Address; ata: Address };
 }) {
   const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
@@ -148,21 +146,21 @@ export async function createTransferTokenInnerMessage({
 
   const createATAIx = getCreateAssociatedTokenIdempotentInstruction({
     ata: toAta,
+    payer: feePayer,
     owner: toAddress,
     mint: fromToken.mint,
-    payer: address(authority),
     tokenProgram: address(mintInfo?.owner as Address),
   });
 
   const transferIx = getTransferInstruction({
     amount,
     destination: address(toAta),
-    authority: address(authority),
+    authority: feePayer.address,
     source: address(fromToken.ata),
   });
 
   const transferInnerMessage = new TransactionMessage({
-    payerKey: new PublicKey(authority),
+    payerKey: new PublicKey(feePayer.address),
     instructions: [
       {
         programId: new PublicKey(createATAIx.programAddress),
@@ -235,15 +233,9 @@ export async function proposalCreate({
   multisigPda: Address;
   transactionIndex: bigint;
 }) {
-  const proposalPda = await getProposalPda({
-    multisigAddress: multisigPda,
-    transactionIndex,
-  });
-
-  const proposalTransactionIx = createProposalCreateInstruction({
+  const proposalTransactionIx = await createProposalCreateInstruction({
     creator,
     multisigPda,
-    proposalPda,
     transactionIndex,
   });
 
@@ -285,16 +277,11 @@ export async function proposalCancel({
   memberAddress: Address;
   transactionIndex: bigint;
 }) {
-  const proposalPda = await getProposalPda({
-    multisigAddress: multisigPda,
-    transactionIndex,
-  });
-
-  const proposalApproveTransactionIx = createProposalCancelInstruction({
+  const proposalApproveTransactionIx = await createProposalCancelInstruction({
     memo,
     multisigPda,
-    proposalPda,
     memberAddress,
+    transactionIndex,
   });
 
   return compileTransactionWithIx({
@@ -310,36 +297,21 @@ export async function vaultTransactionExecute({
   transactionIndex,
   ephemeralSignerBumps,
 }: {
-  message: TransactionMessage;
-  ephemeralSignerBumps: any;
   multisigPda: Address;
   memberAddress: Address;
   transactionIndex: bigint;
+  ephemeralSignerBumps: any;
+  message: TransactionMessage;
 }) {
-  const proposalPda = await getProposalPda({
-    multisigAddress: multisigPda,
-    transactionIndex,
-  });
-
-  const transactionPda = await getTransactionPda({
-    transactionIndex,
-    multisigAddress: multisigPda,
-  });
-
-  const vaultPda = await getVaultPda({
-    vaultIndex: 0,
-    multisigAddress: multisigPda,
-  });
-
-  const vaultTransactionExecuteIx = createVaultTransactionExecuteInstruction({
-    message,
-    vaultPda,
-    multisigPda,
-    proposalPda,
-    memberAddress,
-    transactionPda,
-    ephemeralSignerBumps,
-  });
+  const vaultTransactionExecuteIx =
+    await createVaultTransactionExecuteInstruction({
+      // @ts-expect-error: incompatible type of TransactionMessage (solana web3js1 squads vs fuse)
+      message,
+      multisigPda,
+      memberAddress,
+      transactionIndex,
+      ephemeralSignerBumps,
+    });
 
   return compileTransactionWithIx({
     feePayer: memberAddress,
@@ -356,22 +328,11 @@ export async function vaultTransactionAccountsClose({
   transactionIndex: bigint;
   rentCollectorPda: Address;
 }) {
-  const proposalPda = await getProposalPda({
-    transactionIndex,
-    multisigAddress: multisigPda,
-  });
-
-  const transactionPda = await getTransactionPda({
-    transactionIndex,
-    multisigAddress: multisigPda,
-  });
-
   const vaultTransactionAccountsCloseIx =
-    createVaultTransactionAccountsCloseInstruction({
+    await createVaultTransactionAccountsCloseInstruction({
       multisigPda,
-      proposalPda,
-      transactionPda,
       rentCollectorPda,
+      transactionIndex,
     });
 
   const feePayer = rentCollectorPda;

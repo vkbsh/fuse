@@ -4,21 +4,11 @@ import { motion } from "motion/react";
 
 import Dropdown from "~/components/ui/Dropdown";
 import { IconChevronDown } from "~/components/ui/icons/IconChevronDown";
-import { useTokenInfo } from "~/hooks/resources";
 
 import { useWithdrawStore } from "~/state/withdraw";
-
+import { useTokenInfo, TokenData } from "~/hooks/resources";
 import { getRoundedSOL, getRoundedToken } from "~/utils/amount";
 
-export type Token = {
-  name: string;
-  symbol: string;
-  amount: number;
-  decimals: number;
-  ata: Address;
-  mint: Address;
-  logoURI: string;
-};
 export default function SelectToken({
   vaultAddress,
 }: {
@@ -85,7 +75,7 @@ export default function SelectToken({
   );
 }
 
-const SelectedToken = ({ token }: { token: Token | null }) => {
+const SelectedToken = ({ token }: { token: TokenData }) => {
   return (
     <div className="relative cursor-pointer px-2 pr-3.5 min-w-[130px] h-[40px] bg-white/20 flex flex-row gap-2 items-center rounded-full text-white border border-white/5">
       <img

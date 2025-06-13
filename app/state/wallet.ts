@@ -2,21 +2,22 @@ import { Address } from "gill";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import { MultisigAccount } from "~/program/multisig/codec";
-
-const STORAGE_KEY = "fuse:wallet-store";
-
 export type LSWallet = {
   name: string;
   icon: string;
   address: Address;
 };
 
+type Member = {
+  key: Address;
+  permissions: { mask: number };
+};
+
 export type WalletWithMembers = {
   address: Address;
   defaultVault: Address;
   account: {
-    members: MultisigAccount["members"];
+    members: Member[];
   };
 };
 
@@ -95,10 +96,9 @@ export const useWalletStore = create<WalletStore>()(
             state.walletHistory.find((w) => w.name === name) || null,
         })),
     }),
-
     {
       version: 0.1,
-      name: STORAGE_KEY,
+      name: "fuse:wallet-store",
     },
   ),
 );
