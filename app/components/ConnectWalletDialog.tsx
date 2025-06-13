@@ -8,7 +8,6 @@ import Dialog from "~/components/ui/Dialog";
 import { toast } from "~/state/toast";
 import { useDialog } from "~/state/dialog";
 import { useWalletStore } from "~/state/wallet";
-
 import { useMultisigWallets } from "~/hooks/resources";
 import { SOLANA_SIGN_AND_SEND_TRANSACTION } from "~/hooks/wallet";
 
@@ -111,12 +110,12 @@ function WithAccount({
   const account = walletWithAccount.accounts[0];
   const accountAddress = address(account?.address);
 
-  const { addwalletStorage, addMultisig, selectWalletName } = useWalletStore();
   const {
     isLoading,
     isFetched,
     data: multisigWallets,
   } = useMultisigWallets(accountAddress) || {};
+  const { addwalletStorage, addMultisig, selectWalletName } = useWalletStore();
 
   const multisig = multisigWallets?.[0];
 

@@ -45,11 +45,7 @@ export default function MemberKeysDropdown() {
       })
       .map((wallet) => {
         return (
-          <div
-            key={wallet.address}
-            onClick={(e) => e.stopPropagation()}
-            className="p-2"
-          >
+          <div key={wallet.address} onClick={(e) => e.stopPropagation()}>
             <Account
               key={wallet.address}
               wallet={wallet}

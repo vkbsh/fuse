@@ -313,11 +313,11 @@ function Footer({
             transactionIndex: BigInt(transactionIndex),
             multisigPda: address(multisigStorageAddress),
           }),
-          await createVaultTransactionAccountsCloseInstruction({
-            transactionIndex: BigInt(transactionIndex),
-            multisigPda: address(multisigStorageAddress),
-            rentCollectorPda: address(rentCollectorAddress),
-          }),
+          // await createVaultTransactionAccountsCloseInstruction({
+          //   transactionIndex: BigInt(transactionIndex),
+          //   multisigPda: address(multisigStorageAddress),
+          //   rentCollectorPda: address(rentCollectorAddress),
+          // }),
         ],
       });
 

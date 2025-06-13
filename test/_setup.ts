@@ -36,10 +36,6 @@ import { getCreateAccountInstruction } from "gill/programs";
 
 import { useRpcStore } from "~/state/rpc";
 
-type Permissions = {
-  mask: number;
-};
-
 const client = useRpcStore.getState();
 const connection = new Connection(client.RPC_URL, "confirmed");
 export async function getMultisigInfo({

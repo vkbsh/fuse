@@ -1,9 +1,17 @@
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+
 import Button from "~/components/ui/Button";
 
 import { useDialog } from "~/state/dialog";
 
 export default function Connect() {
+  const queryClient = useQueryClient();
   const { onOpenChange } = useDialog("connectWallet");
+
+  useEffect(() => {
+    queryClient.removeQueries();
+  }, []);
 
   return (
     <div className="flex flex-col gap-6 m-auto">
