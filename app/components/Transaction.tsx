@@ -299,7 +299,9 @@ function Footer({
   status,
   onClose,
   approved,
+  rejected,
   initiated,
+  cancelled,
   transactionIndex,
   rentCollectorAddress,
   multisigStorageAddress,
@@ -325,19 +327,14 @@ function Footer({
     walletAccount as UiWalletAccount,
     "solana:mainnet",
   );
-
   const refetch = refetchTransactions(multisigStorageAddress);
-
   const isCloudKey = hasCloudPermission(
     multisigStorage?.account?.members || [],
     address(walletAddress),
   );
-
-  const isApproveDisabled =
-    (isCloudKey && initiated === walletAddress) ||
-    approved.some((a) => a === walletAddress);
   const isExecuteDisabled = !isCloudKey || status !== "Approved";
-  const isRejectDisabled = !isCloudKey || status !== "Active";
+  const isRejectDisabled = rejected.some((a) => a === walletAddress);
+  const isApproveDisabled = approved.some((a) => a === walletAddress);
 
   const cancelHandler = async () => {
     try {

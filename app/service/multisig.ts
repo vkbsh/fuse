@@ -1,6 +1,5 @@
 import {
   Address,
-  getBase64Codec,
   EncodedAccount,
   AccountInfoBase,
   Base64EncodedBytes,
