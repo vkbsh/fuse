@@ -47,6 +47,21 @@ type Wallet = {
   };
 };
 
+type Transaction = {
+  status: any;
+  message: any;
+  timestamp: number;
+  approved: Address[];
+  rejected: Address[];
+  cancelled: Address[];
+  creator: Address | null;
+  transactionIndex: number;
+};
+
+type ProgramAccountInfo = AccountInfoWithPubkey<
+  AccountInfoBase & AccountInfoWithBase64EncodedData
+>;
+
 export async function getMultisigAccount(multisigAddress: Address) {
   const multisigAccountInfo = await rpc
     .getAccountInfo(multisigAddress, { encoding: "base64" })
@@ -67,36 +82,26 @@ export async function getMultisigAccount(multisigAddress: Address) {
   }
 }
 
-// TODO: Get from model
-type Transaction = {
-  status: any;
-  message: any;
-  timestamp: number;
-  approved: Address[];
-  rejected: Address[];
-  cancelled: Address[];
-  creator: Address | null;
-  transactionIndex: number;
-};
-
-type ProgramAccountInfo = AccountInfoWithPubkey<
-  AccountInfoBase & AccountInfoWithBase64EncodedData
->;
-
-export async function getTransactionsByMultisig(keyAddress: Address | null) {
+export async function getTransactionsByMultisig(
+  keyAddress: Address | null,
+  staleTransactionIndex: number | null,
+) {
   if (!keyAddress)
     throw new Error("Missing keyAddress in getTransactionsByMemberKey()");
 
-  // Proposal Status has [Draft, Active, Rejected, Approved, Executing, Executed, Cancelled]
-
   try {
-    const [...transactions] = await Promise.all([
-      await getTransactionsByMultisigAndIndex(keyAddress, 1),
-      await getTransactionsByMultisigAndIndex(keyAddress, 2),
-      await getTransactionsByMultisigAndIndex(keyAddress, 3),
-    ]);
+    const transactions = await getTransactionsByMultisigAndIndex(
+      keyAddress,
+      staleTransactionIndex,
+    );
 
-    return transactions;
+    const result = transactions
+      ?.filter(Boolean)
+      .sort(
+        (a, b) => Number(b?.transactionIndex) - Number(a?.transactionIndex),
+      );
+
+    return result;
   } catch (e) {
     console.log("Can't give a transaction list", e);
   }
@@ -108,8 +113,8 @@ export async function getWalletByMemberKey(
   if (!keyAddress)
     throw new Error("Missing keyAddress in getWalletByMemberKey()");
 
-  // The key must be the one of the first 6 multisig members: Paymaster (optionally), up to 2 Active Keys, up to 3 Recovery Keys.
   const [...wallets] = await Promise.all([
+    // The key must be the one of the first 6 multisig members: Paymaster (optionally), up to 2 Active Keys, up to 3 Recovery Keys.
     getWalletByKeyAndIndex(keyAddress, 0),
     getWalletByKeyAndIndex(keyAddress, 1),
     getWalletByKeyAndIndex(keyAddress, 2),
@@ -198,7 +203,7 @@ async function getWalletByKeyAndIndex(
 
 async function getTransactionsByMultisigAndIndex(
   multisigAddress: Address,
-  status: number,
+  staleTransactionIndex: number | null,
 ): Promise<(Transaction | null)[] | null> {
   let accounts: ProgramAccountInfo[];
 
@@ -221,15 +226,6 @@ async function getTransactionsByMultisigAndIndex(
               bytes: multisigAddress as unknown as Base58EncodedBytes,
             },
           },
-          {
-            memcmp: {
-              offset: 48n, // Status
-              encoding: "base64",
-              bytes: getBase64Codec().decode(
-                new Uint8Array([status]),
-              ) as Base64EncodedBytes,
-            },
-          },
         ],
         encoding: "base64",
       })
@@ -244,6 +240,14 @@ async function getTransactionsByMultisigAndIndex(
       const { data } = parseBase64RpcAccount(tx.pubkey, tx.account);
       const { status, rejected, approved, cancelled, transactionIndex } =
         getProposalAccountCodec().decode(data);
+
+      if (
+        (Number(transactionIndex) <= (staleTransactionIndex || 0) &&
+          !["Cancelled", "Rejected"].includes(status.__kind)) ||
+        status.__kind === "Draft"
+      ) {
+        return null;
+      }
 
       const transactionPda = await getTransactionPda({
         multisigAddress,

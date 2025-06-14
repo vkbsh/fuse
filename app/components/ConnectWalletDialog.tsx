@@ -82,7 +82,7 @@ function WalletOption({ wallet }: { wallet: UiWallet }) {
   return (
     <>
       {isConnectionInitiated && account && (
-        <WithAccount
+        <ConnectMultisig
           walletWithAccount={wallet}
           onClose={() => onOpenChange(false)}
         />
@@ -100,7 +100,7 @@ function WalletOption({ wallet }: { wallet: UiWallet }) {
   );
 }
 
-function WithAccount({
+function ConnectMultisig({
   onClose,
   walletWithAccount,
 }: {
@@ -115,9 +115,12 @@ function WithAccount({
     isFetched,
     data: multisigWallets,
   } = useMultisigWallets(accountAddress) || {};
+
   const { addwalletStorage, addMultisig, selectWalletName } = useWalletStore();
 
   const multisig = multisigWallets?.[0];
+
+  console.log("multisigWallets", multisigWallets);
 
   useEffect(() => {
     if (isFetched && accountAddress && !isLoading) {

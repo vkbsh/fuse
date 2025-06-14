@@ -36,12 +36,12 @@ export const queryKeys: { [key in QueryKey]: QueryKey } = {
 };
 
 const staleTimeByQueryKey: { [key in QueryKey]: number } = {
-  balance: 1000 * 20, // 20 sec
   tokenMeta: 1000 * 60 * 60 * 24 * 30, // 1 month
-  tokenPrice: 1000 * 20, // 20 sec
   transaction: 0, // 1 min
-  multisigAccount: 1000 * 60, // 1 min
-  multisigWalletsByKey: 1000 * 60, // 1 min
+  balance: 1000 * 30, // 30 sec
+  tokenPrice: 1000 * 30, // 30 sec
+  multisigAccount: 1000 * 30, // 30 sec
+  multisigWalletsByKey: 1000 * 30, // 30 sec
 };
 
 export function useMultisigWallets(keyAddress: Address | null) {
@@ -62,13 +62,16 @@ export function useMultisigAccount(multisigAddress: Address) {
   });
 }
 
-export function useTransactions(multisigAddress: Address) {
+export function useTransactions(
+  multisigAddress: Address,
+  staleTransactionIndex: number,
+) {
   return useQuery({
-    enabled: !!multisigAddress,
+    enabled: !!multisigAddress && !!staleTransactionIndex,
     queryKey: [queryKeys.transaction, multisigAddress],
-    staleTime: Infinity,
+    staleTime: 0,
     queryFn: async () => {
-      return getTransactionsByMultisig(multisigAddress);
+      return getTransactionsByMultisig(multisigAddress, staleTransactionIndex);
     },
   });
 }
@@ -175,8 +178,6 @@ export function refetchTransactions(multisigAddress: Address) {
   const queryClient = useQueryClient();
 
   return async () => {
-    console.log("Refetching transactions");
-
     return queryClient.refetchQueries({
       queryKey: [queryKeys.transaction, multisigAddress],
     });
@@ -187,8 +188,6 @@ export function refetchBalance(vaultAddress: Address) {
   const queryClient = useQueryClient();
 
   return async () => {
-    console.log("Refetching balance");
-
     return Promise.all([
       queryClient.refetchQueries({
         queryKey: [queryKeys.balance, vaultAddress],

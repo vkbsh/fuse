@@ -15,40 +15,20 @@ export default function Transactions({
 }: {
   multisigAddress: Address;
 }) {
-  const { data, isLoading } = useTransactions(multisigAddress);
   const { data: multisigAccount } = useMultisigAccount(multisigAddress);
+  const { data, isLoading } = useTransactions(
+    multisigAddress,
+    multisigAccount?.staleTransactionIndex
+      ? Number(multisigAccount?.staleTransactionIndex)
+      : 0,
+  );
 
-  let _transactions =
-    // TODO: Move to useTransactions
-    data
-      ?.flat()
-      .filter(Boolean)
-      .sort((a, b) => {
-        return Number(b?.transactionIndex) - Number(a?.transactionIndex);
-      }) || [];
-
-  if (multisigAccount?.staleTransactionIndex) {
-    // TODO: Move to useTransactions
-    _transactions = _transactions.filter((txData) =>
-      Number(txData?.transactionIndex) >
-      Number(multisigAccount?.staleTransactionIndex)
-        ? true
-        : false,
-    );
-  }
-
-  const tokens: Set<Address> = new Set();
-
-  _transactions.forEach((txData) => {
-    const { mintAddress } = txData?.message;
-
-    tokens.add(mintAddress);
-  });
-
+  const tokens: Set<Address> = new Set(
+    data?.map((txData) => txData?.message?.mintAddress),
+  );
   const tokensMeta = useTokensMeta(Array.from(tokens));
-
-  const transactions = _transactions.map((txData) => {
-    const { mintAddress } = txData?.message;
+  const transactions = data?.map((txData) => {
+    const { mintAddress } = txData?.message || {};
     const tokenMeta = tokensMeta.find((t) => t.data?.address === mintAddress);
 
     return {
@@ -90,8 +70,7 @@ export default function Transactions({
         {transactions?.map((txData, i) => {
           return (
             <motion.div
-              key={txData.timestamp + txData.status}
-              layout
+              key={txData.transactionIndex + txData.status}
               initial={{
                 y: -10,
                 opacity: 0,
@@ -107,14 +86,14 @@ export default function Transactions({
             >
               <Transaction
                 status={txData.status}
-                creator={txData.creator as Address}
                 message={txData.message}
                 rejected={txData.rejected || []}
                 approved={txData.approved || []}
-                cancelled={txData.cancelled || []}
                 timestamp={txData.timestamp || 0}
-                transactionIndex={txData.transactionIndex || 0}
+                cancelled={txData.cancelled || []}
+                creator={txData.creator as Address}
                 rentCollectorAddress={rentCollectorAddress}
+                transactionIndex={txData.transactionIndex || 0}
               />
             </motion.div>
           );

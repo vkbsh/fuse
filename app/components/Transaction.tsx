@@ -41,6 +41,13 @@ export type Token = {
   logoURI: string;
 };
 
+export type Status =
+  | "Active"
+  | "Approved"
+  | "Rejected"
+  | "Executed"
+  | "Cancelled";
+
 export default function Transaction({
   status,
   creator,
@@ -48,17 +55,18 @@ export default function Transaction({
   approved,
   rejected,
   timestamp,
+  cancelled,
   transactionIndex,
   rentCollectorAddress,
 }: {
-  status: any;
   message: any;
-  creator: Address;
   timestamp: number;
+  creator: Address;
+  rejected: Address[];
   approved: Address[];
   cancelled: Address[];
-  rejected: Address[];
   transactionIndex: number;
+  status: Status;
   rentCollectorAddress: Address;
 }) {
   const { multisigStorage } = useWalletStore();
@@ -67,6 +75,8 @@ export default function Transaction({
   const statusColor = cn({
     "text-status-primary": status === "Active",
     "text-status-warning": status === "Approved",
+    "text-status-success": status === "Executed",
+    "text-status-error": ["Cancelled", "Rejected"].includes(status),
   });
 
   const { amount, toAccount, mint } = message || {};
@@ -155,11 +165,14 @@ export default function Transaction({
                 approved={approved}
                 rejected={rejected}
                 initiated={creator}
+                cancelled={cancelled}
               />
 
               <Footer
                 status={status}
                 approved={approved}
+                rejected={rejected}
+                cancelled={cancelled}
                 initiated={creator}
                 onClose={() => onOpenChange(false)}
                 transactionIndex={transactionIndex}
@@ -178,51 +191,63 @@ function Progress({
   status,
   approved,
   rejected,
+  cancelled,
   initiated,
 }: {
+  status: Status;
   initiated: Address;
   approved: Address[];
   rejected: Address[];
-  status: "Approved";
+  cancelled: Address[];
 }) {
-  const isAllApproved = approved.length === 2;
+  const isRejected = status === "Rejected";
+  const isExecuted = status === "Executed";
+  const isCancelled = status === "Cancelled";
+  const isAllApproved = status === "Approved";
 
   // // TODO: Add tx execute/*cancel loading state + animation
   const executed = "" as Address;
   const isExecuting = false;
-  const isExecuted = false;
 
   return (
     <motion.div
       initial={{ height: 0 }}
       animate={{ height: "auto" }}
       exit={{ height: 0 }}
-      className="flex flex-row gap-20 justify-center text-sm font-semibold mx-auto"
+      className="flex flex-row justify-between gap-4 text-sm font-semibold mx-auto"
     >
-      <ProgressStatus
-        label="Initiated"
-        active={true}
-        icon={<IconCirclePlus />}
-        addresses={[initiated]}
-      />
-      <ProgressStatus
-        label="Approved"
-        active={isAllApproved}
-        icon={<IconSquareDot />}
-        addresses={approved}
-      />
-      {/* <ProgressStatus
-        label="Rejected"
-        active={null}
-        icon={<span />}
-        addresses={rejected}
-      /> */}
-      <ProgressStatus
-        label="Executed"
-        active={isExecuting || isExecuted}
-        icon={<IconCircleDot />}
-        addresses={[executed]}
-      />
+      <AnimatePresence>
+        <ProgressStatus
+          label="Initiated"
+          active={true}
+          icon={<IconCirclePlus />}
+          addresses={[initiated]}
+        />
+        <ProgressStatus
+          label="Approved"
+          active={isAllApproved}
+          icon={<IconSquareDot />}
+          addresses={approved}
+        />
+        <ProgressStatus
+          label="Cancelled"
+          active={isCancelled}
+          icon={<IconCircleDot />}
+          addresses={cancelled}
+        />
+        <ProgressStatus
+          label="Rejected"
+          active={isRejected}
+          icon={<IconCircleDot />}
+          addresses={rejected}
+        />
+        <ProgressStatus
+          label="Executed"
+          active={isExecuting || isExecuted}
+          icon={<IconCircleDot />}
+          addresses={[executed]}
+        />
+      </AnimatePresence>
     </motion.div>
   );
 }
@@ -239,25 +264,34 @@ function ProgressStatus({
   addresses: Address[];
 }) {
   return (
-    <div className="w-full flex flex-col items-center gap-5 text-black/30">
-      <motion.span animate={{ color: active ? "#000" : "rgba(0, 0, 0, 0.3)" }}>
-        {icon}
-      </motion.span>
-      <div className="flex flex-col gap-1 items-center">
-        <span className="text-black">{label}</span>
-        <div className="flex flex-row gap-1">
-          <div className="flex flex-col">
-            <span>With</span>
-          </div>
-          <div className="flex flex-col">
-            {addresses.map((address) => {
-              if (!address) return null;
-              return <span key={address}>{abbreviateAddress(address)}</span>;
-            })}
+    addresses?.[0] && (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="w-[130px] flex flex-col items-center gap-5 text-black/30"
+      >
+        <motion.span
+          animate={{ color: active ? "#000" : "rgba(0, 0, 0, 0.3)" }}
+        >
+          {icon}
+        </motion.span>
+        <div className="flex flex-col gap-1 items-center">
+          <span className="text-black">{label}</span>
+          <div className="flex flex-row gap-1">
+            <div className="flex flex-col">
+              <span>With</span>
+            </div>
+            <div className="flex flex-col">
+              {addresses.map((address) => {
+                if (!address) return null;
+                return <span key={address}>{abbreviateAddress(address)}</span>;
+              })}
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    )
   );
 }
 
@@ -271,10 +305,12 @@ function Footer({
   multisigStorageAddress,
 }: {
   status: any;
+  initiated: Address;
   approved: Address[];
+  rejected: Address[];
+  cancelled: Address[];
   onClose: () => void;
   transactionIndex: number;
-  initiated: Address;
   rentCollectorAddress: Address;
   multisigStorageAddress: Address;
 }) {
@@ -300,7 +336,8 @@ function Footer({
   const isApproveDisabled =
     (isCloudKey && initiated === walletAddress) ||
     approved.some((a) => a === walletAddress);
-  const isExecuteDisabled = !isCloudKey;
+  const isExecuteDisabled = !isCloudKey || status !== "Approved";
+  const isRejectDisabled = !isCloudKey || status !== "Active";
 
   const cancelHandler = async () => {
     try {
@@ -313,11 +350,6 @@ function Footer({
             transactionIndex: BigInt(transactionIndex),
             multisigPda: address(multisigStorageAddress),
           }),
-          // await createVaultTransactionAccountsCloseInstruction({
-          //   transactionIndex: BigInt(transactionIndex),
-          //   multisigPda: address(multisigStorageAddress),
-          //   rentCollectorPda: address(rentCollectorAddress),
-          // }),
         ],
       });
 
@@ -394,18 +426,57 @@ function Footer({
     }
   };
 
+  const closeAccounts = async () => {
+    try {
+      const message = await createMessageWithSigner({
+        feePayer,
+        instructions: [
+          await createVaultTransactionAccountsCloseInstruction({
+            multisigPda: multisigStorageAddress,
+            transactionIndex: BigInt(transactionIndex),
+            rentCollectorPda: address(rentCollectorAddress),
+          }),
+        ],
+      });
+
+      await signAndSendTransactionMessageWithSigners(message);
+      await refetch();
+      onClose();
+    } catch (e) {
+      console.error("Error [Close Accounts]:", e);
+      toast.error("Failed to close accounts");
+    }
+  };
+
   return (
     <AnimatePresence>
+      {status === "Executed" && (
+        <motion.div key={status} className="flex flex-row justify-center gap-4">
+          <Button size="md" variant="bordered" onClick={() => onClose()}>
+            Ok
+          </Button>
+        </motion.div>
+      )}
+      {["Cancelled", "Rejected"].includes(status) && (
+        <motion.div key={status} className="flex flex-row justify-center gap-4">
+          <Button size="md" variant="bordered" onClick={() => onClose()}>
+            Ok
+          </Button>
+          <Button size="md" variant="bordered" onClick={closeAccounts}>
+            Reclaim
+          </Button>
+        </motion.div>
+      )}
       {status === "Active" && (
         <motion.div key={status} className="flex flex-row justify-center gap-4">
-          {/* <Button
+          <Button
             size="md"
             variant="bordered"
             onClick={rejectHandler}
-            disabled={isApproveDisabled}
+            disabled={isRejectDisabled}
           >
             Reject
-          </Button> */}
+          </Button>
           <Button
             size="md"
             variant="bordered"

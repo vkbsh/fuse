@@ -48,6 +48,7 @@ export function getProposalStatusCodec() {
     ["Active", getStructCodec([["timestamp", getI64Codec()]])],
     ["Rejected", getStructCodec([["timestamp", getI64Codec()]])],
     ["Approved", getStructCodec([["timestamp", getI64Codec()]])],
+    ["Executing", getStructCodec([["timestamp", getI64Codec()]])],
     ["Executed", getStructCodec([["timestamp", getI64Codec()]])],
     ["Cancelled", getStructCodec([["timestamp", getI64Codec()]])],
   ]);
@@ -105,15 +106,11 @@ export function getVaultTransactionCodec() {
     ["accountDiscriminator", getArrayCodec(getU8Codec(), { size: 8 })],
     ["multisig", getAddressCodec()],
     ["creator", getAddressCodec()],
-    ["index", getU64Codec()],
+    ["transactionIndex", getU64Codec()],
     ["bump", getU8Codec()],
     ["vaultIndex", getU8Codec()],
     ["vaultBump", getU8Codec()],
-    [
-      "ephemeralSignerBumps",
-      getArrayCodec(getU8Codec()),
-      // addCodecSizePrefix(getBytesCodec(), getU32Codec()),
-    ],
+    ["ephemeralSignerBumps", getArrayCodec(getU8Codec())],
     ["message", getVaultTransactionMessageCodec()],
   ]);
 }
