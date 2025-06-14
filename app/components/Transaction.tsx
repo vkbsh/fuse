@@ -218,30 +218,35 @@ function Progress({
     >
       <AnimatePresence>
         <ProgressStatus
+          key="Initiated"
           label="Initiated"
           active={true}
           icon={<IconCirclePlus />}
           addresses={[initiated]}
         />
         <ProgressStatus
+          key="Approved"
           label="Approved"
           active={isAllApproved}
           icon={<IconSquareDot />}
           addresses={approved}
         />
         <ProgressStatus
+          key="Cancelled"
           label="Cancelled"
           active={isCancelled}
           icon={<IconCircleDot />}
           addresses={cancelled}
         />
         <ProgressStatus
+          key="Rejected"
           label="Rejected"
           active={isRejected}
           icon={<IconCircleDot />}
           addresses={rejected}
         />
         <ProgressStatus
+          key="Executed"
           label="Executed"
           active={isExecuting || isExecuted}
           icon={<IconCircleDot />}
@@ -335,6 +340,7 @@ function Footer({
   const isExecuteDisabled = !isCloudKey || status !== "Approved";
   const isRejectDisabled = rejected.some((a) => a === walletAddress);
   const isApproveDisabled = approved.some((a) => a === walletAddress);
+  const isCancelDisabled = cancelled.some((a) => a === walletAddress);
 
   const cancelHandler = async () => {
     try {
@@ -487,7 +493,12 @@ function Footer({
 
       {status === "Approved" && (
         <motion.div key={status} className="flex flex-row justify-center gap-4">
-          <Button size="md" variant="bordered" onClick={cancelHandler}>
+          <Button
+            size="md"
+            variant="bordered"
+            onClick={cancelHandler}
+            disabled={isCancelDisabled}
+          >
             Cancel
           </Button>
           <Button
