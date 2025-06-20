@@ -1,21 +1,19 @@
 import {
-  address,
   Address,
+  Lamports,
   AccountRole,
   IInstruction,
   EncodedAccount,
-  isWritableRole,
+  TransactionSigner,
   ReadonlyUint8Array,
   parseBase64RpcAccount,
 } from "gill";
-import { SYSTEM_PROGRAM_ADDRESS } from "gill/programs";
-
 import {
-  getVaultPda,
-  getProposalPda,
-  getTransactionPda,
-  getEphemeralSignerPda,
-} from "~/program/multisig/pda";
+  TransferSolInstruction,
+  SYSTEM_PROGRAM_ADDRESS,
+  getTransferSolInstruction,
+} from "gill/programs";
+
 import {
   getProposalCodec,
   getVaultExecuteCodec,
@@ -23,9 +21,28 @@ import {
   getProposalApproveCodec,
   getVaultTransactionCodec,
 } from "~/program/multisig/codec";
+
+import {
+  TOKEN_2022_PROGRAM_ADDRESS,
+  getTransferTokensInstructions,
+  getAssociatedTokenAccountAddress,
+} from "gill/programs/token";
+
 import { SQUADS_PROGRAM_ID } from "~/program/multisig/address";
+import {
+  getVaultPda,
+  getProposalPda,
+  getTransactionPda,
+  getEphemeralSignerPda,
+} from "~/program/multisig/pda";
 
 import { useRpcStore } from "~/state/rpc";
+import {
+  AccountMeta,
+  convertRoles,
+  isSignerIndex,
+  isStaticWritableIndex,
+} from "~/program/multisig/legacy";
 
 const rpc = useRpcStore.getState().rpc;
 
@@ -41,10 +58,8 @@ const discriminator = {
 
 const { READONLY, WRITABLE, READONLY_SIGNER, WRITABLE_SIGNER } = AccountRole;
 
-type AccountMeta = {
-  pubkey: Address;
-  isSigner: boolean;
-  isWritable: boolean;
+export type Signer = TransactionSigner & {
+  keyPair?: CryptoKeyPair;
 };
 
 export function createInstruction({
@@ -61,59 +76,150 @@ export function createInstruction({
   };
 }
 
-export function isStaticWritableIndex(index: number, message: any): boolean {
-  const numAccountKeys = message.accountKeys.length;
-  const { numSigners, numWritableSigners, numWritableNonSigners } = message;
+export async function createProposalCreateInstruction({
+  creatorAddress,
+  multisigAddress,
+  transactionIndex,
+}: {
+  creatorAddress: Address;
+  multisigAddress: Address;
+  transactionIndex: bigint;
+}): Promise<IInstruction> {
+  const proposalPda = await getProposalPda({
+    transactionIndex,
+    multisigAddress,
+  });
+  return createInstruction({
+    data: getProposalCreateCodec().encode({
+      draft: false,
+      transactionIndex,
+      instructionDiscriminator: discriminator.proposalCreate,
+    }),
 
-  if (index < 0 || index >= numAccountKeys) {
-    return false;
-  }
-
-  const isWritableSigner = index < numWritableSigners;
-  const isWritableNonSigner =
-    index >= numSigners && index < numSigners + numWritableNonSigners;
-
-  return isWritableSigner || isWritableNonSigner;
+    accounts: [
+      [multisigAddress, READONLY],
+      [proposalPda, WRITABLE],
+      [creatorAddress, READONLY_SIGNER],
+      [creatorAddress, WRITABLE_SIGNER],
+      [SYSTEM_PROGRAM_ADDRESS, READONLY],
+    ],
+  });
 }
 
-export function isSignerIndex(message: any, index: number) {
-  return index < message.numSigners;
+export async function createProposalApproveInstruction({
+  memo,
+  memberAddress,
+  multisigAddress,
+  transactionIndex,
+}: {
+  memo?: string;
+  multisigAddress: Address;
+  memberAddress: Address;
+  transactionIndex: bigint;
+}): Promise<IInstruction> {
+  const proposalPda = await getProposalPda({
+    transactionIndex,
+    multisigAddress,
+  });
+
+  return createInstruction({
+    data: getProposalApproveCodec().encode({
+      instructionDiscriminator: discriminator.proposalApprove,
+      args: {
+        memo: memo ?? "",
+      },
+    }),
+    accounts: [
+      [multisigAddress, READONLY],
+      [memberAddress, WRITABLE_SIGNER],
+      [proposalPda, WRITABLE],
+    ],
+  });
 }
 
-function convertRoles(
-  accountMetas: AccountMeta[],
-): Array<[Address, AccountRole]> {
-  return accountMetas.map((meta) => {
-    let role = READONLY;
-    if (meta.isWritable) {
-      role = WRITABLE;
-    }
-    if (meta.isSigner) {
-      role = isWritableRole(role) ? WRITABLE_SIGNER : READONLY_SIGNER;
-    }
-    return [address(meta.pubkey.toString()), role];
+export async function createProposalRejectInstruction({
+  memo,
+  memberAddress,
+  multisigAddress,
+  transactionIndex,
+}: {
+  memo?: string;
+  memberAddress: Address;
+  multisigAddress: Address;
+  transactionIndex: bigint;
+}): Promise<IInstruction> {
+  const proposalPda = await getProposalPda({
+    multisigAddress,
+    transactionIndex,
+  });
+
+  return createInstruction({
+    data: getProposalCodec().encode({
+      memo: memo ?? "",
+      instructionDiscriminator: discriminator.proposalReject,
+    }),
+    accounts: [
+      [multisigAddress, READONLY],
+      [memberAddress, WRITABLE_SIGNER],
+      [proposalPda, WRITABLE],
+    ],
+  });
+}
+
+export async function createProposalCancelInstruction({
+  memo,
+  memberAddress,
+  multisigAddress,
+  transactionIndex,
+}: {
+  memo?: string;
+  memberAddress: Address;
+  multisigAddress: Address;
+  transactionIndex: bigint;
+}): Promise<IInstruction> {
+  const proposalPda = await getProposalPda({
+    multisigAddress,
+    transactionIndex: BigInt(transactionIndex),
+  });
+
+  return createInstruction({
+    data: getProposalApproveCodec().encode({
+      instructionDiscriminator: discriminator.proposalCancel,
+      args: {
+        memo: memo ?? "",
+      },
+    }),
+    accounts: [
+      [multisigAddress, READONLY],
+      [memberAddress, WRITABLE_SIGNER],
+      [proposalPda, WRITABLE],
+      [SYSTEM_PROGRAM_ADDRESS, READONLY],
+    ],
   });
 }
 
 export async function createVaultTransactionExecuteInstruction({
-  multisigPda,
   memberAddress,
+  multisigAddress,
   transactionIndex,
 }: {
-  multisigPda: Address;
   memberAddress: Address;
+  multisigAddress: Address;
   transactionIndex: bigint;
 }): Promise<IInstruction> {
-  const accountMetas: AccountMeta[] = [];
-
   const transactionPda = await getTransactionPda({
+    multisigAddress,
     transactionIndex,
-    multisigAddress: multisigPda,
+  });
+
+  const proposalPda = await getProposalPda({
+    multisigAddress,
+    transactionIndex,
   });
 
   const vaultPda = await getVaultPda({
     vaultIndex: 0,
-    multisigAddress: multisigPda,
+    multisigAddress,
   });
 
   const transactionPdaInfo = await rpc
@@ -129,10 +235,7 @@ export async function createVaultTransactionExecuteInstruction({
     parsedTransaction.data,
   );
 
-  const proposalPda = await getProposalPda({
-    transactionIndex,
-    multisigAddress: multisigPda,
-  });
+  const accountMetas: AccountMeta[] = [];
 
   const message = vaultTransaction.message;
   const ephemeralSignerBumps = vaultTransaction.ephemeralSignerBumps;
@@ -162,133 +265,37 @@ export async function createVaultTransactionExecuteInstruction({
 
   const converted = convertRoles(accountMetas);
 
-  const accounts: Array<[Address, AccountRole]> = [
-    [multisigPda, READONLY],
-    [proposalPda, WRITABLE],
-    [transactionPda, READONLY],
-    [memberAddress, READONLY_SIGNER],
-    ...converted,
-  ];
-
   return createInstruction({
-    accounts,
     data: getVaultExecuteCodec().encode({
       instructionDiscriminator: discriminator.vaultTransactionExecute,
     }),
-  });
-}
-
-export async function createProposalCreateInstruction({
-  creator,
-  multisigPda,
-  transactionIndex,
-}: {
-  creator: Address;
-  multisigPda: Address;
-
-  transactionIndex: bigint;
-}): Promise<IInstruction> {
-  const proposalPda = await getProposalPda({
-    transactionIndex,
-    multisigAddress: multisigPda,
-  });
-  return createInstruction({
-    data: getProposalCreateCodec().encode({
-      draft: false,
-      transactionIndex,
-      instructionDiscriminator: discriminator.proposalCreate,
-    }),
-
     accounts: [
-      [multisigPda, READONLY],
+      [multisigAddress, READONLY],
       [proposalPda, WRITABLE],
-      [creator, READONLY_SIGNER],
-      [creator, WRITABLE_SIGNER],
-      [SYSTEM_PROGRAM_ADDRESS, READONLY],
+      [transactionPda, READONLY],
+      [memberAddress, READONLY_SIGNER],
+      ...converted,
     ],
   });
 }
 
-export async function createProposalApproveInstruction({
-  memo,
-  multisigPda,
-  memberAddress,
+export async function createCloseAccountsInstruction({
+  multisigAddress,
   transactionIndex,
+  rentCollectorAddress,
 }: {
-  memo?: string;
-  multisigPda: Address;
-  memberAddress: Address;
+  multisigAddress: Address;
   transactionIndex: bigint;
-}): Promise<IInstruction> {
-  const proposalPda = await getProposalPda({
-    transactionIndex,
-    multisigAddress: multisigPda,
-  });
-
-  return createInstruction({
-    data: getProposalApproveCodec().encode({
-      instructionDiscriminator: discriminator.proposalApprove,
-      args: {
-        memo: memo ?? "",
-      },
-    }),
-    accounts: [
-      [multisigPda, READONLY],
-      [memberAddress, WRITABLE_SIGNER],
-      [proposalPda, WRITABLE],
-    ],
-  });
-}
-
-export async function createProposalCancelInstruction({
-  memo,
-  multisigPda,
-  memberAddress,
-  transactionIndex,
-}: {
-  memo?: string;
-  multisigPda: Address;
-  memberAddress: Address;
-  transactionIndex: bigint;
-}): Promise<IInstruction> {
-  const proposalPda = await getProposalPda({
-    multisigAddress: multisigPda,
-    transactionIndex: BigInt(transactionIndex),
-  });
-
-  return createInstruction({
-    data: getProposalApproveCodec().encode({
-      instructionDiscriminator: discriminator.proposalCancel,
-      args: {
-        memo: memo ?? "",
-      },
-    }),
-    accounts: [
-      [multisigPda, READONLY],
-      [memberAddress, WRITABLE_SIGNER],
-      [proposalPda, WRITABLE],
-      [SYSTEM_PROGRAM_ADDRESS, READONLY],
-    ],
-  });
-}
-
-export async function createVaultTransactionAccountsCloseInstruction({
-  multisigPda,
-  rentCollectorPda,
-  transactionIndex,
-}: {
-  multisigPda: Address;
-  transactionIndex: bigint;
-  rentCollectorPda: Address;
+  rentCollectorAddress: Address;
 }): Promise<IInstruction> {
   const transactionPda = await getTransactionPda({
     transactionIndex,
-    multisigAddress: multisigPda,
+    multisigAddress,
   });
 
   const proposalPda = await getProposalPda({
     transactionIndex,
-    multisigAddress: multisigPda,
+    multisigAddress,
   });
 
   return createInstruction({
@@ -296,40 +303,66 @@ export async function createVaultTransactionAccountsCloseInstruction({
       instructionDiscriminator: discriminator.vaultTransactionCloseAccounts,
     }),
     accounts: [
-      [multisigPda, READONLY],
+      [multisigAddress, READONLY],
       [proposalPda, WRITABLE],
       [transactionPda, WRITABLE],
-      [rentCollectorPda, WRITABLE],
+      [rentCollectorAddress, WRITABLE],
       [SYSTEM_PROGRAM_ADDRESS, READONLY],
     ],
   });
 }
 
-export async function createProposalRejectInstruction({
-  memo,
-  multisigPda,
-  memberAddress,
-  transactionIndex,
+export function createTransferSolInstruction({
+  signer,
+  amount,
+  toAddress,
 }: {
-  memo?: string;
-  multisigPda: Address;
-  memberAddress: Address;
-  transactionIndex: bigint;
-}): Promise<IInstruction> {
-  const proposalPda = await getProposalPda({
-    multisigAddress: multisigPda,
-    transactionIndex: BigInt(transactionIndex),
+  signer: Signer;
+  amount: Lamports;
+  toAddress: Address;
+}): TransferSolInstruction {
+  return getTransferSolInstruction({
+    amount,
+    source: signer,
+    destination: toAddress,
   });
+}
 
-  return createInstruction({
-    data: getProposalCodec().encode({
-      memo: memo ?? "",
-      instructionDiscriminator: discriminator.proposalReject,
-    }),
-    accounts: [
-      [multisigPda, READONLY],
-      [memberAddress, WRITABLE_SIGNER],
-      [proposalPda, WRITABLE],
-    ],
+export async function createTransferTokenInstruction({
+  amount,
+  signer,
+  toAddress,
+  fromToken,
+}: {
+  amount: number;
+  signer: Signer;
+  toAddress: Address;
+  fromToken: { decimals: number; mint: Address; ata: Address };
+}): Promise<IInstruction[]> {
+  const { value: mintInfo } = await rpc
+    .getAccountInfo(fromToken.mint, { encoding: "jsonParsed" })
+    .send();
+
+  const owner = mintInfo?.owner;
+
+  if (!owner) {
+    throw new Error("Failed to get mint info: createTransferTokenInstruction");
+  }
+
+  const toAta = await getAssociatedTokenAccountAddress(
+    fromToken.mint,
+    toAddress,
+    TOKEN_2022_PROGRAM_ADDRESS,
+  );
+
+  return getTransferTokensInstructions({
+    amount,
+    feePayer: signer,
+    authority: signer,
+    mint: fromToken.mint,
+    destinationAta: toAta,
+    destination: toAddress,
+    sourceAta: fromToken.ata,
+    tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
   });
 }

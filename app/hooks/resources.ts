@@ -3,8 +3,10 @@ import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   getMultisigAccount,
+  getProposalByIndex,
   getWalletByMemberKey,
   getTransactionsByMultisig,
+  Transaction,
 } from "~/service/multisig";
 
 import { getAmount } from "~/utils/amount";
@@ -37,7 +39,7 @@ export const queryKeys: { [key in QueryKey]: QueryKey } = {
 
 const staleTimeByQueryKey: { [key in QueryKey]: number } = {
   tokenMeta: 1000 * 60 * 60 * 24 * 30, // 1 month
-  transaction: 0, // 1 min
+  transaction: 0, // 5 min
   balance: 1000 * 30, // 30 sec
   tokenPrice: 1000 * 30, // 30 sec
   multisigAccount: 1000 * 30, // 30 sec
@@ -174,14 +176,96 @@ export const useTokenInfo = (vaultAddress: Address) => {
   };
 };
 
-export function refetchTransactions(multisigAddress: Address) {
+export function useUpdateTransaction(
+  multisigAddress: Address,
+  transactionIndex: number,
+) {
   const queryClient = useQueryClient();
 
   return async () => {
-    return queryClient.refetchQueries({
+    // let allTransactions: Transaction[] =
+    //   queryClient.getQueryData<Array<Transaction>>([
+    //     queryKeys.transaction,
+    //     multisigAddress,
+    //   ]) || [];
+    // const newProposal = await getProposalByIndex(
+    //   multisigAddress,
+    //   transactionIndex,
+    // );
+
+    // queryClient.invalidateQueries({
+    //   queryKey: [queryKeys.transaction, multisigAddress],
+    // });
+
+    await queryClient.refetchQueries({
       queryKey: [queryKeys.transaction, multisigAddress],
     });
+
+    // queryClient.setQueryData(
+    //   [queryKeys.transaction, multisigAddress],
+    //   (allTransactions: Transaction[]) => {
+    //     console.log("allTransactions", allTransactions);
+    //     let updatedTransactions = [];
+
+    //     if (!newProposal) {
+    //       updatedTransactions = allTransactions.filter(
+    //         (tx) => tx.transactionIndex !== transactionIndex,
+    //       );
+    //     } else {
+    //       updatedTransactions = allTransactions.map((transaction) => {
+    //         if (transaction.transactionIndex === transactionIndex) {
+    //           return {
+    //             ...transaction,
+    //             approved: newProposal?.approved,
+    //             rejected: newProposal?.rejected,
+    //             cancelled: newProposal?.cancelled,
+    //             status: newProposal?.status.__kind,
+    //             timestamp: Number(newProposal?.status.timestamp),
+    //           };
+    //         }
+
+    //         return transaction;
+    //       });
+    //     }
+
+    //     console.log("updatedTransactions", updatedTransactions);
+
+    //     return updatedTransactions;
+    //   },
+    // );
   };
+}
+
+export function useFetchLatestTransaction(
+  multisigAddress: Address,
+  transactionIndex: number,
+) {
+  const queryClient = useQueryClient();
+
+  return async () => {
+    // await queryClient.refetchQueries({
+    //   queryKey: [queryKeys.transaction, multisigAddress],
+    // });
+    return "test";
+  };
+
+  // const allTransactions: Transaction[] =
+  //   queryClient.getQueryData<Array<Transaction>>([
+  //     queryKeys.transaction,
+  //     multisigAddress,
+  //   ]) || [];
+
+  // return async () => {
+  //   const newProposal = await getProposalByIndex(
+  //     multisigAddress,
+  //     transactionIndex,
+  //   );
+
+  //   return queryClient.setQueryData(
+  //     [queryKeys.transaction, multisigAddress],
+  //     [newProposal, ...allTransactions], // TODO: use setter function instead (oldData) => return [newProposal,...oldData]
+  //   );
+  // };
 }
 
 export function refetchBalance(vaultAddress: Address) {

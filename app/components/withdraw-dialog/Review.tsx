@@ -1,44 +1,40 @@
-import {
-  address,
-  Address,
-  LAMPORTS_PER_SOL,
-  signAndSendTransactionMessageWithSigners,
-} from "gill";
+import { address, Address, LAMPORTS_PER_SOL } from "gill";
 import { UiWalletAccount } from "@wallet-standard/react";
-import { useWalletAccountTransactionSendingSigner } from "@solana/react";
+import { useWalletAccountTransactionSigner } from "@solana/react";
 
 import Button from "~/components/ui/Button";
 
 import {
   createTransferSolMessage,
   createTransferTokenMessage,
-} from "~/program/multisig/utils/message";
+  sendAndConfirmTransferWithProposalApproveMessage,
+} from "~/program/multisig/message";
 
 import { toast } from "~/state/toast";
-import { refetchTransactions } from "~/hooks/resources";
 import { useWithdrawStore } from "~/state/withdraw";
 import { SOL_MINT_ADDRESS } from "~/service/balance";
+import { useFetchLatestTransaction } from "~/hooks/resources";
 
 const Review = ({
   onClose,
-  vaultAddress,
   walletAccount,
   multisigAddress,
   transactionIndex,
 }: {
   onClose: () => void;
-  vaultAddress: Address;
   multisigAddress: Address;
   transactionIndex: number;
   walletAccount: UiWalletAccount;
 }) => {
   const { toAddress, token, amount, addError, reset } = useWithdrawStore();
+  const fetchLastTransaction = useFetchLatestTransaction(
+    multisigAddress,
+    transactionIndex,
+  );
 
-  const refetch = refetchTransactions(multisigAddress);
-
-  const signer = useWalletAccountTransactionSendingSigner(
+  const signer = useWalletAccountTransactionSigner(
     walletAccount,
-    "solana:mainnet", // TODO: Get from .env
+    "solana:mainnet",
   );
 
   const handleTx = async () => {
@@ -57,46 +53,47 @@ const Review = ({
     }
 
     const nextTxIndex = BigInt(transactionIndex + 1);
+    const memberAddress = address(walletAccount.address);
+    const creatorAddress = address(walletAccount.address);
 
-    let message = null;
+    let transactionMessage = null;
     const memo = "auto approve";
     const isNative = token?.mint === SOL_MINT_ADDRESS;
 
-    if (!isNative) {
-      message = await createTransferTokenMessage({
-        memo,
-        feePayer: signer,
-        fromToken: token,
-        authority: vaultAddress,
-        multisigPda: multisigAddress,
-        transactionIndex: nextTxIndex,
-        toAddress: address(toAddress as string),
-        creator: address(walletAccount.address),
-        amount: Math.round(amount * 10 ** token.decimals),
+    if (isNative) {
+      transactionMessage = await createTransferSolMessage({
+        signer,
+        toAddress,
+        amount: amount * LAMPORTS_PER_SOL,
       });
     } else {
-      message = await createTransferSolMessage({
-        memo,
-        feePayer: signer,
-        vaultPda: vaultAddress,
-        multisigPda: multisigAddress,
-        transactionIndex: nextTxIndex,
-        toAddress: address(toAddress as string),
-        creator: address(walletAccount.address),
-        amount: Math.round(amount * LAMPORTS_PER_SOL),
+      transactionMessage = await createTransferTokenMessage({
+        signer,
+        toAddress,
+        fromToken: token,
+        amount: amount * 10 ** token.decimals,
       });
     }
 
     try {
-      const signature = await signAndSendTransactionMessageWithSigners(message);
-      // TODO: *Check status of transaction
-      console.log("Signature", signature);
+      const signature = await sendAndConfirmTransferWithProposalApproveMessage({
+        memo,
+        memberAddress,
+        creatorAddress,
+        multisigAddress,
+        feePayer: signer,
+        transactionMessage,
+        transactionIndex: nextTxIndex,
+      });
+
+      console.log("TransferWithProposalApprove confirmed: ", signature);
+
       reset();
-      await refetch();
-      onClose();
+      await fetchLastTransaction();
     } catch (e: any) {
-      toast.error("Failed to initiate transaction");
-      console.error("Error [Initiate, Proposal, Approve]:", e);
+      toast.error("Failed to initiate transfer");
+      console.error("Error [Initiate, Proposal, Approve]: ", e);
+    } finally {
       onClose();
     }
   };
@@ -113,7 +110,7 @@ const Review = ({
       >
         Cancel
       </Button>
-      <Button size="md" onClick={() => handleTx()} variant="secondary">
+      <Button size="md" variant="secondary" onClick={handleTx}>
         Initiate
       </Button>
     </div>

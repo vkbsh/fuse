@@ -1,5 +1,5 @@
 import { address, Address } from "gill";
-import { TOKEN_PROGRAM_ADDRESS } from "@solana-program/token";
+import { TOKEN_2022_PROGRAM_ADDRESS } from "gill/programs/token";
 
 import { useRpcStore } from "~/state/rpc";
 
@@ -35,7 +35,7 @@ export async function getBalance(vault: Address): Promise<Balance> {
       .getTokenAccountsByOwner(
         vault,
         {
-          programId: TOKEN_PROGRAM_ADDRESS,
+          programId: TOKEN_2022_PROGRAM_ADDRESS,
         },
         {
           encoding: "jsonParsed",

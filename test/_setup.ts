@@ -5,10 +5,10 @@ import {
   getMintSize,
   getTokenSize,
   getMintToInstruction,
-  TOKEN_PROGRAM_ADDRESS,
+  TOKEN_2022_PROGRAM_ADDRESS,
   getInitializeMintInstruction,
   getInitializeAccountInstruction,
-} from "@solana-program/token";
+} from "gill/programs/token";
 
 import {
   pipe,
@@ -34,10 +34,10 @@ import {
 
 import { getCreateAccountInstruction } from "gill/programs";
 
-import { useRpcStore } from "~/state/rpc";
+import { useRpcStore, RPC_URL_TEST } from "~/state/rpc";
 
 const client = useRpcStore.getState();
-const connection = new Connection(client.RPC_URL, "confirmed");
+const connection = new Connection(RPC_URL_TEST, "confirmed");
 export async function getMultisigInfo({
   multisigPda,
 }: {
@@ -69,11 +69,13 @@ export async function createMultisig({
   members,
   createKey,
   multisigPda,
+  rentCollector,
 }: {
-  members: Array<{ key: Address; permissions: { mask: number } }>;
   creator: Signer;
   createKey: Signer;
   multisigPda: PublicKey;
+  rentCollector: Address;
+  members: Array<{ key: Address; permissions: { mask: number } }>;
 }) {
   const programConfigPda = multisig.getProgramConfigPda({})[0];
 
@@ -101,7 +103,7 @@ export async function createMultisig({
       configAuthority: null,
       members: legacyMembers,
       treasury: programConfig.treasury,
-      rentCollector: Keypair.generate().publicKey,
+      rentCollector: new PublicKey(rentCollector) ?? null,
     });
 
     await connection.confirmTransaction(signature);
@@ -114,7 +116,6 @@ export const airdrop = async (
   recipientAddress: Address,
   putativeLamports: bigint = lamports(BigInt(LAMPORTS_PER_SOL)),
 ) => {
-  // @ts-expect-error: incompatible type of Connection (solana web3js1 squads vs fuse)
   await airdropFactory(client)({
     recipientAddress,
     commitment: "confirmed",
@@ -138,7 +139,7 @@ export async function getMockToken({
 
   const ata = await createTokenWithAmount(
     mint,
-    vaultPda,
+    creator.address,
     BigInt(10 ** decimals),
     creator,
     creator,
@@ -168,7 +169,7 @@ const createMint = async (
       space,
       lamports: rent,
       newAccount: mint,
-      programAddress: address(TOKEN_PROGRAM_ADDRESS),
+      programAddress: address(TOKEN_2022_PROGRAM_ADDRESS),
     }),
     getInitializeMintInstruction({
       decimals,
@@ -205,7 +206,7 @@ const createTokenWithAmount = async (
       space,
       lamports: rent,
       newAccount: token,
-      programAddress: TOKEN_PROGRAM_ADDRESS,
+      programAddress: TOKEN_2022_PROGRAM_ADDRESS,
     }),
     getInitializeAccountInstruction({ account: token.address, mint, owner }),
     getMintToInstruction({ mint, token: token.address, mintAuthority, amount }),
@@ -227,7 +228,7 @@ const signAndSendTransaction = async (
   const signedTransaction =
     await signTransactionMessageWithSigners(transactionMessage);
   const signature = getSignatureFromTransaction(signedTransaction);
-  // @ts-expect-error: incompatible type of Connection (solana web3js1 squads vs fuse)
+
   await sendAndConfirmTransactionFactory(client)(signedTransaction, {
     commitment,
   });
@@ -244,3 +245,11 @@ const createDefaultTransaction = async (feePayer: TransactionSigner) => {
     (tx) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
   );
 };
+
+export async function getTokenAccountBalance(ata: Address) {
+  const { value: balance } = await client.rpc
+    .getTokenAccountBalance(ata)
+    .send();
+
+  return balance;
+}

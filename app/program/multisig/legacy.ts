@@ -1,43 +1,125 @@
+import {
+  PublicKey,
+  SystemProgram,
+  TransactionInstruction,
+  TransactionMessage as TMessage,
+} from "web3js1";
 import * as multisig from "@sqds/multisig";
-import { PublicKey, TransactionMessage, TransactionInstruction } from "web3js1";
 
 import {
   Address,
   AccountRole,
-  IAccountMeta,
   IInstruction,
-  getAddressDecoder,
+  ReadonlyUint8Array,
   upgradeRoleToSigner,
   upgradeRoleToWritable,
+  address,
+  isWritableRole,
 } from "gill";
-// export type CompiledMsInstruction = {
-//   data: number[];
-//   programIdIndex: number;
-//   accountIndexes: number[];
-// };
+import {
+  TOKEN_2022_PROGRAM_ADDRESS,
+  ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
+} from "gill/programs/token";
+import { SYSTEM_PROGRAM_ADDRESS } from "gill/programs";
 
-// export type MessageAddressTableLookup = {
-//   accountKey: PublicKey;
-//   writableIndexes: number[];
-//   readonlyIndexes: number[];
-// };
+import { useRpcStore } from "~/state/rpc";
+import { Signer } from "~/program/multisig/instruction";
 
-// export type TransactionMessage = {
-//   numSigners: number;
-//   accountKeys: PublicKey[];
-//   numWritableSigners: number;
-//   numWritableNonSigners: number;
-//   instructions: CompiledMsInstruction[];
-//   addressTableLookups: MessageAddressTableLookup[];
-// };
+export type TransactionMessage = TMessage;
+export const TransactionMessage = TMessage;
 
-export function addressFromLegacyPublicKey(
-  legacyPublicKey: PublicKey,
-): Address {
-  return getAddressDecoder().decode(legacyPublicKey.toBytes());
+const { READONLY, WRITABLE, READONLY_SIGNER, WRITABLE_SIGNER } = AccountRole;
+
+const { rpc } = useRpcStore.getState();
+
+export function transferSol(
+  fromAddress: Address,
+  toAddress: Address,
+  amount: number,
+) {
+  return SystemProgram.transfer({
+    fromPubkey: new PublicKey(fromAddress),
+    toPubkey: new PublicKey(toAddress),
+    lamports: amount,
+  });
 }
 
-export function instructionFromLegacyInstruction(
+export type AccountMeta = {
+  pubkey: Address;
+  isSigner: boolean;
+  isWritable: boolean;
+};
+
+export function convertRoles(
+  accountMetas: AccountMeta[],
+): Array<[Address, AccountRole]> {
+  return accountMetas.map((meta) => {
+    let role = READONLY;
+    if (meta.isWritable) {
+      role = WRITABLE;
+    }
+    if (meta.isSigner) {
+      role = isWritableRole(role) ? WRITABLE_SIGNER : READONLY_SIGNER;
+    }
+    return [address(meta.pubkey.toString()), role];
+  });
+}
+
+export function isStaticWritableIndex(index: number, message: any): boolean {
+  const numAccountKeys = message.accountKeys.length;
+  const { numSigners, numWritableSigners, numWritableNonSigners } = message;
+
+  if (index < 0 || index >= numAccountKeys) {
+    return false;
+  }
+
+  const isWritableSigner = index < numWritableSigners;
+  const isWritableNonSigner =
+    index >= numSigners && index < numSigners + numWritableNonSigners;
+
+  return isWritableSigner || isWritableNonSigner;
+}
+
+export function isSignerIndex(message: any, index: number) {
+  return index < message.numSigners;
+}
+
+export function convertFromLegacyInstruction({
+  data,
+  accounts,
+  accountKeys,
+  programAddress,
+}: {
+  data: any;
+  accounts: number[];
+  accountKeys: Address[];
+  programAddress:
+    | typeof TOKEN_2022_PROGRAM_ADDRESS
+    | typeof SYSTEM_PROGRAM_ADDRESS
+    | typeof ASSOCIATED_TOKEN_PROGRAM_ADDRESS;
+}): {
+  data: Uint8Array;
+  programAddress: Address;
+  accounts: Array<{
+    address: Address;
+    role: 0 | 1 | 2 | 3;
+  }>;
+} {
+  return {
+    data: new Uint8Array(data),
+    programAddress,
+    accounts: accounts.map((index) => ({
+      address: accountKeys[index],
+      role: 1, // !!! ANY role (to satisfy the type) !!!
+    })),
+  };
+}
+
+function addressFromLegacyPublicKey(legacyPublicKey: PublicKey): Address {
+  return address(legacyPublicKey.toBase58());
+}
+
+function instructionFromLegacyInstruction(
   legacyInstruction: TransactionInstruction,
 ): IInstruction {
   return {
@@ -54,39 +136,63 @@ export function instructionFromLegacyInstruction(
       return {
         address: addressFromLegacyPublicKey(meta.pubkey),
         role,
-      } satisfies IAccountMeta;
+      };
     }),
     data: legacyInstruction.data,
   };
 }
 
+export async function createLegacyTransactionMessage(
+  signer: Signer,
+  instructions: IInstruction[],
+): Promise<TransactionMessage> {
+  const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
+
+  return new TransactionMessage({
+    payerKey: new PublicKey(signer.address),
+    instructions: instructions.map((ix) => {
+      const accounts = ix.accounts ? ix.accounts : [];
+
+      return {
+        programId: new PublicKey(ix.programAddress),
+        keys: accounts.map((account) => ({
+          pubkey: new PublicKey(account.address),
+          isSigner:
+            account.role === WRITABLE_SIGNER ||
+            account.role === READONLY_SIGNER,
+          isWritable:
+            account.role === WRITABLE || account.role === WRITABLE_SIGNER,
+        })),
+        data: Buffer.from(ix.data as ReadonlyUint8Array),
+      };
+    }),
+    recentBlockhash: latestBlockhash.blockhash,
+  });
+}
+
 export function createVaultInstruction({
   memo,
-  creator,
-  vaultIndex,
-  multisigPda,
-  ephemeralSigners,
+  creatorAddress,
+  multisigAddress,
   transactionIndex,
   transactionMessage,
 }: {
   memo?: string;
-  creator: Address;
-  vaultIndex: number;
-  multisigPda: Address;
+  creatorAddress: Address;
+  multisigAddress: Address;
   transactionIndex: bigint;
-  ephemeralSigners: number;
   transactionMessage: TransactionMessage;
 }): IInstruction {
   const createVaultTransactionIx = multisig.instructions.vaultTransactionCreate(
     {
       memo,
-      vaultIndex,
-      ephemeralSigners,
+      vaultIndex: 0,
       transactionIndex,
+      ephemeralSigners: 0,
+      creator: new PublicKey(creatorAddress),
+      multisigPda: new PublicKey(multisigAddress),
       // @ts-expect-error: incompatible type of TransactionMessage (solana web3js1 squads vs fuse)
       transactionMessage,
-      creator: new PublicKey(creator),
-      multisigPda: new PublicKey(multisigPda),
     },
   );
 

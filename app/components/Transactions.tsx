@@ -47,6 +47,18 @@ export default function Transactions({
   return (
     <div className="flex flex-1 flex-col gap-2 overflow-y-auto scroll-smooth scrollbar-hidden">
       <AnimatePresence>
+        {isLoading && (
+          <motion.span
+            initial={{ opacity: 0.8 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="flex w-full h-[68px] justify-center items-center rounded-[20px] text-black/40">
+              Loading...
+            </div>
+          </motion.span>
+        )}
+
         {!isLoading && !transactions?.length && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -64,13 +76,11 @@ export default function Transactions({
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
 
-      <AnimatePresence>
         {transactions?.map((txData, i) => {
           return (
             <motion.div
-              key={txData.transactionIndex + txData.status}
+              key={txData.timestamp}
               initial={{
                 y: -10,
                 opacity: 0,
@@ -98,20 +108,6 @@ export default function Transactions({
             </motion.div>
           );
         })}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {isLoading && (
-          <motion.span
-            initial={{ opacity: 0.8 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="flex w-full h-[68px] justify-center items-center rounded-[20px] text-black/40">
-              Loading...
-            </div>
-          </motion.span>
-        )}
       </AnimatePresence>
     </div>
   );

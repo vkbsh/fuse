@@ -4,10 +4,9 @@ import { useConnect, useWallets } from "@wallet-standard/react";
 
 import { toast } from "~/state/toast";
 import { useWalletStore } from "~/state/wallet";
-import { useWalletByName } from "~/hooks/wallet";
 import { abbreviateAddress } from "~/utils/address";
-
 import { isKeyMember } from "~/program/multisig/utils/member";
+import { SOLANA_SIGN_AND_SEND_TRANSACTION_FEATURE } from "~/hooks/wallet";
 
 export default function AutoReconnectWallet({ name }: { name: string }) {
   const {
@@ -19,8 +18,12 @@ export default function AutoReconnectWallet({ name }: { name: string }) {
     selectWalletName,
     removewalletStorage,
   } = useWalletStore();
-  const wallets = useWallets();
-  const wallet = useWalletByName(name);
+  const _wallets = useWallets();
+  const wallets = _wallets?.filter((w) =>
+    w.features.includes(SOLANA_SIGN_AND_SEND_TRANSACTION_FEATURE),
+  );
+  const wallet = wallets.find((w) => w?.name === name);
+  const members = multisigStorage?.account?.members || [];
 
   if (!wallet) {
     return null;
@@ -28,16 +31,19 @@ export default function AutoReconnectWallet({ name }: { name: string }) {
 
   const [, connect] = useConnect(wallet);
 
-  const members = multisigStorage?.account?.members || [];
-
   // Update walletHistory with latest wallets
   useEffect(() => {
     const updatedHistory = walletHistory.map((wHistory) => {
       const wallet = wallets.find((w) => w.name === wHistory.name);
       const account = wallet?.accounts[0];
 
-      // TODO: Need to check if the account is a member
-      // TODO: if not a member, remove from history
+      if (account?.address) {
+        const isMember = isKeyMember(members, address(account.address));
+
+        if (!isMember) {
+          console.log("not a member", account.address);
+        }
+      }
 
       return {
         name: wallet?.name || wHistory.name,
@@ -46,8 +52,22 @@ export default function AutoReconnectWallet({ name }: { name: string }) {
       };
     });
 
-    updateHistory(updatedHistory);
-    selectWalletName(wallet.name);
+    const isUpdatedEqual = updatedHistory.every((w, i) => {
+      return (
+        w.name === walletHistory[i].name &&
+        w.icon === walletHistory[i].icon &&
+        w.address === walletHistory[i].address
+      );
+    });
+
+    if (!isUpdatedEqual) {
+      updateHistory(updatedHistory);
+      const updatedWallet = updatedHistory.find((w) => w.name === name);
+
+      if (updatedWallet && updatedWallet?.address !== walletStorage?.address) {
+        selectWalletName(updatedWallet.name);
+      }
+    }
   }, [wallets]);
 
   // Connect to wallet

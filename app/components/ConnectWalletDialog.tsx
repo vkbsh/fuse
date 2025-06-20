@@ -9,7 +9,7 @@ import { toast } from "~/state/toast";
 import { useDialog } from "~/state/dialog";
 import { useWalletStore } from "~/state/wallet";
 import { useMultisigWallets } from "~/hooks/resources";
-import { SOLANA_SIGN_AND_SEND_TRANSACTION } from "~/hooks/wallet";
+import { SOLANA_SIGN_AND_SEND_TRANSACTION_FEATURE } from "~/hooks/wallet";
 
 import { abbreviateAddress } from "~/utils/address";
 
@@ -27,7 +27,7 @@ function WalletOptions() {
   const wallets = useWallets();
 
   const supportedWallets = wallets.filter((w) =>
-    w.features.includes(SOLANA_SIGN_AND_SEND_TRANSACTION),
+    w.features.includes(SOLANA_SIGN_AND_SEND_TRANSACTION_FEATURE),
   );
 
   return (

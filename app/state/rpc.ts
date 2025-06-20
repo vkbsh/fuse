@@ -1,46 +1,18 @@
 import { create } from "zustand";
-import {
-  Rpc,
-  SolanaRpcApi,
-  RpcFromTransport,
-  ModifiedClusterUrl,
-  createSolanaClient,
-  SolanaRpcApiFromTransport,
-  RpcTransportFromClusterUrl,
-  SendAndConfirmTransactionWithSignersFunction,
-} from "gill";
+import { createSolanaClient, SolanaClient } from "gill";
 
-const VITE_RPC_URL = import.meta.env.VITE_RPC_URL;
-const IS_TEST_MODE = import.meta.env.MODE === "test";
+const isTestEnvironment = import.meta.env.VITEST;
+export const RPC_URL_PROD =
+  "https://mainnet.helius-rpc.com/?api-key=b79c2065-6c48-483c-a01f-ead4f4fe616d";
+export const RPC_URL_TEST = "http://localhost:8899";
+export const RPC_URL = isTestEnvironment ? RPC_URL_TEST : RPC_URL_PROD;
 
-type RpcState = {
-  RPC_URL: string;
-  rpc: RpcFromTransport<
-    SolanaRpcApiFromTransport<RpcTransportFromClusterUrl<ModifiedClusterUrl>>,
-    RpcTransportFromClusterUrl<ModifiedClusterUrl>
-  >;
-  setRpc: (rpc: Rpc<SolanaRpcApi>) => void;
-  sendAndConfirmTransaction: SendAndConfirmTransactionWithSignersFunction;
-};
-
-export const useRpcStore = create<RpcState>((set) => {
-  let RPC_URL = IS_TEST_MODE ? "http://localhost:8899" : VITE_RPC_URL;
-
-  if (!RPC_URL) {
-    console.warn("You might want to set VITE_RPC_URL in your .env file.");
-    RPC_URL = "https://api.mainnet-beta.solana.com";
-  }
-
-  const { rpc, sendAndConfirmTransaction } = createSolanaClient({
+export const useRpcStore = create<SolanaClient>(() => {
+  const client = createSolanaClient({
     urlOrMoniker: RPC_URL,
   });
 
-  return {
-    rpc,
-    RPC_URL,
-    sendAndConfirmTransaction,
-    setRpc: (rpc: Rpc<SolanaRpcApi>) => set({ rpc }),
-  };
+  return client;
 });
 
 // const abortController = new AbortController();

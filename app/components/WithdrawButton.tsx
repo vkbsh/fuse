@@ -22,6 +22,7 @@ export default function WithdrawButton() {
       variant="bordered"
       disabled={!hasAllPermissions}
       onClick={() => onOpenChange(true)}
+      className="w-[126px]"
     >
       <span className="rounded-full w-[16px] h-[16px] flex items-center justify-center">
         <IconCircleArrow />

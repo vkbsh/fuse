@@ -1,26 +1,22 @@
-import { describe, test, assert, beforeAll } from "vitest";
+import { describe, test, expect, beforeAll } from "vitest";
 
 import {
   address,
   Address,
+  LAMPORTS_PER_SOL,
   createKeyPairFromBytes,
   createSignerFromKeyPair,
-  signTransactionMessageWithSigners,
 } from "gill";
 
 import {
-  createProposalApproveInstruction,
-  createVaultTransactionExecuteInstruction,
-} from "~/program/multisig/instruction";
-import {
   createTransferSolMessage,
   createTransferTokenMessage,
-  createMessageExecuteAndCloseAccounts,
-} from "~/program/multisig/utils/message";
-import { getVaultPda } from "~/program/multisig/pda";
-import { createMessageWithSigner } from "~/program/multisig/transaction";
+  sendAndConfirmProposalApproveMessage,
+  sendAndConfirmExecuteAndCloseAccountsMessage,
+  sendAndConfirmTransferWithProposalApproveMessage,
+} from "~/program/multisig/message";
 
-import { useRpcStore } from "~/state/rpc";
+import { getVaultPda } from "~/program/multisig/pda";
 
 import {
   airdrop,
@@ -28,18 +24,21 @@ import {
   getMockToken,
   createMultisig,
   getMultisigPda,
-  getMultisigInfo,
   generateLegacyKeyPair,
+  getTokenAccountBalance,
 } from "./_setup";
+import {
+  getAssociatedTokenAccountAddress,
+  TOKEN_2022_PROGRAM_ADDRESS,
+} from "gill/programs/token";
 
-// TODO: Add correct assertions
-// TODO: Use rpc.getAccountInfo, getBalance, etc.  to retrieve accounts and check balances
 describe("Interacting with the Multisig Program", async () => {
-  const { sendAndConfirmTransaction } = useRpcStore.getState();
-
   const creatorKeyPair = generateLegacyKeyPair();
   const createKeyKeyPair = generateLegacyKeyPair();
   const secondMemberKeyPair = generateLegacyKeyPair();
+  const rentCollectorKeyPair = generateLegacyKeyPair();
+  const toTokenKeyPair = generateLegacyKeyPair();
+  const toSolKeyPair = generateLegacyKeyPair();
 
   const createKey = await createSignerFromKeyPair(
     await createKeyPairFromBytes(createKeyKeyPair.secretKey),
@@ -52,12 +51,29 @@ describe("Interacting with the Multisig Program", async () => {
     await createKeyPairFromBytes(secondMemberKeyPair.secretKey),
   );
 
+  const rentCollector = await createSignerFromKeyPair(
+    await createKeyPairFromBytes(rentCollectorKeyPair.secretKey),
+  );
+
+  const toToken = await createSignerFromKeyPair(
+    await createKeyPairFromBytes(toTokenKeyPair.secretKey),
+  );
+
+  const toSol = await createSignerFromKeyPair(
+    await createKeyPairFromBytes(toSolKeyPair.secretKey),
+  );
+
+  const toSolAddress = toSol.address;
+  const toTokenAddress = toToken.address;
+
   const multisigPda = getMultisigPda(createKey.address);
   const multisigAddress = address(multisigPda.toBase58());
   const vaultPda = await getVaultPda({
     vaultIndex: 0,
     multisigAddress,
   });
+
+  const amount = 0.07357;
   let transactionIndex = 1n;
 
   beforeAll(async () => {
@@ -71,6 +87,7 @@ describe("Interacting with the Multisig Program", async () => {
       multisigPda,
       creator: createKeyKeyPair,
       createKey: createKeyKeyPair,
+      rentCollector: rentCollector.address,
       members: [
         {
           key: creator.address,
@@ -86,72 +103,47 @@ describe("Interacting with the Multisig Program", async () => {
 
   describe("Transfer SOL", async () => {
     test("Create VaultTransaction with: [TransferSOL, ProposalCreate, ProposalApprove]", async () => {
-      const message = await createTransferSolMessage({
-        vaultPda,
-        amount: 0.07,
+      const transactionMessage = await createTransferSolMessage({
+        signer: creator,
+        toAddress: toSolAddress,
+        amount: amount * LAMPORTS_PER_SOL,
+      });
+
+      await sendAndConfirmTransferWithProposalApproveMessage({
+        multisigAddress,
         transactionIndex,
         feePayer: creator,
-        creator: creator.address,
-        toAddress: creator.address,
-        multisigPda: multisigAddress,
+        transactionMessage,
+        memberAddress: creator.address,
+        creatorAddress: creator.address,
         memo: "approve from test by the creator",
       });
-
-      try {
-        const signedTransaction =
-          await signTransactionMessageWithSigners(message);
-
-        await sendAndConfirmTransaction(signedTransaction);
-
-        assert.equal(1, 1);
-      } catch (error) {
-        console.log("Error", error);
-      }
     });
 
-    test("Approve VaultTransaction by a Member", async () => {
-      try {
-        const tx = await createMessageWithSigner({
-          feePayer: secondMember,
-          instructions: [
-            await createProposalApproveInstruction({
-              multisigPda: multisigAddress,
-              transactionIndex: transactionIndex,
-              memberAddress: secondMember.address,
-              memo: "approve from test by a member",
-            }),
-          ],
-        });
-
-        const signedTransaction = await signTransactionMessageWithSigners(tx);
-        await sendAndConfirmTransaction(signedTransaction);
-        assert.equal(1, 1);
-      } catch (error) {
-        console.log("Error", error);
-      }
-    });
-
-    test("Execute VaultTransaction by Creator and Close Accounts", async () => {
-      const { rentCollector } = await getMultisigInfo({
-        multisigPda,
+    test("Approve proposal by a Member", async () => {
+      await sendAndConfirmProposalApproveMessage({
+        memo: "Approved by a Member",
+        transactionIndex,
+        feePayer: secondMember,
+        multisigAddress: multisigAddress,
+        memberAddress: secondMember.address,
       });
+    });
 
-      try {
-        const message = await createMessageExecuteAndCloseAccounts({
-          feePayer: creator,
-          transactionIndex,
-          multisigPda: multisigAddress,
-          memberAddress: creator.address,
-          rentCollectorPda: address(String(rentCollector)),
-        });
+    test("Execute VaultTransaction & Close Accounts", async () => {
+      await sendAndConfirmExecuteAndCloseAccountsMessage({
+        transactionIndex,
+        feePayer: creator,
+        memberAddress: creator.address,
+        multisigAddress: multisigAddress,
+        rentCollectorAddress: rentCollector.address,
+      });
+    });
 
-        const signedTransaction =
-          await signTransactionMessageWithSigners(message);
-        await sendAndConfirmTransaction(signedTransaction);
-        assert.equal(1, 1);
-      } catch (error) {
-        console.log("Error", error);
-      }
+    test("Should verify account state after transaction execution", async () => {
+      const balance = await getBalance(toSolAddress);
+
+      expect(balance.value).equal(BigInt(amount * LAMPORTS_PER_SOL));
     });
   });
 
@@ -167,78 +159,67 @@ describe("Interacting with the Multisig Program", async () => {
     });
 
     test("Create VaultTransaction with: [TransferToken, ProposalCreate, ProposalApprove]", async () => {
-      const amount = 0.07357;
-
-      const message = await createTransferTokenMessage({
-        feePayer: creator,
-        creator: creator.address,
-        amount,
+      const transactionMessage = await createTransferTokenMessage({
         fromToken,
-        transactionIndex,
-        authority: vaultPda,
-        toAddress: creator.address,
-        multisigPda: multisigAddress,
-        memo: "approve from test by the creator",
+        signer: creator,
+        toAddress: toTokenAddress,
+        amount: Math.round(amount * 10 ** fromToken.decimals),
       });
 
-      try {
-        const signedTransaction =
-          await signTransactionMessageWithSigners(message);
-        await sendAndConfirmTransaction(signedTransaction);
-        assert.equal(1, 1);
-      } catch (error) {
-        console.log("Error", error);
-      }
+      await sendAndConfirmTransferWithProposalApproveMessage({
+        multisigAddress,
+        transactionIndex,
+        feePayer: creator,
+        transactionMessage,
+        memberAddress: creator.address,
+        creatorAddress: creator.address,
+        memo: "approve from test by creator",
+      });
     });
 
-    test("Approve VaultTransaction by a Member", async () => {
-      try {
-        const tx = await createMessageWithSigner({
-          feePayer: secondMember,
-          instructions: [
-            await createProposalApproveInstruction({
-              transactionIndex,
-              multisigPda: multisigAddress,
-              memberAddress: secondMember.address,
-              memo: "approve from test by a member",
-            }),
-          ],
-        });
-
-        const signedTransaction = await signTransactionMessageWithSigners(tx);
-        await sendAndConfirmTransaction(signedTransaction);
-        assert.equal(1, 1);
-      } catch (error) {
-        console.log("Error", error);
-      }
+    test("Approve proposal by a Member", async () => {
+      await sendAndConfirmProposalApproveMessage({
+        memo: "Approved by a Member",
+        transactionIndex,
+        feePayer: secondMember,
+        multisigAddress: multisigAddress,
+        memberAddress: secondMember.address,
+      });
     });
-    test("Execute VaultTransaction by Creator", async () => {
+
+    test("Execute VaultTransaction & Close Accounts", async () => {
       try {
-        const tx = await createMessageWithSigner({
-          instructions: [
-            await createVaultTransactionExecuteInstruction({
-              transactionIndex,
-              multisigPda: multisigAddress,
-              memberAddress: creator.address,
-            }),
-          ],
+        await sendAndConfirmExecuteAndCloseAccountsMessage({
+          transactionIndex,
           feePayer: creator,
+          memberAddress: creator.address,
+          multisigAddress: multisigAddress,
+          rentCollectorAddress: rentCollector.address,
         });
-
-        const signedTransaction = await signTransactionMessageWithSigners(tx);
-        await sendAndConfirmTransaction(signedTransaction);
-        assert.equal(1, 1);
-      } catch (error) {
-        console.log("Error", error);
+      } catch (e) {
+        console.error("Error [Execute, Close Accounts]: ", e);
       }
+    });
+
+    test("Should verify account state after transaction execution", async () => {
+      const ata = await getAssociatedTokenAccountAddress(
+        fromToken.mint,
+        toTokenAddress,
+        TOKEN_2022_PROGRAM_ADDRESS,
+      );
+
+      const balance = await getTokenAccountBalance(ata);
+
+      expect(balance.uiAmountString).equal(amount.toString());
     });
   });
 });
 
-// TODO:
-describe("Other Cases", async () => {
-  test("Should handle maximum approval count", async () => {});
-  test("Should fail when non-member tries to approve proposal", async () => {});
-  test("Should verify account state after transaction execution", async () => {});
-  test("Should not execute transaction before threshold is met", async () => {});
-});
+// describe("Other Cases", async () => {
+//   test("Should handle maximum approval count", async () => {});
+//   test("Should fail when non-member tries to approve proposal", async () => {});
+//   test("Should verify account state after transaction execution", async () => {});
+//   test("Should not execute transaction before threshold is met", async () => {});
+//   test("Should not execute transaction after it is cancelled", async () => {});
+//   test("Should not execute transaction after it is rejected", async () => {});
+// });

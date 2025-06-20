@@ -1,12 +1,8 @@
+import { address, Address } from "gill";
 import { ReactNode, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { UiWalletAccount } from "@wallet-standard/react";
-import { useWalletAccountTransactionSendingSigner } from "@solana/react";
-import {
-  address,
-  Address,
-  signAndSendTransactionMessageWithSigners,
-} from "gill";
+import { useWalletAccountTransactionSigner } from "@solana/react";
 
 import Button from "~/components/ui/Button";
 import { IconArrowUp } from "~/components/ui/icons/IconArrowUp";
@@ -14,25 +10,22 @@ import { IconSquareDot } from "~/components/ui/icons/IconSquareDot";
 import { IconCircleDot } from "~/components/ui/icons/IconCircleDot";
 import { IconCirclePlus } from "~/components/ui/icons/IconCirclePlus";
 
+import { toast } from "~/state/toast";
 import { useWalletStore } from "~/state/wallet";
 import { useWalletByName } from "~/hooks/wallet";
-import { refetchTransactions } from "~/hooks/resources";
+import { useUpdateTransaction } from "~/hooks/resources";
 
 import {
-  createProposalRejectInstruction,
-  createProposalCancelInstruction,
-  createProposalApproveInstruction,
-  createVaultTransactionAccountsCloseInstruction,
-} from "~/program/multisig/instruction";
-import { hasCloudPermission } from "~/program/multisig/utils/member";
-import { createMessageWithSigner } from "~/program/multisig/transaction";
-import { createMessageExecuteAndCloseAccounts } from "~/program/multisig/utils/message";
+  sendAndConfirmAccountsCloseMessage,
+  sendAndConfirmProposalCancelMessage,
+  sendAndConfirmProposalRejectMessage,
+  sendAndConfirmProposalApproveMessage,
+  sendAndConfirmExecuteAndCloseAccountsMessage,
+} from "~/program/multisig/message";
 
 import { cn } from "~/utils/tw";
-import { toast } from "~/state/toast";
 import { abbreviateAddress } from "~/utils/address";
-
-import { Signer } from "~/program/multisig/transaction";
+import { hasCloudPermission } from "~/program/multisig/utils/member";
 
 export type Token = {
   name: string;
@@ -60,13 +53,13 @@ export default function Transaction({
   rentCollectorAddress,
 }: {
   message: any;
-  timestamp: number;
+  status: Status;
   creator: Address;
+  timestamp: number;
   rejected: Address[];
   approved: Address[];
   cancelled: Address[];
   transactionIndex: number;
-  status: Status;
   rentCollectorAddress: Address;
 }) {
   const { multisigStorage } = useWalletStore();
@@ -173,8 +166,6 @@ export default function Transaction({
                 approved={approved}
                 rejected={rejected}
                 cancelled={cancelled}
-                initiated={creator}
-                onClose={() => onOpenChange(false)}
                 transactionIndex={transactionIndex}
                 rentCollectorAddress={rentCollectorAddress}
                 multisigStorageAddress={multisigStorage?.address as Address}
@@ -302,21 +293,17 @@ function ProgressStatus({
 
 function Footer({
   status,
-  onClose,
   approved,
   rejected,
-  initiated,
   cancelled,
   transactionIndex,
   rentCollectorAddress,
   multisigStorageAddress,
 }: {
   status: any;
-  initiated: Address;
   approved: Address[];
   rejected: Address[];
   cancelled: Address[];
-  onClose: () => void;
   transactionIndex: number;
   rentCollectorAddress: Address;
   multisigStorageAddress: Address;
@@ -328,11 +315,14 @@ function Footer({
 
   if (!walletAccount || !walletAddress) return null;
 
-  const feePayer: Signer = useWalletAccountTransactionSendingSigner(
+  const feePayer = useWalletAccountTransactionSigner(
     walletAccount as UiWalletAccount,
     "solana:mainnet",
   );
-  const refetch = refetchTransactions(multisigStorageAddress);
+  const updateTransaction = useUpdateTransaction(
+    multisigStorageAddress,
+    transactionIndex,
+  );
   const isCloudKey = hasCloudPermission(
     multisigStorage?.account?.members || [],
     address(walletAddress),
@@ -344,129 +334,104 @@ function Footer({
 
   const cancelHandler = async () => {
     try {
-      const message = await createMessageWithSigner({
+      const signature = await sendAndConfirmProposalCancelMessage({
         feePayer,
-        instructions: [
-          await createProposalCancelInstruction({
-            memo: "Cancelled by a Member",
-            memberAddress: address(walletAddress),
-            transactionIndex: BigInt(transactionIndex),
-            multisigPda: address(multisigStorageAddress),
-          }),
-        ],
+        memberAddress: address(walletAddress),
+        multisigAddress: address(multisigStorageAddress),
+        transactionIndex: BigInt(transactionIndex),
       });
 
-      await signAndSendTransactionMessageWithSigners(message);
-      await refetch();
-      onClose();
-    } catch (e: any) {
-      console.error("Error [Cancel]:", e);
-      toast.error("Failed to cancel transaction");
+      await updateTransaction();
+      console.log("CancelProposal signature: ", signature);
+    } catch (e) {
+      console.error("Error [Cancel Proposal]: ", e);
+      toast.error("Failed to Cancel Proposal");
     }
   };
 
   const approveHandler = async () => {
     try {
-      const message = await createMessageWithSigner({
+      const signature = await sendAndConfirmProposalApproveMessage({
+        memo: "Approved by a Member",
         feePayer,
-        instructions: [
-          await createProposalApproveInstruction({
-            memo: "Approved by a Member",
-            memberAddress: address(walletAddress),
-            transactionIndex: BigInt(transactionIndex),
-            multisigPda: address(multisigStorageAddress),
-          }),
-        ],
+        memberAddress: address(walletAddress),
+        multisigAddress: address(multisigStorageAddress),
+        transactionIndex: BigInt(transactionIndex),
       });
 
-      await signAndSendTransactionMessageWithSigners(message);
-      await refetch();
-      onClose();
-    } catch (e: any) {
-      console.error("Error [Approve]:", e);
-      toast.error("Failed to approve transaction");
+      console.log("ApproveProposal signature: ", signature);
+      await updateTransaction();
+    } catch (e) {
+      console.error("Error [Approve Proposal]: ", e);
+      toast.error("Failed to Approve Proposal");
     }
   };
 
   const executeHandler = async () => {
     try {
-      const message = await createMessageExecuteAndCloseAccounts({
+      const signature = await sendAndConfirmExecuteAndCloseAccountsMessage({
         feePayer,
-        multisigPda: multisigStorageAddress,
+        rentCollectorAddress,
         memberAddress: address(walletAddress),
+        multisigAddress: multisigStorageAddress,
         transactionIndex: BigInt(transactionIndex),
-        rentCollectorPda: address(rentCollectorAddress),
       });
-      await signAndSendTransactionMessageWithSigners(message);
-      await refetch();
-      onClose();
-    } catch (e: any) {
-      console.error("Error [Execute, Close Accounts]:", e);
-      toast.error("Failed to execute transaction");
+
+      console.log("ExecuteAndCloseAccounts signature: ", signature);
+      await updateTransaction();
+    } catch (e) {
+      console.error("Error [Execute, Close Accounts]: ", e);
+      toast.error("Failed to Execute Vault Transaction");
     }
   };
 
   const rejectHandler = async () => {
     try {
-      const message = await createMessageWithSigner({
+      const signature = await sendAndConfirmProposalRejectMessage({
         feePayer,
-        instructions: [
-          await createProposalRejectInstruction({
-            memo: "Rejected by a Member",
-            memberAddress: address(walletAddress),
-            transactionIndex: BigInt(transactionIndex),
-            multisigPda: address(multisigStorageAddress),
-          }),
-        ],
+        memberAddress: address(walletAddress),
+        multisigAddress: address(multisigStorageAddress),
+        transactionIndex: BigInt(transactionIndex),
       });
 
-      await signAndSendTransactionMessageWithSigners(message);
-      await refetch();
-      onClose();
+      console.log("RejectProposal signature: ", signature);
+      await updateTransaction();
     } catch (e) {
-      console.error("Error [Reject]:", e);
-      toast.error("Failed to reject transaction");
+      console.error("Error [Reject Proposal]: ", e);
+      toast.error("Failed to Reject Proposal");
     }
   };
 
   const closeAccounts = async () => {
     try {
-      const message = await createMessageWithSigner({
+      const signature = await sendAndConfirmAccountsCloseMessage({
         feePayer,
-        instructions: [
-          await createVaultTransactionAccountsCloseInstruction({
-            multisigPda: multisigStorageAddress,
-            transactionIndex: BigInt(transactionIndex),
-            rentCollectorPda: address(rentCollectorAddress),
-          }),
-        ],
+        rentCollectorAddress,
+        multisigAddress: address(multisigStorageAddress),
+        transactionIndex: BigInt(transactionIndex),
       });
 
-      await signAndSendTransactionMessageWithSigners(message);
-      await refetch();
-      onClose();
+      console.log("CloseAccounts signature: ", signature);
+      await updateTransaction();
     } catch (e) {
-      console.error("Error [Close Accounts]:", e);
-      toast.error("Failed to close accounts");
+      console.error("Error [Close Accounts]: ", e);
+      toast.error("Failed to Close Accounts");
     }
   };
 
   return (
     <AnimatePresence>
-      {status === "Executed" && (
+      {/* {status === "Executed" && (
         <motion.div key={status} className="flex flex-row justify-center gap-4">
-          <Button size="md" variant="bordered" onClick={() => onClose()}>
-            Ok
+          <Button size="md" variant="bordered" onClick={closeAccounts}>
+            Reclaim rent
           </Button>
         </motion.div>
-      )}
+      )} */}
       {["Cancelled", "Rejected"].includes(status) && (
         <motion.div key={status} className="flex flex-row justify-center gap-4">
-          <Button size="md" variant="bordered" onClick={() => onClose()}>
-            Ok
-          </Button>
           <Button size="md" variant="bordered" onClick={closeAccounts}>
-            Reclaim
+            Reclaim rent
           </Button>
         </motion.div>
       )}

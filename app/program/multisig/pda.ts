@@ -19,8 +19,8 @@ export const SEED_EPHEMERAL_SIGNER =
 
 async function getPda(seeds: any[]): Promise<Address> {
   const [pda] = await getProgramDerivedAddress({
-    programAddress: SQUADS_PROGRAM_ID,
     seeds,
+    programAddress: SQUADS_PROGRAM_ID,
   });
 
   return pda;

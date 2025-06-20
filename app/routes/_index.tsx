@@ -35,8 +35,8 @@ export default function Index() {
         {!multisigStorage || !walletStorage ? (
           <motion.div
             key="connect"
-            initial={{ opacity: 0, display: "flex" }}
-            animate={{ opacity: 1, display: "flex" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0, display: "none" }}
             transition={{ duration: 0.5 }}
             className="h-full flex items-center justify-center"
@@ -46,8 +46,8 @@ export default function Index() {
         ) : (
           <motion.div
             key="dashboard"
-            initial={{ opacity: 0, display: "flex" }}
-            animate={{ opacity: 1, display: "flex" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0, display: "none" }}
             transition={{ duration: 0.5 }}
             className="h-full flex items-center justify-center"

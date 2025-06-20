@@ -1,5 +1,6 @@
 import {
   Address,
+  decodeAccount,
   EncodedAccount,
   AccountInfoBase,
   Base64EncodedBytes,
@@ -27,7 +28,7 @@ import {
   getTransactionPda,
 } from "~/program/multisig/pda";
 
-import { parseTransactionMessage } from "~/program/multisig/utils/parse-transaction";
+import { parseTransactionMessage } from "~/program/multisig/utils/parseTransferTransaction";
 
 import { useRpcStore } from "~/state/rpc";
 
@@ -46,7 +47,7 @@ type Wallet = {
   };
 };
 
-type Transaction = {
+export type Transaction = {
   status: any;
   message: any;
   timestamp: number;
@@ -231,7 +232,7 @@ async function getTransactionsByMultisigAndIndex(
       .send();
   } catch (e) {
     accounts = [];
-    console.error(e);
+    console.error("Failed to getProgramAccounts for Proposals: ", e);
   }
 
   return await Promise.all(
@@ -275,20 +276,11 @@ async function getTransactionsByMultisigAndIndex(
         return null;
       }
 
-      let parsedMessage;
+      // const decodedMessage = decodeAccount(vaultTransaction?.message);
 
-      try {
-        parsedMessage = vaultTransaction?.message
-          ? await parseTransactionMessage(vaultTransaction.message)
-          : null;
-      } catch (e) {
-        console.error(
-          "Failed to parse vaultTransaction: ",
-          transactionIndex,
-          e,
-        );
-        return null;
-      }
+      const parsedMessage = vaultTransaction?.message
+        ? await parseTransactionMessage(vaultTransaction.message)
+        : null;
 
       if (!parsedMessage) {
         return null;
@@ -306,4 +298,31 @@ async function getTransactionsByMultisigAndIndex(
       };
     }),
   );
+}
+
+export async function getProposalByIndex(
+  multisigAddress: Address,
+  transactionIndex: number,
+) {
+  const proposalPda = await getProposalPda({
+    multisigAddress,
+    transactionIndex: BigInt(transactionIndex),
+  });
+
+  const proposalPdaInfo = await rpc
+    .getAccountInfo(proposalPda, { encoding: "base64" })
+    .send();
+
+  if (!proposalPdaInfo.value) {
+    return null;
+  }
+
+  const { data: proposalDataAccount } = parseBase64RpcAccount(
+    proposalPda,
+    proposalPdaInfo.value,
+  );
+
+  const proposal = getProposalAccountCodec().decode(proposalDataAccount);
+
+  return proposal;
 }

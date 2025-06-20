@@ -9,8 +9,8 @@ import { cn } from "~/utils/tw";
 const ANIMATION_OUT_DURATION = 350;
 
 export const Toasts = () => {
-  const { toasts, removeToast } = useToastStore();
   const viewportRef = useRef(null);
+  const { toasts, removeToast } = useToastStore();
   const [isHovering, setIsHovering] = useState(false);
 
   const toastsArray = Array.from(toasts);
@@ -32,7 +32,7 @@ export const Toasts = () => {
             total={toastsArray.length}
             onOpenChange={(open) => {
               if (!open) {
-                useToastStore.getState().setToastElement(key, null);
+                // useToastStore.getState().setToastElement(key, null);
                 setTimeout(() => {
                   removeToast(key);
                 }, ANIMATION_OUT_DURATION);

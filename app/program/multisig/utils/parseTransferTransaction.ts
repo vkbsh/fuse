@@ -1,9 +1,10 @@
-import { address, Address } from "gill";
+import { address, Address, fetchEncodedAccount, decodeAccount } from "gill";
 
 import {
   SYSTEM_PROGRAM_ADDRESS,
   parseTransferSolInstruction,
   ParsedTransferSolInstruction,
+  getTransferSolInstructionDataEncoder,
 } from "gill/programs";
 
 import {
@@ -11,9 +12,11 @@ import {
   ParsedTransferInstruction,
   ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
   parseCreateAssociatedTokenIdempotentInstruction,
-} from "@solana-program/token";
+  TOKEN_2022_PROGRAM_ADDRESS,
+  TOKEN_PROGRAM_ADDRESS,
+} from "gill/programs/token";
 
-import { TOKEN_PROGRAM_ADDRESS } from "@solana-program/token";
+import { convertFromLegacyInstruction } from "~/program/multisig/legacy";
 
 const nativeToken = {
   address: address("So11111111111111111111111111111111111111112"),
@@ -34,6 +37,18 @@ type Result = {
   fromAccount: Address;
   mintAddress: Address;
 };
+
+function isTokenProgram(programAddress: Address): boolean {
+  return programAddress === TOKEN_2022_PROGRAM_ADDRESS;
+}
+
+function isSystemProgram(programAddress: Address): boolean {
+  return programAddress === SYSTEM_PROGRAM_ADDRESS;
+}
+
+function isAssociatedTokenProgram(programAddress: Address): boolean {
+  return programAddress === ASSOCIATED_TOKEN_PROGRAM_ADDRESS;
+}
 
 export async function parseTransactionMessage(
   message: Message,
@@ -169,47 +184,4 @@ export async function parseTransactionMessage(
   }
 
   return result;
-}
-
-function convertFromLegacyInstruction({
-  data,
-  accounts,
-  accountKeys,
-  programAddress,
-}: {
-  data: any;
-  accounts: number[];
-  accountKeys: Address[];
-  programAddress:
-    | typeof TOKEN_PROGRAM_ADDRESS
-    | typeof SYSTEM_PROGRAM_ADDRESS
-    | typeof ASSOCIATED_TOKEN_PROGRAM_ADDRESS;
-}): {
-  data: Uint8Array;
-  programAddress: Address;
-  accounts: Array<{
-    address: Address;
-    role: 0 | 1 | 2 | 3;
-  }>;
-} {
-  return {
-    data: new Uint8Array(data),
-    programAddress,
-    accounts: accounts.map((index) => ({
-      address: accountKeys[index],
-      role: 1, // !!! ANY role (to satisfy the type) !!!
-    })),
-  };
-}
-
-function isTokenProgram(programAddress: Address): boolean {
-  return programAddress === TOKEN_PROGRAM_ADDRESS;
-}
-
-function isSystemProgram(programAddress: Address): boolean {
-  return programAddress === SYSTEM_PROGRAM_ADDRESS;
-}
-
-function isAssociatedTokenProgram(programAddress: Address): boolean {
-  return programAddress === ASSOCIATED_TOKEN_PROGRAM_ADDRESS;
 }
