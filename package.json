@@ -9,7 +9,8 @@
   "scripts": {
     "test": "vitest",
     "dev": "remix vite:dev",
-    "build": "remix vite:build"
+    "build": "remix vite:build",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.2",

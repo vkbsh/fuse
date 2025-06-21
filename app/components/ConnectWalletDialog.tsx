@@ -120,8 +120,6 @@ function ConnectMultisig({
 
   const multisig = multisigWallets?.[0];
 
-  console.log("multisigWallets", multisigWallets);
-
   useEffect(() => {
     if (isFetched && accountAddress && !isLoading) {
       if (!multisig) {

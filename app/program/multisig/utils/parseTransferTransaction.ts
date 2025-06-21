@@ -1,19 +1,18 @@
-import { address, Address, fetchEncodedAccount, decodeAccount } from "gill";
+import { address, Address } from "gill";
 
 import {
   SYSTEM_PROGRAM_ADDRESS,
   parseTransferSolInstruction,
   ParsedTransferSolInstruction,
-  getTransferSolInstructionDataEncoder,
 } from "gill/programs";
 
 import {
+  TOKEN_PROGRAM_ADDRESS,
+  TOKEN_2022_PROGRAM_ADDRESS,
+  ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
   parseTransferInstruction,
   ParsedTransferInstruction,
-  ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
   parseCreateAssociatedTokenIdempotentInstruction,
-  TOKEN_2022_PROGRAM_ADDRESS,
-  TOKEN_PROGRAM_ADDRESS,
 } from "gill/programs/token";
 
 import { convertFromLegacyInstruction } from "~/program/multisig/legacy";
@@ -68,12 +67,14 @@ export async function parseTransactionMessage(
       | typeof TOKEN_PROGRAM_ADDRESS
       | typeof SYSTEM_PROGRAM_ADDRESS;
 
-    const ix = convertFromLegacyInstruction({
-      accountKeys,
+    const ix = {
+      data: new Uint8Array(ixLegacy.data),
+      accounts: ixLegacy.accountIndexes.map((index) => ({
+        role: 1,
+        address: accountKeys[index],
+      })),
       programAddress,
-      data: ixLegacy.data,
-      accounts: ixLegacy.accountIndexes,
-    });
+    };
 
     let parsedTx:
       | ParsedTransferInstruction<Address>
@@ -82,6 +83,7 @@ export async function parseTransactionMessage(
 
     if (isSystemProgram(programAddress)) {
       try {
+        // parsedTx = parseTransferSolInstruction(ix);
         parsedTx = parseTransferSolInstruction(ix);
       } catch (error) {
         console.error("Failed to parse Transfer SOL Instruction: ", error);

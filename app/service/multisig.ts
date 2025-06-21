@@ -1,6 +1,5 @@
 import {
   Address,
-  decodeAccount,
   EncodedAccount,
   AccountInfoBase,
   Base64EncodedBytes,
@@ -188,13 +187,13 @@ async function getWalletByKeyAndIndex(
         vaultIndex: 0,
         multisigAddress: wallet.pubkey,
       });
-      const data = getMultisigAccountCodec().decode(
+      const account = getMultisigAccountCodec().decode(
         parseBase64RpcAccount(wallet.pubkey, wallet.account).data,
       );
 
       return {
+        account,
         defaultVault,
-        account: data,
         address: wallet.pubkey,
       };
     }),
@@ -275,8 +274,6 @@ async function getTransactionsByMultisigAndIndex(
         console.error("Decode vaultTransaction: ", transactionIndex, e);
         return null;
       }
-
-      // const decodedMessage = decodeAccount(vaultTransaction?.message);
 
       const parsedMessage = vaultTransaction?.message
         ? await parseTransactionMessage(vaultTransaction.message)

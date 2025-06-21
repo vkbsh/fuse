@@ -1,29 +1,32 @@
-import {
-  PublicKey,
-  SystemProgram,
-  TransactionInstruction,
-  TransactionMessage as TMessage,
-} from "web3js1";
 import * as multisig from "@sqds/multisig";
 
 import {
+  PublicKey,
+  TransactionInstruction,
+  TransactionMessage as TMessage,
+} from "web3js1";
+
+import {
+  address,
   Address,
   AccountRole,
   IInstruction,
+  isWritableRole,
   ReadonlyUint8Array,
   upgradeRoleToSigner,
   upgradeRoleToWritable,
-  address,
-  isWritableRole,
 } from "gill";
+
 import {
+  TOKEN_PROGRAM_ADDRESS,
   TOKEN_2022_PROGRAM_ADDRESS,
   ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
 } from "gill/programs/token";
+
 import { SYSTEM_PROGRAM_ADDRESS } from "gill/programs";
+import { Signer } from "~/program/multisig/instruction";
 
 import { useRpcStore } from "~/state/rpc";
-import { Signer } from "~/program/multisig/instruction";
 
 export type TransactionMessage = TMessage;
 export const TransactionMessage = TMessage;
@@ -31,18 +34,6 @@ export const TransactionMessage = TMessage;
 const { READONLY, WRITABLE, READONLY_SIGNER, WRITABLE_SIGNER } = AccountRole;
 
 const { rpc } = useRpcStore.getState();
-
-export function transferSol(
-  fromAddress: Address,
-  toAddress: Address,
-  amount: number,
-) {
-  return SystemProgram.transfer({
-    fromPubkey: new PublicKey(fromAddress),
-    toPubkey: new PublicKey(toAddress),
-    lamports: amount,
-  });
-}
 
 export type AccountMeta = {
   pubkey: Address;
@@ -94,8 +85,9 @@ export function convertFromLegacyInstruction({
   accounts: number[];
   accountKeys: Address[];
   programAddress:
-    | typeof TOKEN_2022_PROGRAM_ADDRESS
+    | typeof TOKEN_PROGRAM_ADDRESS
     | typeof SYSTEM_PROGRAM_ADDRESS
+    | typeof TOKEN_2022_PROGRAM_ADDRESS
     | typeof ASSOCIATED_TOKEN_PROGRAM_ADDRESS;
 }): {
   data: Uint8Array;

@@ -23,7 +23,6 @@ import {
   TransactionMessage,
   createVaultInstruction,
   createLegacyTransactionMessage,
-  transferSol,
 } from "~/program/multisig/legacy";
 
 import { useRpcStore } from "~/state/rpc";

@@ -25,10 +25,6 @@ export default function AutoReconnectWallet({ name }: { name: string }) {
   const wallet = wallets.find((w) => w?.name === name);
   const members = multisigStorage?.account?.members || [];
 
-  if (!wallet) {
-    return null;
-  }
-
   const [, connect] = useConnect(wallet);
 
   // Update walletHistory with latest wallets

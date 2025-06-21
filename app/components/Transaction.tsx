@@ -313,8 +313,6 @@ function Footer({
   const walletAccount = wallet?.accounts[0];
   const walletAddress = walletAccount?.address;
 
-  if (!walletAccount || !walletAddress) return null;
-
   const feePayer = useWalletAccountTransactionSigner(
     walletAccount as UiWalletAccount,
     "solana:mainnet",

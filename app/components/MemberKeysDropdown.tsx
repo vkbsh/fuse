@@ -86,10 +86,6 @@ function Account({
   permissionLabel: string;
   wallet: LSWallet;
 }) {
-  if (!wallet) {
-    return null;
-  }
-
   const { removewalletStorage, selectWalletName } = useWalletStore();
 
   return (
