@@ -47,13 +47,14 @@
   --color-status-success: #41be6b;
   --color-status-warning: #e0a100;
   --color-status-error: #ff4a4a;
+
+  --font-display: "SFProDisplay", "sans-serif";
 }
 
 html,
 body {
   height: 100%;
   overflow: hidden;
-  font-family: "SFProDisplay";
   color: var(--color-primary-text);
   background-color: var(--color-background);
 }
