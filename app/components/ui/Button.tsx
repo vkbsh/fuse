@@ -11,9 +11,9 @@ type Variant = "primary" | "secondary" | "bordered" | "max" | "cancel";
 const variants: { [key in Variant]: string } = {
   primary: "bg-black text-white",
   secondary: "bg-white text-black",
-  cancel: "bg-white/20 text-white border border-white/20",
+  cancel: "bg-white-20 text-white border border-white-20",
   bordered: "bg-black text-white ring-3 ring-[#BFBFBF] font-medium text-sm",
-  max: "bg-white/30 text-white border-4 border-black/20 font-extrabold text-base",
+  max: "bg-white-30 text-white border-4 border-black-20 font-extrabold text-base",
 };
 
 const sizes: { [k in Size]: string } = {

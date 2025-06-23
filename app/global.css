@@ -3,27 +3,44 @@
 @font-face {
   font-style: normal;
   font-family: "SFProDisplay";
-  src: url("/fonts/sf-pro.ttf") format("truetype");
+  src: url("./fonts/sf-pro.ttf") format("ttf");
 }
 
 @theme {
-  --color-*: initial; /* reset default colors */
-  --color-white: #fff;
+  /* Black */
   --color-black: #000;
+  --color-black-20: #00000020;
+  --color-black-30: #00000030;
+  --color-black-40: #00000040;
+  --color-black-60: #00000060;
+  --color-black-85: #00000085;
+
+  /* White */
+  --color-white: #fff;
+  --color-white-5: #ffffff05;
+  --color-white-20: #ffffff20;
+  --color-white-30: #ffffff30;
+  --color-white-40: #ffffff40;
+
+  /* Background */
   --color-background: #f3f3f3;
   --color-foreground: #ebebeb;
-  --color-foreground-text: #7b7b7b;
-  --color-trn-hover: rgba(179, 179, 179, 0.24);
-  --color-hover-background: rgba(256, 256, 256, 0.2);
-  --color-hover-text: rgba(256, 256, 256, 0.3);
-  --color-grey-text: rgba(256, 256, 256, 0.4);
 
+  /* Text */
+  --color-hover-text: #ffffff4d;
+  --color-grey-text: #ffffff66;
   --color-primary-text: #1f1e1e;
+  --color-foreground-text: #7b7b7b;
+  --color-white-60: #ffffff60;
+
+  /* Hover */
+  --color-trn-hover: #b3b3b33d;
+  --color-hover-background: #ffffff33;
 
   /* Select */
-  --color-select-bg-hover: rgba(256, 256, 256, 0.15);
-  --color-select-text-hover: rgba(256, 256, 256, 0.5);
-  --color-select-border-hover: rgba(256, 256, 256, 0.15);
+  --color-select-bg-hover: #ffffff26;
+  --color-select-text-hover: #ffffff80;
+  --color-select-border-hover: #ffffff26;
 
   /* Status */
   --color-status-primary: #2685e1;
@@ -36,7 +53,7 @@ html,
 body {
   height: 100%;
   overflow: hidden;
-  font-family: SFProDisplay;
+  font-family: "SFProDisplay";
   color: var(--color-primary-text);
   background-color: var(--color-background);
 }

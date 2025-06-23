@@ -13,7 +13,7 @@ import { SOLANA_SIGN_AND_SEND_TRANSACTION_FEATURE } from "~/hooks/wallet";
 
 import { abbreviateAddress } from "~/utils/address";
 
-export function ConnectWalletDialog() {
+export default function ConnectWalletDialog() {
   const { isOpen, onOpenChange } = useDialog("connectWallet");
 
   return (

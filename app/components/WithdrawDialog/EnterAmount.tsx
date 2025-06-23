@@ -80,7 +80,7 @@ const EnterAmount = ({ vaultAddress }: { vaultAddress: Address }) => {
       <div className="relative flex flex-row gap-4 items-center justify-between">
         <SelectToken vaultAddress={vaultAddress} />
         <label htmlFor="amount" className="cursor-pointer flex flex-row w-full">
-          <div className="relative overflow-visible flex flex-row gap-1.5 items-center justify-between border rounded-2xl border-white/40 px-4 py-1">
+          <div className="relative overflow-visible flex flex-row gap-1.5 items-center justify-between border rounded-2xl border-white-40 px-4 py-1">
             <Input
               id="amount"
               value={value}
@@ -112,7 +112,7 @@ const EnterAmount = ({ vaultAddress }: { vaultAddress: Address }) => {
           MAX
         </Button>
       </div>
-      <div className="flex flex-row gap-2 items-center justify-between mt-2 text-white/60">
+      <div className="flex flex-row gap-2 items-center justify-between mt-2 text-white-60">
         <motion.span
           key={calculatedAmount}
           initial={{

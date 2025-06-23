@@ -1,6 +1,5 @@
 import { Address } from "gill";
 import { useEffect } from "react";
-import { motion } from "motion/react";
 
 import Dropdown from "~/components/ui/Dropdown";
 import { IconChevronDown } from "~/components/ui/icons/IconChevronDown";
@@ -26,7 +25,7 @@ export default function SelectToken({
     }
   }, [selected]);
 
-  const itemsComponent = items.map((item, i) => {
+  const itemsComponent = items.map((item) => {
     const amount =
       item?.symbol?.toLocaleLowerCase() === "sol"
         ? getRoundedSOL(item.amount)
@@ -34,24 +33,17 @@ export default function SelectToken({
     const name = item.name === "Wrapped SOL" ? "Solana" : item.name;
 
     return (
-      <motion.div
-        key={i}
-        whileHover={{
-          color: "var(--color-select-text-hover)",
-          backgroundColor: "var(--color-select-bg-hover)",
-          borderColor: "var(--color-select-border-hover)",
-        }}
+      <div
+        key={item.mint}
         onClick={() => set("token", item)}
-        className="flex items-center cursor-pointer w-[279px] h-[46px] p-4 rounded-[14px] text-white border border-transparent"
+        className="flex items-center cursor-pointer w-[279px] h-[46px] p-4 rounded-[14px] text-white border border-transparent hover:text-select-text-hover hover:bg-select-bg-hover hover:border-select-border-hover duration-500"
       >
         <div className="flex flex-row items-center justify-between  w-full">
           <div className="flex flex-row items-center gap-2">
             <img
               src={item.logoURI}
               alt={item.name}
-              className="w-7 h-7 rounded-full  
-
-              "
+              className="w-7 h-7 rounded-full"
             />
             <span className="font-semibold text-base max-w-26 truncate">
               {name}
@@ -61,7 +53,7 @@ export default function SelectToken({
             {amount} {item.symbol}
           </span>
         </div>
-      </motion.div>
+      </div>
     );
   });
 
@@ -69,7 +61,7 @@ export default function SelectToken({
     <Dropdown
       align="start"
       items={itemsComponent}
-      className="overflow-scroll max-h-[226px] ring-white/30 relative z-30"
+      className="overflow-scroll max-h-[226px] ring-white-30 relative z-30"
       trigger={<SelectedToken token={selected} />}
     />
   );
@@ -77,17 +69,16 @@ export default function SelectToken({
 
 const SelectedToken = ({ token }: { token: TokenData }) => {
   return (
-    <div className="relative cursor-pointer px-2 pr-3.5 min-w-[130px] h-[40px] bg-white/20 flex flex-row gap-2 items-center rounded-full text-white border border-white/5">
+    <div className="relative cursor-pointer px-2 pr-3.5 min-w-[130px] h-[40px] bg-white-20 flex flex-row gap-2 items-center rounded-full text-white border border-white-5">
       <img
-        src={token?.logoURI}
         alt={token?.name}
+        src={token?.logoURI}
         className="w-7 h-7 rounded-full"
       />
-
       <span className="uppercase font-semibold text-base ">
         {token?.symbol}
       </span>
-      <span className="text-white/30 ml-auto">
+      <span className="text-white-30 ml-auto">
         <IconChevronDown />
       </span>
     </div>

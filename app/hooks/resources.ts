@@ -193,11 +193,11 @@ export function useUpdateTransaction(
     //   transactionIndex,
     // );
 
-    // queryClient.invalidateQueries({
-    //   queryKey: [queryKeys.transaction, multisigAddress],
-    // });
+    queryClient.invalidateQueries({
+      queryKey: [queryKeys.transaction, multisigAddress],
+    });
 
-    await queryClient.refetchQueries({
+    return queryClient.refetchQueries({
       queryKey: [queryKeys.transaction, multisigAddress],
     });
 
@@ -243,10 +243,12 @@ export function useFetchLatestTransaction(
   const queryClient = useQueryClient();
 
   return async () => {
-    // await queryClient.refetchQueries({
-    //   queryKey: [queryKeys.transaction, multisigAddress],
-    // });
-    return "test";
+    await queryClient.invalidateQueries({
+      queryKey: [queryKeys.transaction, multisigAddress],
+    });
+    return queryClient.refetchQueries({
+      queryKey: [queryKeys.transaction, multisigAddress],
+    });
   };
 
   // const allTransactions: Transaction[] =

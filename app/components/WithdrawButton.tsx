@@ -1,5 +1,3 @@
-import { Address } from "gill";
-
 import Button from "~/components/ui/Button";
 import { IconCircleArrow } from "~/components/ui/icons/IconCircleArrow";
 
@@ -13,7 +11,7 @@ export default function WithdrawButton() {
 
   const hasAllPermissions = hasCloudPermission(
     multisigStorage?.account?.members || [],
-    walletStorage?.address as Address,
+    walletStorage?.address,
   );
 
   return (

@@ -1,12 +1,13 @@
 import { Address } from "gill";
 import { motion, AnimatePresence } from "motion/react";
 
-import Transaction from "~/components/Transaction";
 import {
   useTokensMeta,
   useTransactions,
   useMultisigAccount,
 } from "~/hooks/resources";
+
+import Transaction from "./Transaction";
 
 export type Status = "ready" | "executed" | "cancelled";
 
@@ -53,7 +54,7 @@ export default function Transactions({
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="flex w-full h-[68px] justify-center items-center rounded-[20px] text-black/40">
+            <div className="flex w-full h-[68px] justify-center items-center rounded-[20px] text-black-40">
               Loading...
             </div>
           </motion.span>

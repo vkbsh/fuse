@@ -74,7 +74,7 @@ export default function Dialog({
                     whileHover={{
                       scale: 1.05,
                     }}
-                    className="cursor-pointer absolute -bottom-20 left-0 right-0 z-0 w-[47px] h-[47px] rounded-full bg-black/60 text-white flex items-center justify-center mx-auto drop-shadow-2xl border border-[#A7A7A7]"
+                    className="cursor-pointer absolute -bottom-20 left-0 right-0 z-0 w-[47px] h-[47px] rounded-full bg-black-60 text-white flex items-center justify-center mx-auto drop-shadow-2xl border border-[#A7A7A7]"
                   >
                     <Close className="w-full h-full flex justify-center items-center cursor-pointer">
                       <IconClose />

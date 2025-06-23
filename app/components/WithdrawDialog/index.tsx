@@ -1,14 +1,14 @@
 import { Address } from "gill";
 
-import Dialog from "~/components/ui/Dialog";
-import Review from "~/components/withdraw-dialog/Review";
-import EnterAmount from "~/components/withdraw-dialog/EnterAmount";
-import ChooseWallet from "~/components/withdraw-dialog/ChooseWallet";
-
 import { useDialog } from "~/state/dialog";
 import { useWalletStore } from "~/state/wallet";
 import { useWalletByName } from "~/hooks/wallet";
 import { useMultisigAccount } from "~/hooks/resources";
+
+import Dialog from "~/components/ui/Dialog";
+import Review from "./Review";
+import EnterAmount from "./EnterAmount";
+import ChooseWallet from "./ChooseWallet";
 
 export default function WithdrawDialog() {
   const { walletStorage } = useWalletStore();
@@ -64,9 +64,9 @@ function Withdraw({
       <ChooseWallet vaultAddress={vaultAddress} />
       <EnterAmount vaultAddress={vaultAddress} />
       <Review
+        onClose={() => onOpenChange(false)}
         walletAccount={walletAccount}
         multisigAddress={multisigAddress}
-        onClose={() => onOpenChange(false)}
         transactionIndex={transactionIndex}
       />
     </>

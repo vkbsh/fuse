@@ -31,7 +31,7 @@ const ChooseWallet = ({ vaultAddress }: { vaultAddress: Address }) => {
 
   return (
     <>
-      <div className="bg-white/20  h-14 border border-white/30 rounded-[20px] px-4 py-2.5 flex flex-row gap-2 items-center justify-between">
+      <div className="bg-white-20  h-14 border border-white-30 rounded-[20px] px-4 py-2.5 flex flex-row gap-2 items-center justify-between">
         <div className="flex flex-row items-center gap-2">
           <span className="font-semibold opacity-40">From</span>
           <span className="flex flex-row items-center gap-3">
@@ -47,7 +47,7 @@ const ChooseWallet = ({ vaultAddress }: { vaultAddress: Address }) => {
           ${getRoundedUSD(totalAmount)}
         </span>
       </div>
-      <div className="relative h-14 border border-white/30 rounded-[20px] px-4 py-2.5 flex flex-row gap-2 items-center">
+      <div className="relative h-14 border border-white-30 rounded-[20px] px-4 py-2.5 flex flex-row gap-2 items-center">
         <div>
           <div className="flex flex-row items-center gap-2">
             <span className="font-semibold opacity-40">To:</span>

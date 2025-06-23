@@ -8,7 +8,7 @@ import { cn } from "~/utils/tw";
 
 const ANIMATION_OUT_DURATION = 350;
 
-export const Toasts = () => {
+export default function Toasts() {
   const viewportRef = useRef(null);
   const { toasts, removeToast } = useToastStore();
   const [isHovering, setIsHovering] = useState(false);
@@ -47,7 +47,7 @@ export const Toasts = () => {
       />
     </ToastPrimitive.Provider>
   );
-};
+}
 
 const ToastStatusIcon = ({
   status,

@@ -21,8 +21,12 @@ export function isKeyMember(members: Member[], address: Address) {
   return members.some((m) => m.key === address);
 }
 
-export function hasCloudPermission(members: Member[], address: Address) {
-  if (!isKeyMember(members, address)) return false;
+export function hasCloudPermission(
+  members: Member[],
+  address: Address | undefined,
+) {
+  if (!members?.length || !address || !isKeyMember(members, address))
+    return false;
 
   const member = members.find((m) => m.key === address);
 
@@ -31,8 +35,12 @@ export function hasCloudPermission(members: Member[], address: Address) {
   return false;
 }
 
-export function hasRecoveryPermission(members: Member[], address: Address) {
-  if (!isKeyMember(members, address)) return false;
+export function hasRecoveryPermission(
+  members: Member[],
+  address: Address | undefined,
+) {
+  if (!members?.length || !address || !isKeyMember(members, address))
+    return false;
 
   const member = members.find((m) => m.key === address);
 
@@ -43,9 +51,9 @@ export function hasRecoveryPermission(members: Member[], address: Address) {
 
 export function getPermissionLabel(
   members: Member[],
-  address: Address,
+  address: Address | undefined,
 ): string {
-  if (!isKeyMember(members, address)) return "";
+  if (!members?.length || !address || !isKeyMember(members, address)) return "";
   const member = members.find((m) => m.key === address);
   const permission = member?.permissions?.mask;
 

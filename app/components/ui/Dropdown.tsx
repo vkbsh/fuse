@@ -32,7 +32,7 @@ export default function Dropdown({ items, trigger, align, className }: Props) {
               align={align}
               forceMount
               className={cn(
-                "flex flex-col gap-2 p-4 bg-black/85 ring-1 ring-[#A7A7A7] rounded-[20px] shadow-lg drop-shadow-lg text-white",
+                "flex flex-col gap-2 p-4 bg-black-85 ring-1 ring-[#A7A7A7] rounded-[20px] shadow-lg drop-shadow-lg text-white",
                 className,
               )}
             >

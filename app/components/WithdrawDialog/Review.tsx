@@ -1,4 +1,4 @@
-import { address, Address, LAMPORTS_PER_SOL } from "gill";
+import { address, Address, LAMPORTS_PER_SOL, TransactionSigner } from "gill";
 import { UiWalletAccount } from "@wallet-standard/react";
 import { useWalletAccountTransactionSigner } from "@solana/react";
 
@@ -15,7 +15,7 @@ import { useWithdrawStore } from "~/state/withdraw";
 import { SOL_MINT_ADDRESS } from "~/service/balance";
 import { useFetchLatestTransaction } from "~/hooks/resources";
 
-const Review = ({
+export default function Review({
   onClose,
   walletAccount,
   multisigAddress,
@@ -25,14 +25,14 @@ const Review = ({
   multisigAddress: Address;
   transactionIndex: number;
   walletAccount: UiWalletAccount;
-}) => {
+}) {
   const { toAddress, token, amount, addError, reset } = useWithdrawStore();
   const fetchLastTransaction = useFetchLatestTransaction(
     multisigAddress,
     transactionIndex,
   );
 
-  const signer = useWalletAccountTransactionSigner(
+  const signer: TransactionSigner = useWalletAccountTransactionSigner(
     walletAccount,
     "solana:mainnet",
   );
@@ -88,8 +88,8 @@ const Review = ({
 
       console.log("TransferWithProposalApprove confirmed: ", signature);
 
-      reset();
-      await fetchLastTransaction();
+      // reset();
+      // await fetchLastTransaction();
     } catch (e: any) {
       toast.error("Failed to initiate transfer");
       console.error("Error [Initiate, Proposal, Approve]: ", e);
@@ -115,6 +115,4 @@ const Review = ({
       </Button>
     </div>
   );
-};
-
-export default Review;
+}

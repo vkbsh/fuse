@@ -1,4 +1,4 @@
-import React, { ReactNode } from "react";
+import { ReactNode } from "react";
 import { motion, AnimatePresence, MotionProps, Variants } from "motion/react";
 
 interface AnimateProps extends MotionProps {
@@ -10,9 +10,11 @@ interface AnimateProps extends MotionProps {
   delay?: number;
   isLoading?: boolean;
   loader?: ReactNode;
+  className?: string;
 }
 
-export const Animate: React.FC<AnimateProps> = ({
+export default function Animate({
+  className,
   children,
   variants,
   initial = "hidden",
@@ -22,7 +24,7 @@ export const Animate: React.FC<AnimateProps> = ({
   isLoading = false,
   loader = <DefaultLoader />,
   ...rest
-}) => {
+}: AnimateProps) {
   return (
     <AnimatePresence mode="wait">
       {isLoading ? (
@@ -33,6 +35,7 @@ export const Animate: React.FC<AnimateProps> = ({
           exit="hidden"
           variants={variants}
           transition={{ duration, delay }}
+          className={className}
           {...rest}
         >
           {loader}
@@ -45,6 +48,7 @@ export const Animate: React.FC<AnimateProps> = ({
           exit="hidden"
           variants={variants}
           transition={{ duration, delay }}
+          className={className}
           {...rest}
         >
           {children}
@@ -52,7 +56,7 @@ export const Animate: React.FC<AnimateProps> = ({
       )}
     </AnimatePresence>
   );
-};
+}
 
 const DefaultLoader = () => (
   <div className="p-4 animate-pulse space-y-2">
