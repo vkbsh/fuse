@@ -1,5 +1,3 @@
-import { motion } from "motion/react";
-
 import Dropdown from "~/components/ui/Dropdown";
 import { IconConnect } from "~/components/ui/icons/IconConnect";
 
@@ -56,14 +54,13 @@ export default function MemberKeysDropdown() {
           </div>
         );
       }),
-    <motion.button
-      whileHover={{ opacity: 1 }}
+    <button
       onClick={() => onOpenChange(true)}
-      className="w-full cursor-pointer p-2 flex flex-row justify-between opacity-60"
+      className="w-full cursor-pointer p-2 flex flex-row justify-between opacity-75 duration-500 hover:opacity-100"
     >
       <span>Connect a key</span>
       <IconConnect />
-    </motion.button>,
+    </button>,
   ];
 
   return (

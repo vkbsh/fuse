@@ -4,7 +4,7 @@
 
 ## Description
 
-The Fuse - Web Client, built on top of the Squads Multisig.
+Fuse - Web Client, built on top of the Squads Multisig.
 Designed as a reliable fallback, this web UI ensures users can access their wallets seamlessly when the primary app is unavailable.
 Whether you're a developer, crypto enthusiast, or Fuse user, this project offers a user-friendly solution to interact with your Smart Wallet.
 

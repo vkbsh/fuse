@@ -1,5 +1,4 @@
-import { motion } from "motion/react";
-
+import Animate from "~/components/animated/Animate";
 import { IconLogo } from "~/components/ui/icons/IconLogo";
 import { IconChevronDown } from "~/components/ui/icons/IconChevronDown";
 
@@ -13,25 +12,13 @@ export default function SelectedMemberKey({
 }) {
   return (
     <div className="cursor-pointer flex flex-row gap-3 items-center">
-      <motion.div
+      <Animate
         key={wallet?.address}
-        initial={{
-          y: -5,
-          opacity: 0,
-        }}
-        animate={{
-          y: 0,
-          opacity: 1,
-        }}
-        exit={{
-          y: -5,
-          opacity: 0,
-        }}
-        transition={{ duration: 0.6 }}
         className="flex flex-row gap-3 items-center"
+        variant="slideDown"
       >
         {wallet ? (
-          <span className="flex w-[42px] h-[42px] rounded-full bg-[#EBEBEB] justify-center items-center text-black">
+          <span className="flex w-[42px] h-[42px] rounded-full bg-foreground justify-center items-center text-black">
             <img
               src={wallet.icon}
               alt={wallet.name}
@@ -39,7 +26,7 @@ export default function SelectedMemberKey({
             />
           </span>
         ) : (
-          <span className="w-[42px] h-[42px] rounded-full bg-[#EBEBEB] flex items-center justify-center text-black">
+          <span className="w-[42px] h-[42px] rounded-full bg-foreground flex items-center justify-center text-black">
             <IconLogo />
           </span>
         )}
@@ -48,7 +35,7 @@ export default function SelectedMemberKey({
             ? abbreviateAddress(wallet.address)
             : "Select Account"}
         </span>
-      </motion.div>
+      </Animate>
       <span>
         <IconChevronDown />
       </span>

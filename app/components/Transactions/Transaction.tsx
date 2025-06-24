@@ -1,13 +1,15 @@
 import { Address } from "gill";
 import { useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence } from "motion/react";
 
+import Animate from "~/components/animated/Animate";
 import { IconArrowUp } from "~/components/ui/icons/IconArrowUp";
 
 import { useWalletStore } from "~/state/wallet";
 
 import { cn } from "~/utils/tw";
 import { abbreviateAddress } from "~/utils/address";
+import { useWalletByName } from "~/hooks/wallet";
 
 import Footer from "./TransactionFooter";
 import Progress, { Status } from "./TransactionProgress";
@@ -40,16 +42,11 @@ export default function Transaction({
   transactionIndex: number;
   rentCollectorAddress: Address;
 }) {
-  const { multisigStorage } = useWalletStore();
+  const { walletStorage } = useWalletStore();
   const [isOpen, onOpenChange] = useState(false);
+  const wallet = useWalletByName(walletStorage?.name as Address);
 
-  const statusColor = cn({
-    "text-status-primary": status === "Active",
-    "text-status-warning": status === "Approved",
-    "text-status-success": status === "Executed",
-    "text-status-error": ["Cancelled", "Rejected"].includes(status),
-  });
-
+  const walletAccount = wallet?.accounts[0];
   const { amount, toAccount, mint } = message || {};
   const { logoURI, name, symbol } = mint || {};
 
@@ -63,20 +60,23 @@ export default function Transaction({
     },
   );
 
+  const statusColor = cn({
+    "text-status-primary": status === "Active",
+    "text-status-warning": status === "Approved",
+    "text-status-success": status === "Executed",
+    "text-status-error": ["Cancelled", "Rejected"].includes(status),
+  });
+
   return (
     <div className="flex flex-col items-center justify-between gap-2 select-none">
-      <motion.div
+      <div
         onClick={() => onOpenChange(!isOpen)}
-        animate={{
-          backgroundColor: isOpen
-            ? "var(--color-trn-hover)"
-            : "rgba(0, 0, 0, 0)",
-        }}
-        whileHover={{
-          backgroundColor: "var(--color-trn-hover)",
-          transition: { duration: 0.6, delay: 0 },
-        }}
-        className="flex flex-row items-center justify-between w-full rounded-[20px] p-3 cursor-pointer h-[72px]"
+        className={cn(
+          "flex flex-row items-center justify-between w-full rounded-[20px] p-3 cursor-pointer h-[72px] bg-white  hover:bg-trn-hover duration-500",
+          {
+            "bg-trn-hover": isOpen,
+          },
+        )}
       >
         <div className="flex flex-row items-center gap-4">
           <span className="relative w-[42px] h-[42px] bg-foreground text-foreground-text rounded-[14px] flex shrink-0 items-center justify-center">
@@ -118,16 +118,11 @@ export default function Transaction({
             {status === "Approved" ? "Ready" : status}
           </span>
         </div>
-      </motion.div>
+      </div>
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{
-              duration: 0.3,
-            }}
+          <Animate
+            variant="collapse"
             className="overflow-hidden w-full rounded-[20px] bg-trn-hover"
           >
             <div className="flex flex-col gap-6 p-6 justify-end">
@@ -139,17 +134,19 @@ export default function Transaction({
                 cancelled={cancelled}
               />
 
-              <Footer
-                status={status}
-                approved={approved}
-                rejected={rejected}
-                cancelled={cancelled}
-                transactionIndex={transactionIndex}
-                rentCollectorAddress={rentCollectorAddress}
-                multisigStorageAddress={multisigStorage?.address as Address}
-              />
+              {walletAccount && (
+                <Footer
+                  status={status}
+                  approved={approved}
+                  rejected={rejected}
+                  cancelled={cancelled}
+                  walletAccount={walletAccount}
+                  transactionIndex={transactionIndex}
+                  rentCollectorAddress={rentCollectorAddress}
+                />
+              )}
             </div>
-          </motion.div>
+          </Animate>
         )}
       </AnimatePresence>
     </div>

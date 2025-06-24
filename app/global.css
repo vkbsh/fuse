@@ -21,6 +21,7 @@
   --color-white-20: #ffffff20;
   --color-white-30: #ffffff30;
   --color-white-40: #ffffff40;
+  --color-white-60: #ffffff60;
 
   /* Background */
   --color-background: #f3f3f3;
@@ -31,11 +32,14 @@
   --color-grey-text: #ffffff66;
   --color-primary-text: #1f1e1e;
   --color-foreground-text: #7b7b7b;
-  --color-white-60: #ffffff60;
 
   /* Hover */
   --color-trn-hover: #b3b3b33d;
   --color-hover-background: #ffffff33;
+
+  /* Ring */
+  --color-ring-button: #bfbfbf;
+  --color-ring-dropdown: #a7a7a7;
 
   /* Select */
   --color-select-bg-hover: #ffffff26;

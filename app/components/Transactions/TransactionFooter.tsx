@@ -1,11 +1,9 @@
 import { address, Address } from "gill";
-import { AnimatePresence, motion } from "motion/react";
 import { UiWalletAccount } from "@wallet-standard/react";
 import { useWalletAccountTransactionSigner } from "@solana/react";
 
 import Button from "~/components/ui/Button";
 
-import { useWalletByName } from "~/hooks/wallet";
 import { useUpdateTransaction } from "~/hooks/resources";
 
 import {
@@ -20,14 +18,14 @@ import { hasCloudPermission } from "~/program/multisig/utils/member";
 import { useWalletStore } from "~/state/wallet";
 import { toast } from "~/state/toast";
 
-export default function Footer({
+export default function TransactionFooter({
   status,
   approved,
   rejected,
   cancelled,
+  walletAccount,
   transactionIndex,
   rentCollectorAddress,
-  multisigStorageAddress,
 }: {
   status: any;
   approved: Address[];
@@ -35,12 +33,12 @@ export default function Footer({
   cancelled: Address[];
   transactionIndex: number;
   rentCollectorAddress: Address;
-  multisigStorageAddress: Address;
+  walletAccount: UiWalletAccount;
 }) {
-  const { walletStorage, multisigStorage } = useWalletStore();
-  const wallet = useWalletByName(walletStorage?.name as Address);
-  const walletAccount = wallet?.accounts[0] as UiWalletAccount;
+  const { multisigStorage } = useWalletStore();
+
   const walletAddress = walletAccount?.address;
+  const multisigAddress = multisigStorage?.address as Address;
 
   const feePayer = useWalletAccountTransactionSigner(
     walletAccount,
@@ -48,7 +46,7 @@ export default function Footer({
   );
 
   const updateTransaction = useUpdateTransaction(
-    multisigStorageAddress,
+    multisigAddress,
     transactionIndex,
   );
   const isCloudKey = hasCloudPermission(
@@ -65,7 +63,7 @@ export default function Footer({
       const signature = await sendAndConfirmProposalCancelMessage({
         feePayer,
         memberAddress: address(walletAddress),
-        multisigAddress: address(multisigStorageAddress),
+        multisigAddress: address(multisigAddress),
         transactionIndex: BigInt(transactionIndex),
       });
 
@@ -83,7 +81,7 @@ export default function Footer({
         memo: "Approved by a Member",
         feePayer,
         memberAddress: address(walletAddress),
-        multisigAddress: address(multisigStorageAddress),
+        multisigAddress: address(multisigAddress),
         transactionIndex: BigInt(transactionIndex),
       });
 
@@ -105,7 +103,7 @@ export default function Footer({
         feePayer,
         rentCollectorAddress,
         memberAddress: address(walletAddress),
-        multisigAddress: multisigStorageAddress,
+        multisigAddress: multisigAddress,
         transactionIndex: BigInt(transactionIndex),
       });
 
@@ -122,7 +120,7 @@ export default function Footer({
       const signature = await sendAndConfirmProposalRejectMessage({
         feePayer,
         memberAddress: address(walletAddress),
-        multisigAddress: address(multisigStorageAddress),
+        multisigAddress: address(multisigAddress),
         transactionIndex: BigInt(transactionIndex),
       });
 
@@ -139,7 +137,7 @@ export default function Footer({
       const signature = await sendAndConfirmAccountsCloseMessage({
         feePayer,
         rentCollectorAddress,
-        multisigAddress: address(multisigStorageAddress),
+        multisigAddress: address(multisigAddress),
         transactionIndex: BigInt(transactionIndex),
       });
 
@@ -152,16 +150,16 @@ export default function Footer({
   };
 
   return (
-    <AnimatePresence>
+    <>
       {["Cancelled", "Rejected"].includes(status) && (
-        <motion.div key={status} className="flex flex-row justify-center gap-4">
+        <div className="flex flex-row justify-center gap-4">
           <Button size="md" variant="bordered" onClick={closeAccounts}>
             Reclaim rent
           </Button>
-        </motion.div>
+        </div>
       )}
       {status === "Active" && (
-        <motion.div key={status} className="flex flex-row justify-center gap-4">
+        <div className="flex flex-row justify-center gap-4">
           <Button
             size="md"
             variant="bordered"
@@ -178,11 +176,10 @@ export default function Footer({
           >
             Approve
           </Button>
-        </motion.div>
+        </div>
       )}
-
       {status === "Approved" && (
-        <motion.div key={status} className="flex flex-row justify-center gap-4">
+        <div className="flex flex-row justify-center gap-4">
           <Button
             size="md"
             variant="bordered"
@@ -199,8 +196,8 @@ export default function Footer({
           >
             Execute
           </Button>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

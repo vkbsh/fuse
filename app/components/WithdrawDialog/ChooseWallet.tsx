@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Address, isAddress } from "gill";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence } from "motion/react";
 
 import Input from "~/components/ui/Input";
+import Animate from "~/components/animated/Animate";
 import { IconLogo } from "~/components/ui/icons/IconLogo";
 
 import { useTokenInfo } from "~/hooks/resources";
@@ -11,8 +12,8 @@ import { useWithdrawStore } from "~/state/withdraw";
 import { abbreviateAddress } from "~/utils/address";
 
 const ChooseWallet = ({ vaultAddress }: { vaultAddress: Address }) => {
-  const { toAddress, addError, set, removeError, errors } = useWithdrawStore();
   const { totalAmount } = useTokenInfo(vaultAddress);
+  const { toAddress, addError, set, removeError, errors } = useWithdrawStore();
   const [value, setValue] = useState<string | Address>(toAddress || "");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,16 +65,12 @@ const ChooseWallet = ({ vaultAddress }: { vaultAddress: Address }) => {
         />
         <AnimatePresence>
           {errors?.toAddress && (
-            <motion.span
-              key="error"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              transition={{ duration: 0.3 }}
+            <Animate
+              variant="slideDown"
               className="absolute text-xs -bottom-5 w-full text-status-error"
             >
               {errors.toAddress}
-            </motion.span>
+            </Animate>
           )}
         </AnimatePresence>
       </div>

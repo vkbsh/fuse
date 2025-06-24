@@ -4,7 +4,7 @@ import { AnimatePresence } from "motion/react";
 import Connect from "~/components/Connect";
 import Toasts from "~/components/ui/Toast";
 import Dashboard from "~/components/Dashboard";
-import FadeIn from "~/components/animated/FadeIn";
+import Animate from "~/components/animated/Animate";
 import ConnectWalletDialog from "~/components/ConnectWalletDialog";
 
 import { useWalletStore } from "~/state/wallet";
@@ -23,20 +23,20 @@ export default function Index() {
     <>
       <AnimatePresence mode="popLayout">
         {!multisigStorage || !walletStorage ? (
-          <FadeIn
-            key="connect"
+          <Animate
+            variant="fadeIn"
             className="h-full flex items-center justify-center"
           >
             <Connect />
-          </FadeIn>
+          </Animate>
         ) : (
-          <FadeIn key="dashboard">
+          <Animate variant="fadeIn">
             <Dashboard
               walletName={walletStorage.name}
               multisigAddress={multisigStorage.address}
               vaultAddress={multisigStorage.defaultVault}
             />
-          </FadeIn>
+          </Animate>
         )}
       </AnimatePresence>
       <Toasts />

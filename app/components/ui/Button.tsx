@@ -1,9 +1,7 @@
-"use client";
-
 import React, { forwardRef } from "react";
-import { motion } from "motion/react";
 
 import { cn } from "~/utils/tw";
+import Animate from "~/components/animated/Animate";
 
 type Size = "sm" | "md" | "lg" | "full";
 type Variant = "primary" | "secondary" | "bordered" | "max" | "cancel";
@@ -12,29 +10,29 @@ const variants: { [key in Variant]: string } = {
   primary: "bg-black text-white",
   secondary: "bg-white text-black",
   cancel: "bg-white-20 text-white border border-white-20",
-  bordered: "bg-black text-white ring-3 ring-[#BFBFBF] font-medium text-sm",
+  bordered: "bg-black text-white ring-3 ring-ring-button font-medium text-sm",
   max: "bg-white-30 text-white border-4 border-black-20 font-extrabold text-base",
 };
 
 const sizes: { [k in Size]: string } = {
   sm: "h-[40px] px-5",
   md: "w-auto h-[46px] px-6",
-  full: "h-[46px]",
   lg: "h-[70px]",
+  full: "h-[46px]",
 };
 
 const base =
-  "font-bold flex items-center justify-center rounded-full gap-2 px-6 py-4 cursor-pointer";
+  "font-bold flex items-center justify-center rounded-full gap-2 px-6 py-4 cursor-pointer duration-500 hover:scale-105";
 
 const Button = forwardRef(
   (
     {
       onClick,
       children,
+      disabled,
+      className,
       size = "md",
       variant = "primary",
-      className,
-      disabled,
       ...props
     }: {
       size?: Size;
@@ -47,25 +45,20 @@ const Button = forwardRef(
     ref: React.Ref<HTMLButtonElement>,
   ) => {
     const clsName = cn(base, sizes[size], variants[variant], className, {
-      "cursor-not-allowed": disabled,
+      "cursor-not-allowed opacity-50 hover:scale-100": disabled,
     });
 
     return (
-      <motion.button
-        initial={{ opacity: 1 }}
-        animate={{ opacity: disabled ? 0.5 : 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.3 }}
-        ref={ref}
-        whileHover={{
-          scale: disabled ? 1 : 1.02,
-        }}
-        {...props}
-        onClick={disabled ? undefined : onClick}
-        className={clsName}
-      >
-        {children}
-      </motion.button>
+      <Animate variant="fadeIn">
+        <button
+          ref={ref}
+          {...props}
+          className={clsName}
+          onClick={disabled ? undefined : onClick}
+        >
+          {children}
+        </button>
+      </Animate>
     );
   },
 );

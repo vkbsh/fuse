@@ -1,5 +1,5 @@
 import { Address } from "gill";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence } from "motion/react";
 
 import {
   useTokensMeta,
@@ -7,6 +7,8 @@ import {
   useMultisigAccount,
 } from "~/hooks/resources";
 
+import Animate from "~/components/animated/Animate";
+import AnimateList from "~/components/animated/AnimateList";
 import Transaction from "./Transaction";
 
 export type Status = "ready" | "executed" | "cancelled";
@@ -46,25 +48,23 @@ export default function Transactions({
   const rentCollectorAddress = multisigAccount?.rentCollector as Address;
 
   return (
-    <div className="flex flex-1 flex-col gap-2 overflow-y-auto scroll-smooth scrollbar-hidden">
+    <div className="relative flex flex-1 flex-col gap-2 overflow-y-auto scroll-smooth scrollbar-hidden">
       <AnimatePresence>
         {isLoading && (
-          <motion.span
-            initial={{ opacity: 0.8 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
+          <Animate
+            variant="fadeIn"
+            className="absolute top-0 left-0 w-full h-full"
           >
             <div className="flex w-full h-[68px] justify-center items-center rounded-[20px] text-black-40">
               Loading...
             </div>
-          </motion.span>
+          </Animate>
         )}
 
         {!isLoading && !transactions?.length && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+          <Animate
+            variant="slideDown"
+            className="absolute top-0 left-0 w-full h-full"
           >
             <div className="flex flex-col justify-center items-center">
               <img
@@ -75,41 +75,30 @@ export default function Transactions({
                 No transactions yet
               </span>
             </div>
-          </motion.div>
+          </Animate>
         )}
-
-        {transactions?.map((txData, i) => {
-          return (
-            <motion.div
-              key={txData.timestamp}
-              initial={{
-                y: -10,
-                opacity: 0,
-              }}
-              animate={{
-                y: 0,
-                opacity: 1,
-                transition: {
-                  duration: 0.6,
-                  delay: i * 0.04,
-                },
-              }}
-            >
-              <Transaction
-                status={txData.status}
-                message={txData.message}
-                rejected={txData.rejected || []}
-                approved={txData.approved || []}
-                timestamp={txData.timestamp || 0}
-                cancelled={txData.cancelled || []}
-                creator={txData.creator as Address}
-                rentCollectorAddress={rentCollectorAddress}
-                transactionIndex={txData.transactionIndex || 0}
-              />
-            </motion.div>
-          );
-        })}
       </AnimatePresence>
+      <AnimateList
+        variant="slideDown"
+        list={
+          transactions
+            ? transactions.map((txData) => (
+                <Transaction
+                  key={txData.timestamp}
+                  status={txData.status}
+                  message={txData.message}
+                  rejected={txData.rejected || []}
+                  approved={txData.approved || []}
+                  timestamp={txData.timestamp || 0}
+                  cancelled={txData.cancelled || []}
+                  creator={txData.creator as Address}
+                  rentCollectorAddress={rentCollectorAddress}
+                  transactionIndex={txData.transactionIndex || 0}
+                />
+              ))
+            : []
+        }
+      />
     </div>
   );
 }

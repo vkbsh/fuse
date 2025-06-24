@@ -39,7 +39,7 @@ export const queryKeys: { [key in QueryKey]: QueryKey } = {
 
 const staleTimeByQueryKey: { [key in QueryKey]: number } = {
   tokenMeta: 1000 * 60 * 60 * 24 * 30, // 1 month
-  transaction: 0,
+  transaction: 1000 * 15, // 15 sec
   balance: 1000 * 30, // 30 sec
   tokenPrice: 1000 * 30, // 30 sec
   multisigAccount: 1000 * 30, // 30 sec

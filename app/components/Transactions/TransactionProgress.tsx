@@ -1,11 +1,13 @@
 import { Address } from "gill";
 import { ReactNode } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence } from "motion/react";
 
+import Animate from "~/components/animated/Animate";
 import { IconSquareDot } from "~/components/ui/icons/IconSquareDot";
 import { IconCircleDot } from "~/components/ui/icons/IconCircleDot";
 import { IconCirclePlus } from "~/components/ui/icons/IconCirclePlus";
 
+import { cn } from "~/utils/tw";
 import { abbreviateAddress } from "~/utils/address";
 
 export type Status =
@@ -15,7 +17,7 @@ export type Status =
   | "Executed"
   | "Cancelled";
 
-export default function Progress({
+export default function TransactionProgress({
   status,
   approved,
   rejected,
@@ -38,10 +40,8 @@ export default function Progress({
   const isExecuting = false;
 
   return (
-    <motion.div
-      initial={{ height: 0 }}
-      animate={{ height: "auto" }}
-      exit={{ height: 0 }}
+    <Animate
+      variant="collapse"
       className="flex flex-row justify-between gap-4 text-sm font-semibold mx-auto"
     >
       <AnimatePresence>
@@ -81,7 +81,7 @@ export default function Progress({
           addresses={[executed]}
         />
       </AnimatePresence>
-    </motion.div>
+    </Animate>
   );
 }
 
@@ -98,17 +98,15 @@ function ProgressStatus({
 }) {
   return (
     addresses?.[0] && (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+      <Animate
+        variant="fadeIn"
         className="w-[130px] flex flex-col items-center gap-5 text-black-30"
       >
-        <motion.span
-          animate={{ color: active ? "#000" : "rgba(0, 0, 0, 0.3)" }}
+        <span
+          className={cn("text-black-30 duration-500", active && "text-black")}
         >
           {icon}
-        </motion.span>
+        </span>
         <div className="flex flex-col gap-1 items-center">
           <span className="text-black">{label}</span>
           <div className="flex flex-row gap-1">
@@ -118,12 +116,13 @@ function ProgressStatus({
             <div className="flex flex-col">
               {addresses.map((address) => {
                 if (!address) return null;
+
                 return <span key={address}>{abbreviateAddress(address)}</span>;
               })}
             </div>
           </div>
         </div>
-      </motion.div>
+      </Animate>
     )
   );
 }

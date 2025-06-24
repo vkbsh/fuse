@@ -1,11 +1,11 @@
-import { useState } from "react";
 import { Address } from "gill";
-import { motion } from "motion/react";
+import { useState } from "react";
 import { useDebounce } from "@uidotdev/usehooks";
 
 import Input from "~/components/ui/Input";
 import Button from "~/components/ui/Button";
 import SelectToken from "~/components/SelectToken";
+import Animate from "~/components/animated/Animate";
 
 import { useTokenPrice } from "~/hooks/resources";
 import { useWithdrawStore } from "~/state/withdraw";
@@ -91,20 +91,12 @@ const EnterAmount = ({ vaultAddress }: { vaultAddress: Address }) => {
               error={!!errors?.amount}
             />
             {errors?.amount && (
-              <motion.span
-                initial={{
-                  y: -10,
-                  opacity: 0,
-                }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{
-                  y: 10,
-                  opacity: 0,
-                }}
+              <Animate
+                variant="slideDown"
                 className="absolute w-full text-xs text-status-error -bottom-6 text-nowrap"
               >
                 {errors?.amount}
-              </motion.span>
+              </Animate>
             )}
           </div>
         </label>
@@ -113,24 +105,7 @@ const EnterAmount = ({ vaultAddress }: { vaultAddress: Address }) => {
         </Button>
       </div>
       <div className="flex flex-row gap-2 items-center justify-between mt-2 text-white-60">
-        <motion.span
-          key={calculatedAmount}
-          initial={{
-            scale: 0.9,
-            opacity: 0.8,
-          }}
-          animate={{
-            scale: 1,
-            opacity: 1,
-            filter: !calculatedAmount ? "blur(2px)" : "blur(0px)",
-          }}
-          transition={{
-            duration: 0.6,
-          }}
-          className="text-base flex"
-        >
-          ${calculatedAmount?.toFixed(2)}{" "}
-        </motion.span>
+        <span className="text-base flex">${calculatedAmount?.toFixed(2)} </span>
         <span>{maxAmountLabel}</span>
       </div>
     </>

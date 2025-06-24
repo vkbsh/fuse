@@ -1,5 +1,3 @@
-import { motion, AnimatePresence } from "motion/react";
-import { ReactNode, useState } from "react";
 import {
   Root,
   Portal,
@@ -7,6 +5,10 @@ import {
   Trigger,
   Provider,
 } from "@radix-ui/react-tooltip";
+import { ReactNode, useState } from "react";
+import { AnimatePresence } from "motion/react";
+
+import Animate from "~/components/animated/Animate";
 
 export default function Tooltip({
   text,
@@ -25,14 +27,12 @@ export default function Tooltip({
           <AnimatePresence>
             {open && (
               <Content className="z-20">
-                <motion.div
-                  initial={{ opacity: 0, y: -15 }}
-                  animate={{ opacity: 1, y: -10 }}
-                  exit={{ opacity: 0, y: -15 }}
+                <Animate
+                  variant="slideDown"
                   className="relative text-white bg-black px-2 py-1 rounded-2xl border border-select-border"
                 >
                   {text}
-                </motion.div>
+                </Animate>
               </Content>
             )}
           </AnimatePresence>

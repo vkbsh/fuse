@@ -1,5 +1,4 @@
 import { address } from "gill";
-import { motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import { UiWallet, useConnect, useWallets } from "@wallet-standard/react";
 
@@ -12,6 +11,7 @@ import { useMultisigWallets } from "~/hooks/resources";
 import { SOLANA_SIGN_AND_SEND_TRANSACTION_FEATURE } from "~/hooks/wallet";
 
 import { abbreviateAddress } from "~/utils/address";
+import Animate from "./animated/Animate";
 
 export default function ConnectWalletDialog() {
   const { isOpen, onOpenChange } = useDialog("connectWallet");
@@ -68,14 +68,9 @@ function WalletOption({ wallet }: { wallet: UiWallet }) {
 
   if (isConnecting) {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="flex flex-row items-center gap-6"
-      >
+      <Animate variant="fadeIn" className="flex flex-row items-center gap-6">
         <span className="h-[40px]">Connecting...</span>
-      </motion.div>
+      </Animate>
     );
   }
 

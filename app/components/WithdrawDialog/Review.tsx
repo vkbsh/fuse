@@ -1,6 +1,6 @@
-import { address, Address, LAMPORTS_PER_SOL, TransactionSigner } from "gill";
 import { UiWalletAccount } from "@wallet-standard/react";
 import { useWalletAccountTransactionSigner } from "@solana/react";
+import { address, Address, LAMPORTS_PER_SOL, TransactionSigner } from "gill";
 
 import Button from "~/components/ui/Button";
 

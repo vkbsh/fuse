@@ -1,66 +1,30 @@
 import { ReactNode } from "react";
-import { motion, AnimatePresence, MotionProps, Variants } from "motion/react";
+import { motion, MotionProps } from "motion/react";
 
-interface AnimateProps extends MotionProps {
-  children: ReactNode;
-  variants: Variants;
-  initial?: string;
-  animate?: string;
-  duration?: number;
-  delay?: number;
-  isLoading?: boolean;
-  loader?: ReactNode;
+import { variants, Variant } from "./variants";
+
+type AnimateProps = MotionProps & {
+  variant: Variant;
   className?: string;
-}
+  children: ReactNode;
+};
 
 export default function Animate({
   className,
   children,
-  variants,
-  initial = "hidden",
-  animate = "visible",
-  duration = 0.5,
-  delay = 0,
-  isLoading = false,
-  loader = <DefaultLoader />,
+  variant,
   ...rest
 }: AnimateProps) {
   return (
-    <AnimatePresence mode="wait">
-      {isLoading ? (
-        <motion.div
-          key="loader"
-          initial="hidden"
-          animate="visible"
-          exit="hidden"
-          variants={variants}
-          transition={{ duration, delay }}
-          className={className}
-          {...rest}
-        >
-          {loader}
-        </motion.div>
-      ) : (
-        <motion.div
-          key="content"
-          initial={initial}
-          animate={animate}
-          exit="hidden"
-          variants={variants}
-          transition={{ duration, delay }}
-          className={className}
-          {...rest}
-        >
-          {children}
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <motion.div
+      exit="exit"
+      initial="hidden"
+      animate="visible"
+      className={className}
+      variants={variants[variant]}
+      {...rest}
+    >
+      {children}
+    </motion.div>
   );
 }
-
-const DefaultLoader = () => (
-  <div className="p-4 animate-pulse space-y-2">
-    <div className="h-6 bg-gray-300 rounded w-3/4" />
-    <div className="h-6 bg-gray-300 rounded w-1/2" />
-  </div>
-);
