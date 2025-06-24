@@ -1,6 +1,12 @@
 import { Variants } from "motion/react";
 
-export type Variant = "fadeIn" | "slideUp" | "slideDown" | "collapse" | "blur";
+export type Variant =
+  | "blur"
+  | "fadeIn"
+  | "slideUp"
+  | "slideDown"
+  | "slideDownModal"
+  | "collapse";
 
 export const variants: { [key in Variant]: Variants } = {
   fadeIn: {
@@ -16,6 +22,11 @@ export const variants: { [key in Variant]: Variants } = {
     visible: { y: 0, opacity: 1 },
     exit: { y: -15, opacity: 0 },
   },
+  slideDownModal: {
+    hidden: { y: -25, opacity: 0 },
+    visible: { y: 0, opacity: 1 },
+    exit: { y: -25, opacity: 0 },
+  },
   collapse: {
     hidden: { height: 0, opacity: 0 },
     visible: { height: "auto", opacity: 1 },
@@ -23,7 +34,7 @@ export const variants: { [key in Variant]: Variants } = {
   },
   blur: {
     hidden: { backdropFilter: "blur(0px)" },
-    visible: { backdropFilter: "blur(8px)" },
-    exit: { backdropFilter: "blur(0px)" },
+    visible: { backdropFilter: "blur(8px)", transition: { duration: 1 } },
+    exit: { backdropFilter: "blur(0px)", transition: { duration: 0.3 } },
   },
 };

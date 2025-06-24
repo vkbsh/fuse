@@ -24,8 +24,8 @@ export default function AnimateList({
           variant={variant}
           viewport={{ once: true }}
           transition={{
-            duration: 0.3,
-            delay: i * 0.1,
+            duration: 0.6,
+            delay: i * 0.08,
           }}
           className={className}
           {...rest}

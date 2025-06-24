@@ -18,7 +18,7 @@ export default function BalanceComponent({
 }
 
 function TotalBalance({ vaultAddress }: { vaultAddress: Address }) {
-  const { totalAmount, isLoading, isError } = useTokenInfo(vaultAddress);
+  const { totalAmount } = useTokenInfo(vaultAddress);
 
   const roundedAmount = roundCoin("usd", totalAmount);
   const roundedAmounArray = String(roundedAmount).split("");

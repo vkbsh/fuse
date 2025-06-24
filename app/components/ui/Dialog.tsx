@@ -33,7 +33,7 @@ export default function Dialog({
               className="h-full w-full fixed top-0 left-0 z-10"
             >
               <Animate
-                variant="slideDown"
+                variant="slideDownModal"
                 className="absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%] z-20 overflow-visible drop-shadow-2xl"
               >
                 <Content aria-describedby={undefined}>

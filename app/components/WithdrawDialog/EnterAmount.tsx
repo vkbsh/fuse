@@ -49,7 +49,9 @@ const EnterAmount = ({ vaultAddress }: { vaultAddress: Address }) => {
     const max = Number(token?.amount);
     if (!max) return;
 
-    setValue(token?.amount + "");
+    setValue(max + "");
+    set("amount", max);
+    removeError("amount");
   };
 
   const validateAmount = () => {
@@ -59,7 +61,7 @@ const EnterAmount = ({ vaultAddress }: { vaultAddress: Address }) => {
       error = "Invalid amount (not enough balance)";
     }
 
-    if (Number(value) < 1 / 10 ** Number(token?.decimals) || 0) {
+    if (Number(value) < (1 / 10 ** Number(token?.decimals) || 0)) {
       error = "Invalid amount (too small)";
     }
 
@@ -84,11 +86,12 @@ const EnterAmount = ({ vaultAddress }: { vaultAddress: Address }) => {
             <Input
               id="amount"
               value={value}
-              onChange={onChange}
-              onBlur={validateAmount}
-              className="text-2xl"
               placeholder="0.00"
+              onChange={onChange}
+              className="text-2xl"
+              onBlur={validateAmount}
               error={!!errors?.amount}
+              onFocus={() => removeError("amount")}
             />
             {errors?.amount && (
               <Animate

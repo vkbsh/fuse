@@ -2,11 +2,11 @@ import { address, Address } from "gill";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  Transaction,
   getMultisigAccount,
   getProposalByIndex,
   getWalletByMemberKey,
   getTransactionsByMultisig,
-  Transaction,
 } from "~/service/multisig";
 
 import { getAmount } from "~/utils/amount";

@@ -12,9 +12,9 @@ import Coin from "./Coin";
 
 export default function Coins({ vaultAddress }: { vaultAddress: Address }) {
   const { set } = useWithdrawStore();
+  const { data } = useTokenInfo(vaultAddress);
   const { onOpenChange } = useDialog("withdraw");
   const { walletStorage, multisigStorage } = useWalletStore();
-  const { data, isLoading, isError } = useTokenInfo(vaultAddress);
 
   // Prevent user from clicking on coin if they don't have all permissions
   const hasAllPermissions = hasCloudPermission(
@@ -34,14 +34,7 @@ export default function Coins({ vaultAddress }: { vaultAddress: Address }) {
             onOpenChange(true);
           };
 
-          return (
-            <Coin
-              token={token}
-              key={token.mint}
-              onClick={handleClick}
-              isLoading={isLoading || isError}
-            />
-          );
+          return <Coin token={token} key={token.mint} onClick={handleClick} />;
         })}
       />
     </div>

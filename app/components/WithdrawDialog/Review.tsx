@@ -87,13 +87,12 @@ export default function Review({
       });
 
       console.log("TransferWithProposalApprove confirmed: ", signature);
-
-      // reset();
-      // await fetchLastTransaction();
     } catch (e: any) {
       toast.error("Failed to initiate transfer");
       console.error("Error [Initiate, Proposal, Approve]: ", e);
     } finally {
+      await fetchLastTransaction();
+      reset();
       onClose();
     }
   };

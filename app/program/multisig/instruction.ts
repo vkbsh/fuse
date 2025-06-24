@@ -8,6 +8,7 @@ import {
   ReadonlyUint8Array,
   parseBase64RpcAccount,
 } from "gill";
+
 import {
   TransferSolInstruction,
   SYSTEM_PROGRAM_ADDRESS,
@@ -23,6 +24,7 @@ import {
 } from "~/program/multisig/codec";
 
 import {
+  TOKEN_PROGRAM_ADDRESS,
   TOKEN_2022_PROGRAM_ADDRESS,
   getTransferTokensInstructions,
   getAssociatedTokenAccountAddress,
@@ -36,7 +38,6 @@ import {
   getEphemeralSignerPda,
 } from "~/program/multisig/pda";
 
-import { useRpcStore } from "~/state/rpc";
 import {
   AccountMeta,
   convertRoles,
@@ -44,7 +45,8 @@ import {
   isStaticWritableIndex,
 } from "~/program/multisig/legacy";
 
-const rpc = useRpcStore.getState().rpc;
+import { useRpcStore } from "~/state/rpc";
+const { rpc } = useRpcStore.getState();
 
 const discriminator = {
   proposalCreate: [220, 60, 73, 224, 30, 108, 79, 159],

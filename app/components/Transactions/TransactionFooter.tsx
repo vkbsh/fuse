@@ -95,10 +95,6 @@ export default function TransactionFooter({
 
   const executeHandler = async () => {
     try {
-      console.log(
-        "Executing transaction: ",
-        feePayer.address === walletAddress,
-      );
       const signature = await sendAndConfirmExecuteAndCloseAccountsMessage({
         feePayer,
         rentCollectorAddress,
