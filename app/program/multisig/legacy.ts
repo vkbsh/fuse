@@ -29,8 +29,8 @@ import { SYSTEM_PROGRAM_ADDRESS } from "gill/programs";
 
 import { RPC_URL_TEST, useRpcStore } from "~/state/rpc";
 
-export type TransactionMessage = TMessage;
-export const TransactionMessage = TMessage;
+export type LegacyTransactionMessage = TMessage;
+export const LegacyTransactionMessage = TMessage;
 
 const { rpc } = useRpcStore.getState();
 
@@ -172,10 +172,10 @@ function instructionFromLegacyInstruction(
 export async function createLegacyTransactionMessage(
   signer: TransactionSigner,
   instructions: IInstruction[],
-): Promise<TransactionMessage> {
+): Promise<LegacyTransactionMessage> {
   const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
 
-  return new TransactionMessage({
+  return new LegacyTransactionMessage({
     payerKey: new PublicKey(signer.address),
     instructions: instructions.map((ix) => {
       const accounts = ix.accounts ? ix.accounts : [];
@@ -197,7 +197,7 @@ export async function createLegacyTransactionMessage(
   });
 }
 
-export function createVaultInstruction({
+export function createLegacyVaultInstruction({
   memo,
   creatorAddress,
   multisigAddress,
@@ -208,7 +208,7 @@ export function createVaultInstruction({
   creatorAddress: Address;
   multisigAddress: Address;
   transactionIndex: bigint;
-  transactionMessage: TransactionMessage;
+  transactionMessage: LegacyTransactionMessage;
 }): IInstruction {
   const createVaultTransactionIx = multisig.instructions.vaultTransactionCreate(
     {
@@ -224,4 +224,31 @@ export function createVaultInstruction({
   );
 
   return instructionFromLegacyInstruction(createVaultTransactionIx);
+}
+
+export async function createLegacyVaultExecuteInstruction({
+  memberAddress,
+  multisigAddress,
+  transactionIndex,
+}: {
+  memberAddress: Address;
+  multisigAddress: Address;
+  transactionIndex: bigint;
+}): Promise<IInstruction> {
+  console.log("createVaultExecuteInstruction", {
+    memberAddress,
+    multisigAddress,
+    transactionIndex,
+  });
+
+  const { instruction: executeVaultTransactionIx } =
+    await multisig.instructions.vaultTransactionExecute({
+      // @ts-expect-error: incompatible type of TransactionMessage (solana web3js1 squads vs fuse)
+      connection,
+      transactionIndex,
+      member: new PublicKey(memberAddress),
+      multisigPda: new PublicKey(multisigAddress),
+    });
+
+  return instructionFromLegacyInstruction(executeVaultTransactionIx);
 }

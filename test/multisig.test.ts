@@ -107,7 +107,7 @@ describe("Interacting with the Multisig Program", async () => {
         fromToken,
         signer: creator,
         toAddress: receiverTokenAddress,
-        authorityAddress: creator.address,
+        authorityAddress: vaultAddress,
         amount: Math.round(amount * 10 ** fromToken.decimals),
       });
 

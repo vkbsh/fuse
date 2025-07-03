@@ -21,9 +21,10 @@ import {
 } from "~/program/multisig/instruction";
 
 import {
-  TransactionMessage,
-  createVaultInstruction,
+  LegacyTransactionMessage,
+  createLegacyVaultInstruction,
   createLegacyTransactionMessage,
+  createLegacyVaultExecuteInstruction,
 } from "~/program/multisig/legacy";
 
 import { useRpcStore } from "~/state/rpc";
@@ -122,10 +123,10 @@ export async function sendAndConfirmTransferWithProposalApproveMessage({
   creatorAddress: Address;
   multisigAddress: Address;
   transactionIndex: bigint;
-  transactionMessage: TransactionMessage;
+  transactionMessage: LegacyTransactionMessage;
 }) {
   const instructions = [
-    createVaultInstruction({
+    createLegacyVaultInstruction({
       creatorAddress,
       multisigAddress,
       transactionIndex,
@@ -242,7 +243,12 @@ export async function sendAndConfirmExecuteAndCloseAccountsMessage({
   rentCollectorAddress: Address;
 }) {
   const instructions = [
-    await createVaultTransactionExecuteInstruction({
+    // await createVaultTransactionExecuteInstruction({
+    //   memberAddress,
+    //   multisigAddress,
+    //   transactionIndex,
+    // }),
+    await createLegacyVaultExecuteInstruction({
       memberAddress,
       multisigAddress,
       transactionIndex,
