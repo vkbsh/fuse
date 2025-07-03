@@ -10,6 +10,7 @@ import {
 
 import { SQUADS_PROGRAM_ID } from "~/program/multisig/address";
 
+export const SEED_MULTISIG = getUtf8Encoder().encode("multisig");
 export const SEED_VAULT = getUtf8Encoder().encode("vault");
 export const SEED_PREFIX = getUtf8Encoder().encode("multisig");
 export const SEED_PROPOSAL = getUtf8Encoder().encode("proposal");
@@ -24,6 +25,18 @@ async function getPda(seeds: any[]): Promise<Address> {
   });
 
   return pda;
+}
+
+export async function getMultisigPda({
+  createKey,
+}: {
+  createKey: Address;
+}): Promise<Address> {
+  return getPda([
+    SEED_PREFIX,
+    SEED_MULTISIG,
+    getAddressEncoder().encode(createKey),
+  ]);
 }
 
 export async function getVaultPda({

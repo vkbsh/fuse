@@ -2,23 +2,23 @@ import {
   Address,
   lamports,
   IInstruction,
+  TransactionSigner,
   createTransaction,
   getSignatureFromTransaction,
+  assertTransactionIsFullySigned,
   signTransactionMessageWithSigners,
 } from "gill";
 
 import {
   createTransferSolInstruction,
-  createCloseAccountsInstruction,
   createTransferTokenInstruction,
-  createProposalCreateInstruction,
+  createCloseAccountsInstruction,
   createProposalCancelInstruction,
+  createProposalCreateInstruction,
   createProposalRejectInstruction,
   createProposalApproveInstruction,
   createVaultTransactionExecuteInstruction,
 } from "~/program/multisig/instruction";
-
-import { Signer } from "~/program/multisig/instruction";
 
 import {
   TransactionMessage,
@@ -34,7 +34,7 @@ export async function createAndConfirmMessage({
   feePayer,
   instructions,
 }: {
-  feePayer: Signer;
+  feePayer: TransactionSigner;
   instructions: IInstruction[];
 }) {
   const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
@@ -46,11 +46,23 @@ export async function createAndConfirmMessage({
     version: "legacy",
   });
 
+  const lifetimeConstraint = {
+    blockhash: latestBlockhash.blockhash,
+    lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+  };
+
   const signedTransaction = await signTransactionMessageWithSigners(tx);
 
-  await sendAndConfirmTransaction(signedTransaction);
+  assertTransactionIsFullySigned(signedTransaction);
 
-  return getSignatureFromTransaction(signedTransaction);
+  await sendAndConfirmTransaction({
+    ...signedTransaction,
+    lifetimeConstraint,
+  });
+
+  const signature = getSignatureFromTransaction(signedTransaction);
+
+  return signature;
 }
 
 export async function createTransferSolMessage({
@@ -58,7 +70,7 @@ export async function createTransferSolMessage({
   amount,
   toAddress,
 }: {
-  signer: Signer;
+  signer: TransactionSigner;
   amount: number;
   toAddress: Address;
 }) {
@@ -76,17 +88,20 @@ export async function createTransferTokenMessage({
   signer,
   toAddress,
   fromToken,
+  vaultAddress,
 }: {
   amount: number;
-  signer: Signer;
+  signer: TransactionSigner;
   toAddress: Address;
+  vaultAddress: Address;
   fromToken: { decimals: number; mint: Address; ata: Address };
 }) {
   const transferTokenIxs = await createTransferTokenInstruction({
-    amount: Math.round(amount),
     signer,
     toAddress,
     fromToken,
+    vaultAddress,
+    amount: Math.round(amount),
   });
 
   return createLegacyTransactionMessage(signer, transferTokenIxs);
@@ -102,7 +117,7 @@ export async function sendAndConfirmTransferWithProposalApproveMessage({
   transactionMessage,
 }: {
   memo: string;
-  feePayer: Signer;
+  feePayer: TransactionSigner;
   memberAddress: Address;
   creatorAddress: Address;
   multisigAddress: Address;
@@ -143,7 +158,7 @@ export async function sendAndConfirmProposalApproveMessage({
   transactionIndex,
 }: {
   memo: string;
-  feePayer: Signer;
+  feePayer: TransactionSigner;
   memberAddress: Address;
   multisigAddress: Address;
   transactionIndex: bigint;
@@ -169,7 +184,7 @@ export async function sendAndConfirmProposalCancelMessage({
   transactionIndex,
 }: {
   memo?: string;
-  feePayer: Signer;
+  feePayer: TransactionSigner;
   memberAddress: Address;
   multisigAddress: Address;
   transactionIndex: bigint;
@@ -195,7 +210,7 @@ export async function sendAndConfirmProposalRejectMessage({
   transactionIndex,
 }: {
   memo?: string;
-  feePayer: Signer;
+  feePayer: TransactionSigner;
   memberAddress: Address;
   multisigAddress: Address;
   transactionIndex: bigint;
@@ -220,7 +235,7 @@ export async function sendAndConfirmExecuteAndCloseAccountsMessage({
   transactionIndex,
   rentCollectorAddress,
 }: {
-  feePayer: Signer;
+  feePayer: TransactionSigner;
   memberAddress: Address;
   multisigAddress: Address;
   transactionIndex: bigint;
@@ -251,7 +266,7 @@ export async function sendAndConfirmAccountsCloseMessage({
   transactionIndex,
   rentCollectorAddress,
 }: {
-  feePayer: Signer;
+  feePayer: TransactionSigner;
   multisigAddress: Address;
   transactionIndex: bigint;
   rentCollectorAddress: Address;

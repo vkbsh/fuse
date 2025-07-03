@@ -3,8 +3,7 @@ import { UiWalletAccount } from "@wallet-standard/react";
 import { useWalletAccountTransactionSigner } from "@solana/react";
 
 import Button from "~/components/ui/Button";
-
-import { useUpdateTransaction } from "~/hooks/resources";
+import { useRefetchTransactions } from "~/hooks/resources";
 
 import {
   sendAndConfirmAccountsCloseMessage,
@@ -13,10 +12,11 @@ import {
   sendAndConfirmProposalApproveMessage,
   sendAndConfirmExecuteAndCloseAccountsMessage,
 } from "~/program/multisig/message";
+
 import { hasCloudPermission } from "~/program/multisig/utils/member";
 
-import { useWalletStore } from "~/state/wallet";
 import { toast } from "~/state/toast";
+import { useWalletStore } from "~/state/wallet";
 
 export default function TransactionFooter({
   status,
@@ -39,16 +39,13 @@ export default function TransactionFooter({
 
   const walletAddress = walletAccount?.address;
   const multisigAddress = multisigStorage?.address as Address;
+  const refetchTransactions = useRefetchTransactions(multisigAddress);
 
   const feePayer = useWalletAccountTransactionSigner(
     walletAccount,
     "solana:mainnet",
   );
 
-  const updateTransaction = useUpdateTransaction(
-    multisigAddress,
-    transactionIndex,
-  );
   const isCloudKey = hasCloudPermission(
     multisigStorage?.account?.members || [],
     address(walletAddress),
@@ -67,7 +64,7 @@ export default function TransactionFooter({
         transactionIndex: BigInt(transactionIndex),
       });
 
-      await updateTransaction();
+      await refetchTransactions();
       console.log("CancelProposal signature: ", signature);
     } catch (e) {
       console.error("Error [Cancel Proposal]: ", e);
@@ -86,7 +83,7 @@ export default function TransactionFooter({
       });
 
       console.log("ApproveProposal signature: ", signature);
-      await updateTransaction();
+      await refetchTransactions();
     } catch (e) {
       console.error("Error [Approve Proposal]: ", e);
       toast.error("Failed to Approve Proposal");
@@ -104,7 +101,7 @@ export default function TransactionFooter({
       });
 
       console.log("ExecuteAndCloseAccounts signature: ", signature);
-      await updateTransaction();
+      await refetchTransactions();
     } catch (e) {
       console.error("Error [Execute, Close Accounts]: ", e);
       toast.error("Failed to Execute Vault Transaction");
@@ -121,7 +118,7 @@ export default function TransactionFooter({
       });
 
       console.log("RejectProposal signature: ", signature);
-      await updateTransaction();
+      await refetchTransactions();
     } catch (e) {
       console.error("Error [Reject Proposal]: ", e);
       toast.error("Failed to Reject Proposal");
@@ -138,7 +135,7 @@ export default function TransactionFooter({
       });
 
       console.log("CloseAccounts signature: ", signature);
-      await updateTransaction();
+      await refetchTransactions();
     } catch (e) {
       console.error("Error [Close Accounts]: ", e);
       toast.error("Failed to Close Accounts");

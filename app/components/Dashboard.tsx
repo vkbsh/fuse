@@ -1,7 +1,7 @@
 import { Address } from "gill";
 
 import Coins from "~/components/Coins";
-import Balance from "~/components/Balance";
+import TotalBalance from "~/components/TotalBalance";
 import Transactions from "~/components/Transactions";
 import VaultAccount from "~/components/VaultAccount";
 import WithdrawButton from "~/components/WithdrawButton";
@@ -28,18 +28,16 @@ export default function Dashboard({
         </header>
         <main className="flex-1 flex flex-col w-full h-full min-h-0 gap-10">
           <div className="flex flex-col">
-            <Balance vaultAddress={vaultAddress} />
+            <TotalBalance vaultAddress={vaultAddress} />
             <WithdrawButton />
           </div>
-          <div className="flex flex-1 w-full h-full min-h-0 justify-between items-stretch">
-            <div className="h-full flex flex-1 min-w-0 flex-col gap-4">
+          <div className="flex flex-1 w-full min-h-0 justify-between items-stretch">
+            <div className="flex flex-1 min-w-0 flex-col gap-4">
               <h3 className="font-semibold text-xl">Coins</h3>
               <Coins vaultAddress={vaultAddress} />
             </div>
-            <div className="flex h-auto items-center mx-10">
-              <div className="w-px h-full bg-black-20" />
-            </div>
-            <div className="h-full basis-1/5 flex flex-1 min-w-0 flex-col gap-4">
+            <div className="flex mx-10 w-px self-stretch bg-black-20" />
+            <div className="basis-1/5 flex flex-1 min-w-0 flex-col gap-4">
               <h3 className="font-semibold text-xl">Transactions</h3>
               <Transactions multisigAddress={multisigAddress} />
             </div>

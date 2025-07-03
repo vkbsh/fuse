@@ -2,9 +2,9 @@ import Tooltip from "~/components/ui/Tooltip";
 import { IconConnect } from "~/components/ui/icons/IconConnect";
 import { IconDisconnect } from "~/components/ui/icons/IconDisconnect";
 
+import { cn } from "~/utils/tw";
 import { abbreviateAddress } from "~/utils/address";
 import { LSWallet, useWalletStore } from "~/state/wallet";
-import { cn } from "~/utils/tw";
 
 export default function MemberKey({
   active,

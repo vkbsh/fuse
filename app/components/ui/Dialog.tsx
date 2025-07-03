@@ -25,31 +25,34 @@ export default function Dialog({
   return (
     <Root open={isOpen} onOpenChange={onOpenChange}>
       <Trigger hidden />
-      <Portal key="dialog-portal" forceMount>
-        <AnimatePresence>
-          {isOpen && (
-            <Animate
-              variant="blur"
-              className="h-full w-full fixed top-0 left-0 z-10"
-            >
-              <Animate
-                variant="slideDownModal"
+      <AnimatePresence>
+        {isOpen && (
+          <Animate
+            key="dialog"
+            variant="blur"
+            className="h-full w-full fixed top-0 left-0 z-10"
+          >
+            <Portal forceMount>
+              <Content
+                aria-describedby={undefined}
                 className="absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%] z-20 overflow-visible drop-shadow-2xl"
               >
-                <Content aria-describedby={undefined}>
+                <Animate key="dialog-content" variant="slideDownModal">
                   <Title className="hidden" />
                   {children}
-                  <Close asChild>
-                    <Button className="w-[50px] h-[50px] p-0 rounded-full absolute -bottom-18 left-0 right-0 m-auto">
-                      <IconClose />
-                    </Button>
-                  </Close>
-                </Content>
-              </Animate>
-            </Animate>
-          )}
-        </AnimatePresence>
-      </Portal>
+                  <Animate key="dialog-close" variant="slideDownModal">
+                    <Close asChild>
+                      <Button className="w-[50px] h-[50px] p-0 rounded-full absolute -bottom-18 left-0 right-0 m-auto">
+                        <IconClose />
+                      </Button>
+                    </Close>
+                  </Animate>
+                </Animate>
+              </Content>
+            </Portal>
+          </Animate>
+        )}
+      </AnimatePresence>
     </Root>
   );
 }

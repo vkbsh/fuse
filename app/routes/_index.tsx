@@ -21,16 +21,17 @@ export default function Index() {
 
   return (
     <>
-      <AnimatePresence mode="popLayout">
+      <AnimatePresence initial={false}>
         {!multisigStorage || !walletStorage ? (
           <Animate
+            key="connect"
             variant="fadeIn"
             className="h-full flex items-center justify-center"
           >
             <Connect />
           </Animate>
         ) : (
-          <Animate variant="fadeIn">
+          <Animate key="dashboard" variant="fadeIn">
             <Dashboard
               walletName={walletStorage.name}
               multisigAddress={multisigStorage.address}

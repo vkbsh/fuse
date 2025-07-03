@@ -14,7 +14,10 @@ import {
   getNullableCodec,
   addCodecSizePrefix,
   getDiscriminatedUnionCodec,
+  Codec,
 } from "gill";
+
+type ExtractCodecValueType<T> = T extends Codec<any, infer V> ? V : never;
 
 function getPermissionsCodec() {
   return getStructCodec([["mask", getU8Codec()]]);
@@ -41,6 +44,10 @@ export function getMultisigAccountCodec() {
     ["members", getArrayCodec(getMemberCodec())],
   ]);
 }
+
+export type MultisigAccount = ExtractCodecValueType<
+  ReturnType<typeof getMultisigAccountCodec>
+>;
 
 export function getProposalStatusCodec() {
   return getDiscriminatedUnionCodec([
@@ -115,6 +122,10 @@ export function getVaultTransactionCodec() {
   ]);
 }
 
+export type VaultTransaction = ExtractCodecValueType<
+  ReturnType<typeof getVaultTransactionCodec>
+>;
+
 export function getVaultTransactionMessageCodec() {
   return getStructCodec([
     ["numSigners", getU8Codec()],
@@ -128,6 +139,10 @@ export function getVaultTransactionMessageCodec() {
     ],
   ]);
 }
+
+export type VaultTransactionMessage = ExtractCodecValueType<
+  ReturnType<typeof getVaultTransactionMessageCodec>
+>;
 
 export function getMultisigCompiledInstructionCodec() {
   return getStructCodec([

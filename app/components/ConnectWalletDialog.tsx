@@ -68,7 +68,11 @@ function WalletOption({ wallet }: { wallet: UiWallet }) {
 
   if (isConnecting) {
     return (
-      <Animate variant="fadeIn" className="flex flex-row items-center gap-6">
+      <Animate
+        key={wallet.name}
+        variant="fadeIn"
+        className="flex flex-row items-center gap-6"
+      >
         <span className="h-[40px]">Connecting...</span>
       </Animate>
     );
@@ -110,6 +114,8 @@ function ConnectMultisig({
     isFetched,
     data: multisigWallets,
   } = useMultisigWallets(accountAddress) || {};
+
+  // TODO: Affect loading state
 
   const { addwalletStorage, addMultisig, selectWalletName } = useWalletStore();
 

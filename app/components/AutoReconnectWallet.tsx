@@ -56,7 +56,7 @@ function WalletAccount({
 
         if (!isMember) {
           // TODO: Remove wallet from history
-          console.log("not a member", account.address);
+          console.error("not a member", account.address);
         }
       }
 

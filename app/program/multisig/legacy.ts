@@ -1,7 +1,10 @@
 import * as multisig from "@sqds/multisig";
 
 import {
+  Signer,
+  Keypair,
   PublicKey,
+  Connection,
   TransactionInstruction,
   TransactionMessage as TMessage,
 } from "web3js1";
@@ -11,7 +14,7 @@ import {
   Address,
   AccountRole,
   IInstruction,
-  isWritableRole,
+  TransactionSigner,
   ReadonlyUint8Array,
   upgradeRoleToSigner,
   upgradeRoleToWritable,
@@ -19,21 +22,19 @@ import {
 
 import {
   TOKEN_PROGRAM_ADDRESS,
-  TOKEN_2022_PROGRAM_ADDRESS,
   ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
 } from "gill/programs/token";
 
 import { SYSTEM_PROGRAM_ADDRESS } from "gill/programs";
-import { Signer } from "~/program/multisig/instruction";
 
-import { useRpcStore } from "~/state/rpc";
+import { RPC_URL_TEST, useRpcStore } from "~/state/rpc";
 
 export type TransactionMessage = TMessage;
 export const TransactionMessage = TMessage;
 
-const { READONLY, WRITABLE, READONLY_SIGNER, WRITABLE_SIGNER } = AccountRole;
-
 const { rpc } = useRpcStore.getState();
+
+const { WRITABLE, READONLY_SIGNER, WRITABLE_SIGNER } = AccountRole;
 
 export type AccountMeta = {
   pubkey: Address;
@@ -41,38 +42,72 @@ export type AccountMeta = {
   isWritable: boolean;
 };
 
-export function convertRoles(
-  accountMetas: AccountMeta[],
-): Array<[Address, AccountRole]> {
-  return accountMetas.map((meta) => {
-    let role = READONLY;
-    if (meta.isWritable) {
-      role = WRITABLE;
-    }
-    if (meta.isSigner) {
-      role = isWritableRole(role) ? WRITABLE_SIGNER : READONLY_SIGNER;
-    }
-    return [address(meta.pubkey.toString()), role];
-  });
+const connection = new Connection(RPC_URL_TEST, "confirmed");
+
+export function generateLegacyKeyPair(): Keypair {
+  return Keypair.generate();
 }
 
-export function isStaticWritableIndex(index: number, message: any): boolean {
-  const numAccountKeys = message.accountKeys.length;
-  const { numSigners, numWritableSigners, numWritableNonSigners } = message;
+export async function createMultisig({
+  creator,
+  members,
+  createKey,
+  multisigPda,
+  rentCollector,
+}: {
+  creator: Signer;
+  createKey: Signer;
+  multisigPda: Address;
+  rentCollector: Address;
+  members: Array<{ key: Address; permissions: { mask: number } }>;
+}) {
+  const programConfigPda = multisig.getProgramConfigPda({})[0];
 
-  if (index < 0 || index >= numAccountKeys) {
-    return false;
+  const programConfig =
+    await multisig.accounts.ProgramConfig.fromAccountAddress(
+      // @ts-expect-error: incompatible type of Connection (solana web3js1 squads vs fuse)
+      connection,
+      programConfigPda,
+    );
+
+  const legacyMembers = members.map((member) => ({
+    key: new PublicKey(member.key),
+    permissions: member.permissions,
+  }));
+
+  try {
+    const signature = await multisig.rpc.multisigCreateV2({
+      creator,
+      createKey,
+      // @ts-expect-error: incompatible type of Connection (solana web3js1 squads vs fuse)
+      connection,
+      timeLock: 0,
+      threshold: 2,
+      configAuthority: null,
+      members: legacyMembers,
+      treasury: programConfig.treasury,
+      multisigPda: new PublicKey(multisigPda),
+      rentCollector: new PublicKey(rentCollector) ?? null,
+    });
+
+    await connection.confirmTransaction(signature);
+  } catch (error) {
+    console.log(error);
   }
-
-  const isWritableSigner = index < numWritableSigners;
-  const isWritableNonSigner =
-    index >= numSigners && index < numSigners + numWritableNonSigners;
-
-  return isWritableSigner || isWritableNonSigner;
 }
 
-export function isSignerIndex(message: any, index: number) {
-  return index < message.numSigners;
+export async function getMultisigInfo({
+  multisigPda,
+}: {
+  multisigPda: PublicKey;
+}) {
+  const multisigInfo = await multisig.accounts.Multisig.fromAccountAddress(
+    // @ts-expect-error: incompatible type of Connection (solana web3js1 squads vs fuse)
+    connection,
+    multisigPda,
+  );
+
+  return multisigInfo;
 }
 
 export function convertFromLegacyInstruction({
@@ -87,7 +122,6 @@ export function convertFromLegacyInstruction({
   programAddress:
     | typeof TOKEN_PROGRAM_ADDRESS
     | typeof SYSTEM_PROGRAM_ADDRESS
-    | typeof TOKEN_2022_PROGRAM_ADDRESS
     | typeof ASSOCIATED_TOKEN_PROGRAM_ADDRESS;
 }): {
   data: Uint8Array;
@@ -135,7 +169,7 @@ function instructionFromLegacyInstruction(
 }
 
 export async function createLegacyTransactionMessage(
-  signer: Signer,
+  signer: TransactionSigner,
   instructions: IInstruction[],
 ): Promise<TransactionMessage> {
   const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();

@@ -1,5 +1,4 @@
 import Animate from "~/components/animated/Animate";
-import { IconLogo } from "~/components/ui/icons/IconLogo";
 import { IconChevronDown } from "~/components/ui/icons/IconChevronDown";
 
 import { LSWallet } from "~/state/wallet";
@@ -8,37 +7,31 @@ import { abbreviateAddress } from "~/utils/address";
 export default function SelectedMemberKey({
   wallet,
 }: {
-  wallet: null | LSWallet;
+  wallet: LSWallet | null;
 }) {
+  if (!wallet) {
+    return null;
+  }
+
   return (
     <div className="cursor-pointer flex flex-row gap-3 items-center">
       <Animate
-        key={wallet?.address}
-        className="flex flex-row gap-3 items-center"
+        key={wallet.address}
         variant="slideDown"
+        className="flex flex-row gap-3 items-center"
       >
-        {wallet ? (
-          <span className="flex w-[42px] h-[42px] rounded-full bg-foreground justify-center items-center text-black">
-            <img
-              src={wallet.icon}
-              alt={wallet.name}
-              className="rounded-full w-5 h-5"
-            />
-          </span>
-        ) : (
-          <span className="w-[42px] h-[42px] rounded-full bg-foreground flex items-center justify-center text-black">
-            <IconLogo />
-          </span>
-        )}
+        <span className="flex w-[42px] h-[42px] rounded-full bg-foreground justify-center items-center text-black">
+          <img
+            src={wallet.icon}
+            alt={wallet.name}
+            className="rounded-full w-5 h-5"
+          />
+        </span>
         <span className="font-semibold w-[90px] text-sm text-primary-text">
-          {wallet?.address
-            ? abbreviateAddress(wallet.address)
-            : "Select Account"}
+          {abbreviateAddress(wallet.address)}
         </span>
       </Animate>
-      <span>
-        <IconChevronDown />
-      </span>
+      <IconChevronDown />
     </div>
   );
 }

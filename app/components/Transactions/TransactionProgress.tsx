@@ -1,14 +1,14 @@
 import { Address } from "gill";
-import { ReactNode } from "react";
 import { AnimatePresence } from "motion/react";
+import { ReactNode } from "react";
 
 import Animate from "~/components/animated/Animate";
-import { IconSquareDot } from "~/components/ui/icons/IconSquareDot";
 import { IconCircleDot } from "~/components/ui/icons/IconCircleDot";
 import { IconCirclePlus } from "~/components/ui/icons/IconCirclePlus";
+import { IconSquareDot } from "~/components/ui/icons/IconSquareDot";
 
-import { cn } from "~/utils/tw";
 import { abbreviateAddress } from "~/utils/address";
+import { cn } from "~/utils/tw";
 
 export type Status =
   | "Active"
@@ -40,10 +40,7 @@ export default function TransactionProgress({
   const isExecuting = false;
 
   return (
-    <Animate
-      variant="collapse"
-      className="flex flex-row justify-between gap-4 text-sm font-semibold mx-auto"
-    >
+    <div className="flex flex-row justify-between gap-4 text-sm font-semibold mx-auto">
       <AnimatePresence>
         <ProgressStatus
           key="Initiated"
@@ -81,7 +78,7 @@ export default function TransactionProgress({
           addresses={[executed]}
         />
       </AnimatePresence>
-    </Animate>
+    </div>
   );
 }
 
@@ -98,10 +95,7 @@ function ProgressStatus({
 }) {
   return (
     addresses?.[0] && (
-      <Animate
-        variant="fadeIn"
-        className="w-[130px] flex flex-col items-center gap-5 text-black-30"
-      >
+      <div className="w-[130px] flex flex-col items-center gap-5 text-black-30">
         <span
           className={cn("text-black-30 duration-500", active && "text-black")}
         >
@@ -122,7 +116,7 @@ function ProgressStatus({
             </div>
           </div>
         </div>
-      </Animate>
+      </div>
     )
   );
 }

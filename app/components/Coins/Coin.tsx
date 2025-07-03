@@ -1,5 +1,6 @@
+import AnimateString from "~/components/animated/AnimateString";
+
 import { roundCoin } from "~/utils/amount";
-import AnimateList from "../animated/AnimateList";
 
 export default function Coin({
   token,
@@ -9,10 +10,9 @@ export default function Coin({
   onClick: () => void;
 }) {
   const { name, symbol, logoURI, amount, usdAmount } = token;
-  const roundedAmount = roundCoin("token", Number(amount));
-  const roundedAmountArray = String(roundedAmount).split("");
-  const roundedUsdAmount = roundCoin("usd", Number(usdAmount));
-  const roundedUsdAmountArray = String(roundedUsdAmount).split("");
+  const roundedAmount = roundCoin("token", Number(amount)) + "";
+  const roundedUsdAmount = roundCoin("usd", Number(usdAmount)) + "";
+
   return (
     <div
       onClick={onClick}
@@ -28,12 +28,7 @@ export default function Coin({
           </span>
           <span className="opacity-40 font-medium flex flex-row gap-1">
             <span className="flex flex-row">
-              {roundedAmount && (
-                <AnimateList
-                  variant="slideDown"
-                  list={roundedAmountArray.map((num) => num)}
-                />
-              )}
+              <AnimateString string={roundedAmount} />
             </span>
             <span>{symbol}</span>
           </span>
@@ -41,12 +36,7 @@ export default function Coin({
       </div>
       <div className="font-medium flex mt-auto">
         <span>$</span>
-        {roundedUsdAmount && (
-          <AnimateList
-            variant="slideDown"
-            list={roundedUsdAmountArray.map((num) => num)}
-          />
-        )}
+        <AnimateString string={roundedUsdAmount} />
       </div>
     </div>
   );

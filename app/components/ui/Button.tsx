@@ -1,7 +1,6 @@
-import React, { forwardRef } from "react";
+import React from "react";
 
 import { cn } from "~/utils/tw";
-import Animate from "~/components/animated/Animate";
 
 type Size = "sm" | "md" | "lg" | "full";
 type Variant = "primary" | "secondary" | "bordered" | "max" | "cancel";
@@ -24,43 +23,35 @@ const sizes: { [k in Size]: string } = {
 const base =
   "font-bold flex items-center justify-center rounded-full gap-2 px-6 py-4 cursor-pointer duration-500 hover:scale-105";
 
-const Button = forwardRef(
-  (
-    {
-      onClick,
-      children,
-      disabled,
-      className,
-      size = "md",
-      variant = "primary",
-      ...props
-    }: {
-      size?: Size;
-      variant?: Variant;
-      disabled?: boolean;
-      className?: string;
-      onClick?: () => void;
-      children: React.ReactNode;
-    },
-    ref: React.Ref<HTMLButtonElement>,
-  ) => {
-    const clsName = cn(base, sizes[size], variants[variant], className, {
-      "cursor-not-allowed opacity-50 hover:scale-100": disabled,
-    });
+export default function Button({
+  onClick,
+  children,
+  disabled,
+  className,
+  size = "md",
+  variant = "primary",
+  ...props
+}: {
+  size?: Size;
+  variant?: Variant;
+  disabled?: boolean;
+  className?: string;
+  onClick?: () => void;
+  children: React.ReactNode;
+}) {
+  const clsName = cn(base, sizes[size], variants[variant], className, {
+    "opacity-50 hover:scale-100": disabled,
+  });
 
-    return (
-      <Animate variant="fadeIn">
-        <button
-          ref={ref}
-          {...props}
-          className={clsName}
-          onClick={disabled ? undefined : onClick}
-        >
-          {children}
-        </button>
-      </Animate>
-    );
-  },
-);
-
-export default Button;
+  return (
+    <button
+      {...props}
+      onClick={onClick}
+      className={clsName}
+      disabled={disabled}
+      type="button"
+    >
+      {children}
+    </button>
+  );
+}

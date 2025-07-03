@@ -6,6 +6,9 @@ import {
   ParsedTransferSolInstruction,
 } from "gill/programs";
 
+// TODO: Try to use this
+import { getTransactionCodec } from "@solana/transactions";
+
 import {
   TOKEN_PROGRAM_ADDRESS,
   TOKEN_2022_PROGRAM_ADDRESS,
@@ -38,7 +41,10 @@ type Result = {
 };
 
 function isTokenProgram(programAddress: Address): boolean {
-  return programAddress === TOKEN_2022_PROGRAM_ADDRESS;
+  return (
+    programAddress === TOKEN_PROGRAM_ADDRESS ||
+    programAddress === TOKEN_2022_PROGRAM_ADDRESS
+  );
 }
 
 function isSystemProgram(programAddress: Address): boolean {
@@ -65,7 +71,8 @@ export async function parseTransactionMessage(
     const ixLegacy = instructions[0];
     const programAddress = accountKeys[ixLegacy.programIdIndex] as
       | typeof TOKEN_PROGRAM_ADDRESS
-      | typeof SYSTEM_PROGRAM_ADDRESS;
+      | typeof SYSTEM_PROGRAM_ADDRESS
+      | typeof TOKEN_PROGRAM_ADDRESS;
 
     const ix = {
       data: new Uint8Array(ixLegacy.data),

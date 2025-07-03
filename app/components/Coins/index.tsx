@@ -1,4 +1,5 @@
 import { Address } from "gill";
+import { AnimatePresence } from "motion/react";
 
 import { useDialog } from "~/state/dialog";
 import { useWalletStore } from "~/state/wallet";
@@ -7,7 +8,7 @@ import { useTokenInfo } from "~/hooks/resources";
 
 import { hasCloudPermission } from "~/program/multisig/utils/member";
 
-import AnimateList from "~/components/animated/AnimateList";
+import Animate from "~/components/animated/Animate";
 import Coin from "./Coin";
 
 export default function Coins({ vaultAddress }: { vaultAddress: Address }) {
@@ -16,7 +17,6 @@ export default function Coins({ vaultAddress }: { vaultAddress: Address }) {
   const { onOpenChange } = useDialog("withdraw");
   const { walletStorage, multisigStorage } = useWalletStore();
 
-  // Prevent user from clicking on coin if they don't have all permissions
   const hasAllPermissions = hasCloudPermission(
     multisigStorage?.account?.members || [],
     walletStorage?.address,
@@ -24,9 +24,10 @@ export default function Coins({ vaultAddress }: { vaultAddress: Address }) {
 
   return (
     <div className="flex flex-1 flex-col gap-0 overflow-y-auto scroll-smooth scrollbar-hidden">
-      <AnimateList
-        variant="slideDown"
-        list={data.map((token) => {
+      <AnimatePresence>
+        {data.map((token, i) => {
+          if (!token) return null;
+
           const handleClick = () => {
             if (!hasAllPermissions) return;
 
@@ -34,9 +35,17 @@ export default function Coins({ vaultAddress }: { vaultAddress: Address }) {
             onOpenChange(true);
           };
 
-          return <Coin token={token} key={token.mint} onClick={handleClick} />;
+          return (
+            <Animate
+              variant="fadeInList"
+              key={token.address}
+              transition={{ duration: 0.6, delay: i * 0.06 }}
+            >
+              <Coin token={token} onClick={handleClick} />
+            </Animate>
+          );
         })}
-      />
+      </AnimatePresence>
     </div>
   );
 }

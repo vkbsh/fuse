@@ -1,10 +1,10 @@
+import { Address, address } from "gill";
 import { useState } from "react";
-import { Address, isAddress } from "gill";
 import { AnimatePresence } from "motion/react";
 
-import Input from "~/components/ui/Input";
 import Animate from "~/components/animated/Animate";
 import { IconLogo } from "~/components/ui/icons/IconLogo";
+import AnimateString from "~/components/animated/AnimateString";
 
 import { useTokenInfo } from "~/hooks/resources";
 import { getRoundedUSD } from "~/utils/amount";
@@ -13,21 +13,13 @@ import { abbreviateAddress } from "~/utils/address";
 
 const ChooseWallet = ({ vaultAddress }: { vaultAddress: Address }) => {
   const { totalAmount } = useTokenInfo(vaultAddress);
-  const { toAddress, addError, set, removeError, errors } = useWithdrawStore();
+  const { toAddress, removeError, errors, set } = useWithdrawStore();
   const [value, setValue] = useState<string | Address>(toAddress || "");
 
+  const handleFocus = () => removeError("toAddress");
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValue(e.target.value);
-    removeError("toAddress");
-  };
-
-  const handleBlur = () => {
-    if (isAddress(value)) {
-      removeError("toAddress");
-      set("toAddress", value);
-    } else {
-      addError("toAddress", "Invalid address");
-    }
+    set("toAddress", address(e.target.value));
   };
 
   return (
@@ -44,8 +36,9 @@ const ChooseWallet = ({ vaultAddress }: { vaultAddress: Address }) => {
             </span>
           </span>
         </div>
-        <span className="font-semibold text-base">
-          ${getRoundedUSD(totalAmount)}
+        <span className="flex flex-row font-semibold text-base">
+          <span>$</span>
+          <AnimateString string={getRoundedUSD(totalAmount) + ""} />
         </span>
       </div>
       <div className="relative h-14 border border-white-30 rounded-[20px] px-4 py-2.5 flex flex-row gap-2 items-center">
@@ -54,14 +47,13 @@ const ChooseWallet = ({ vaultAddress }: { vaultAddress: Address }) => {
             <span className="font-semibold opacity-40">To:</span>
           </div>
         </div>
-        <Input
+        <input
           value={value}
           tabIndex={-1}
+          onFocus={handleFocus}
           onChange={handleChange}
-          className="text-sm"
-          onBlur={handleBlur}
-          error={!!errors?.toAddress}
           placeholder="Enter wallet address"
+          className="w-full text-sm outline-0"
         />
         <AnimatePresence>
           {errors?.toAddress && (

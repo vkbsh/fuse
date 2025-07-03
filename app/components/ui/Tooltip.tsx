@@ -23,20 +23,21 @@ export default function Tooltip({
     <Provider delayDuration={500}>
       <Root open={open} onOpenChange={setOpen}>
         <Trigger asChild>{children}</Trigger>
-        <Portal forceMount>
-          <AnimatePresence>
-            {open && (
-              <Content className="z-20">
+        <AnimatePresence>
+          <Portal forceMount>
+            <Content className="z-20">
+              {open && (
                 <Animate
+                  key="tooltip"
                   variant="slideDown"
                   className="relative text-white bg-black px-2 py-1 rounded-2xl border border-select-border"
                 >
                   {text}
                 </Animate>
-              </Content>
-            )}
-          </AnimatePresence>
-        </Portal>
+              )}
+            </Content>
+          </Portal>
+        </AnimatePresence>
       </Root>
     </Provider>
   );

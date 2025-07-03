@@ -2,9 +2,7 @@ import { address, Address } from "gill";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
-  Transaction,
   getMultisigAccount,
-  getProposalByIndex,
   getWalletByMemberKey,
   getTransactionsByMultisig,
 } from "~/service/multisig";
@@ -71,7 +69,7 @@ export function useTransactions(
   return useQuery({
     enabled: !!multisigAddress && !!staleTransactionIndex,
     queryKey: [queryKeys.transaction, multisigAddress],
-    staleTime: 0,
+    staleTime: staleTimeByQueryKey.transaction,
     queryFn: async () => {
       return getTransactionsByMultisig(multisigAddress, staleTransactionIndex);
     },
@@ -145,25 +143,30 @@ export const useTokenInfo = (vaultAddress: Address) => {
   const isError = meta.some((m) => m.isError) || price.some((p) => p.isError);
   const isAllFetched = meta.every((m) => m.data) && price.every((p) => p.data);
 
-  const data = meta.map((m, i) => {
-    return {
-      ...m.data,
-      ata: tokens[i].ata,
-      mint: tokens[i].mint,
-      amount: getAmount({
-        decimals: Number(m.data?.decimals) || 0,
-        amount: tokens[i].amount ? Number(tokens[i].amount) : 0,
-      }),
-      usdAmount: getAmount({
-        price: price[i].data || 0,
-        decimals: Number(m.data?.decimals) || 0,
-        amount: tokens[i].amount ? Number(tokens[i].amount) : 0,
-      }),
-    };
-  }) as TokenData[];
+  const data = meta
+    .map((m, i) => {
+      if (!m.data || !price[i].data || !tokens[i]) return null;
+
+      return {
+        ...m.data,
+        ata: tokens[i].ata,
+        mint: tokens[i].mint,
+        amount: getAmount({
+          decimals: Number(m.data?.decimals),
+          amount: tokens[i].amount,
+        }),
+        usdAmount: getAmount({
+          price: price[i].data,
+          decimals: Number(m.data?.decimals),
+          amount: tokens[i].amount,
+        }),
+      };
+    })
+    .filter(Boolean);
 
   const totalAmount = data.reduce(
-    (acc, token) => acc + (token?.usdAmount || 0),
+    (acc, token) =>
+      acc + (isNaN(Number(token?.usdAmount)) ? 0 : token?.usdAmount || 0),
     0,
   );
 
@@ -176,98 +179,14 @@ export const useTokenInfo = (vaultAddress: Address) => {
   };
 };
 
-export function useUpdateTransaction(
-  multisigAddress: Address,
-  transactionIndex: number,
-) {
+export function useRefetchTransactions(multisigAddress: Address) {
   const queryClient = useQueryClient();
 
   return async () => {
-    // let allTransactions: Transaction[] =
-    //   queryClient.getQueryData<Array<Transaction>>([
-    //     queryKeys.transaction,
-    //     multisigAddress,
-    //   ]) || [];
-    // const newProposal = await getProposalByIndex(
-    //   multisigAddress,
-    //   transactionIndex,
-    // );
-
-    queryClient.invalidateQueries({
-      queryKey: [queryKeys.transaction, multisigAddress],
-    });
-
-    return queryClient.refetchQueries({
-      queryKey: [queryKeys.transaction, multisigAddress],
-    });
-
-    // queryClient.setQueryData(
-    //   [queryKeys.transaction, multisigAddress],
-    //   (allTransactions: Transaction[]) => {
-    //     console.log("allTransactions", allTransactions);
-    //     let updatedTransactions = [];
-
-    //     if (!newProposal) {
-    //       updatedTransactions = allTransactions.filter(
-    //         (tx) => tx.transactionIndex !== transactionIndex,
-    //       );
-    //     } else {
-    //       updatedTransactions = allTransactions.map((transaction) => {
-    //         if (transaction.transactionIndex === transactionIndex) {
-    //           return {
-    //             ...transaction,
-    //             approved: newProposal?.approved,
-    //             rejected: newProposal?.rejected,
-    //             cancelled: newProposal?.cancelled,
-    //             status: newProposal?.status.__kind,
-    //             timestamp: Number(newProposal?.status.timestamp),
-    //           };
-    //         }
-
-    //         return transaction;
-    //       });
-    //     }
-
-    //     console.log("updatedTransactions", updatedTransactions);
-
-    //     return updatedTransactions;
-    //   },
-    // );
-  };
-}
-
-export function useFetchLatestTransaction(
-  multisigAddress: Address,
-  transactionIndex: number,
-) {
-  const queryClient = useQueryClient();
-
-  return async () => {
-    await queryClient.invalidateQueries({
-      queryKey: [queryKeys.transaction, multisigAddress],
-    });
-    return queryClient.refetchQueries({
+    return queryClient.invalidateQueries({
       queryKey: [queryKeys.transaction, multisigAddress],
     });
   };
-
-  // const allTransactions: Transaction[] =
-  //   queryClient.getQueryData<Array<Transaction>>([
-  //     queryKeys.transaction,
-  //     multisigAddress,
-  //   ]) || [];
-
-  // return async () => {
-  //   const newProposal = await getProposalByIndex(
-  //     multisigAddress,
-  //     transactionIndex,
-  //   );
-
-  //   return queryClient.setQueryData(
-  //     [queryKeys.transaction, multisigAddress],
-  //     [newProposal, ...allTransactions], // TODO: use setter function instead (oldData) => return [newProposal,...oldData]
-  //   );
-  // };
 }
 
 export function refetchBalance(vaultAddress: Address) {

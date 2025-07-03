@@ -26,8 +26,9 @@ import {
 import {
   TOKEN_PROGRAM_ADDRESS,
   TOKEN_2022_PROGRAM_ADDRESS,
-  getTransferTokensInstructions,
+  getTransferInstruction,
   getAssociatedTokenAccountAddress,
+  getCreateAssociatedTokenIdempotentInstruction,
 } from "gill/programs/token";
 
 import { SQUADS_PROGRAM_ID } from "~/program/multisig/address";
@@ -35,17 +36,10 @@ import {
   getVaultPda,
   getProposalPda,
   getTransactionPda,
-  getEphemeralSignerPda,
 } from "~/program/multisig/pda";
 
-import {
-  AccountMeta,
-  convertRoles,
-  isSignerIndex,
-  isStaticWritableIndex,
-} from "~/program/multisig/legacy";
-
 import { useRpcStore } from "~/state/rpc";
+import { accountsForTransactionExecute } from "./utils/accountsForTransactionExecute";
 const { rpc } = useRpcStore.getState();
 
 const discriminator = {
@@ -59,10 +53,6 @@ const discriminator = {
 };
 
 const { READONLY, WRITABLE, READONLY_SIGNER, WRITABLE_SIGNER } = AccountRole;
-
-export type Signer = TransactionSigner & {
-  keyPair?: CryptoKeyPair;
-};
 
 export function createInstruction({
   data,
@@ -233,39 +223,16 @@ export async function createVaultTransactionExecuteInstruction({
     transactionPdaInfo.value,
   ) as EncodedAccount;
 
-  const vaultTransaction = getVaultTransactionCodec().decode(
+  const { message, ephemeralSignerBumps } = getVaultTransactionCodec().decode(
     parsedTransaction.data,
   );
 
-  const accountMetas: AccountMeta[] = [];
-
-  const message = vaultTransaction.message;
-  const ephemeralSignerBumps = vaultTransaction.ephemeralSignerBumps;
-
-  const ephemeralSignerPdas = await Promise.all(
-    ephemeralSignerBumps.map(async (_, additionalSignerIndex) => {
-      return await getEphemeralSignerPda({
-        transactionPda,
-        ephemeralSignerIndex: BigInt(additionalSignerIndex),
-      });
-    }),
-  );
-
-  // Then add static account keys included into the message.
-  for (const [accountIndex, accountKey] of message.accountKeys.entries()) {
-    accountMetas.push({
-      pubkey: accountKey,
-      isWritable: isStaticWritableIndex(accountIndex, message),
-      // NOTE: vaultPda and ephemeralSignerPdas cannot be marked as signers,
-      // because they are PDAs and hence won't have their signatures on the transaction.
-      isSigner:
-        isSignerIndex(message, accountIndex) &&
-        !(accountKey === vaultPda) &&
-        !ephemeralSignerPdas.find((k) => k === accountKey),
-    });
-  }
-
-  const converted = convertRoles(accountMetas);
+  const accountMetas = await accountsForTransactionExecute({
+    message,
+    vaultPda,
+    transactionPda,
+    ephemeralSignerBumps,
+  });
 
   return createInstruction({
     data: getVaultExecuteCodec().encode({
@@ -276,7 +243,10 @@ export async function createVaultTransactionExecuteInstruction({
       [proposalPda, WRITABLE],
       [transactionPda, READONLY],
       [memberAddress, READONLY_SIGNER],
-      ...converted,
+      ...(accountMetas.map((accountMeta) => [
+        accountMeta.address,
+        accountMeta.role,
+      ]) as [Address, AccountRole][]),
     ],
   });
 }
@@ -319,7 +289,7 @@ export function createTransferSolInstruction({
   amount,
   toAddress,
 }: {
-  signer: Signer;
+  signer: TransactionSigner;
   amount: Lamports;
   toAddress: Address;
 }): TransferSolInstruction {
@@ -335,36 +305,39 @@ export async function createTransferTokenInstruction({
   signer,
   toAddress,
   fromToken,
+  vaultAddress,
 }: {
   amount: number;
-  signer: Signer;
   toAddress: Address;
+  vaultAddress: Address;
+  signer: TransactionSigner;
   fromToken: { decimals: number; mint: Address; ata: Address };
 }): Promise<IInstruction[]> {
-  const { value: mintInfo } = await rpc
-    .getAccountInfo(fromToken.mint, { encoding: "jsonParsed" })
-    .send();
-
-  const owner = mintInfo?.owner;
-
-  if (!owner) {
-    throw new Error("Failed to get mint info: createTransferTokenInstruction");
-  }
-
   const toAta = await getAssociatedTokenAccountAddress(
     fromToken.mint,
     toAddress,
     TOKEN_2022_PROGRAM_ADDRESS,
   );
 
-  return getTransferTokensInstructions({
-    amount,
-    feePayer: signer,
-    authority: signer,
+  const createATAIx = getCreateAssociatedTokenIdempotentInstruction({
+    ata: toAta,
+    payer: signer,
+    owner: toAddress,
     mint: fromToken.mint,
-    destinationAta: toAta,
-    destination: toAddress,
-    sourceAta: fromToken.ata,
     tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
   });
+
+  const transferIx = getTransferInstruction(
+    {
+      amount,
+      destination: toAta,
+      source: fromToken.ata,
+      authority: vaultAddress,
+    },
+    {
+      programAddress: TOKEN_2022_PROGRAM_ADDRESS,
+    },
+  );
+
+  return [createATAIx, transferIx];
 }

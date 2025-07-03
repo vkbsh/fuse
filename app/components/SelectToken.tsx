@@ -20,12 +20,14 @@ export default function SelectToken({
   const selected = token || tokensInfo?.[0];
 
   useEffect(() => {
-    if (selected.address !== token?.ata) {
+    if (selected?.address !== token?.ata) {
       set("token", selected);
     }
   }, [selected]);
 
   const itemsComponent = items.map((item) => {
+    if (!item) return null;
+
     const amount =
       item?.symbol?.toLocaleLowerCase() === "sol"
         ? getRoundedSOL(item.amount)
@@ -36,7 +38,7 @@ export default function SelectToken({
       <div
         key={item.mint}
         onClick={() => set("token", item)}
-        className="flex items-center cursor-pointer w-[279px] h-[46px] p-4 rounded-[14px] text-white border border-transparent hover:text-select-text-hover hover:bg-select-bg-hover hover:border-select-border-hover duration-500"
+        className="flex items-center cursor-pointer w-[300px] h-[46px] p-4 rounded-[14px] text-white border border-transparent hover:text-select-text-hover hover:bg-select-bg-hover hover:border-select-border-hover duration-500"
       >
         <div className="flex flex-row items-center justify-between  w-full">
           <div className="flex flex-row items-center gap-2">
@@ -45,11 +47,11 @@ export default function SelectToken({
               alt={item.name}
               className="w-7 h-7 rounded-full"
             />
-            <span className="font-semibold text-base max-w-26 truncate">
+            <span className="font-semibold text-base max-w-28 truncate">
               {name}
             </span>
           </div>
-          <span className="uppercase font-medium text-sm truncate">
+          <span className="uppercase font-medium text-sm max-w-32 truncate">
             {amount} {item.symbol}
           </span>
         </div>
@@ -67,7 +69,9 @@ export default function SelectToken({
   );
 }
 
-const SelectedToken = ({ token }: { token: TokenData }) => {
+const SelectedToken = ({ token }: { token: TokenData | null }) => {
+  if (!token) return null;
+
   return (
     <div className="relative cursor-pointer px-2 pr-3.5 min-w-[130px] h-[40px] bg-white-20 flex flex-row gap-2 items-center rounded-full text-white border border-white-5">
       <img

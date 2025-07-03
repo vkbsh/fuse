@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, Key } from "react";
 import { motion, MotionProps } from "motion/react";
 
 import { variants, Variant } from "./variants";

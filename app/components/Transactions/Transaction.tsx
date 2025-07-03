@@ -120,12 +120,13 @@ export default function Transaction({
         </div>
       </div>
       <AnimatePresence>
-        {isOpen && (
+        {isOpen && walletAccount && (
           <Animate
+            layout
             variant="collapse"
-            className="overflow-hidden w-full rounded-[20px] bg-trn-hover"
+            className="w-full overflow-hidden bg-trn-hover rounded-[20px]"
           >
-            <div className="flex flex-col gap-6 p-6 justify-end">
+            <div className="flex flex-1 flex-col gap-6 justify-end w-full p-6">
               <Progress
                 status={status}
                 approved={approved}
@@ -133,18 +134,15 @@ export default function Transaction({
                 initiated={creator}
                 cancelled={cancelled}
               />
-
-              {walletAccount && (
-                <Footer
-                  status={status}
-                  approved={approved}
-                  rejected={rejected}
-                  cancelled={cancelled}
-                  walletAccount={walletAccount}
-                  transactionIndex={transactionIndex}
-                  rentCollectorAddress={rentCollectorAddress}
-                />
-              )}
+              <Footer
+                status={status}
+                approved={approved}
+                rejected={rejected}
+                cancelled={cancelled}
+                walletAccount={walletAccount}
+                transactionIndex={transactionIndex}
+                rentCollectorAddress={rentCollectorAddress}
+              />
             </div>
           </Animate>
         )}

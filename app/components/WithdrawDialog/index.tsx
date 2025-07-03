@@ -65,6 +65,7 @@ function Withdraw({
       <EnterAmount vaultAddress={vaultAddress} />
       <Review
         onClose={() => onOpenChange(false)}
+        vaultAddress={vaultAddress}
         walletAccount={walletAccount}
         multisigAddress={multisigAddress}
         transactionIndex={transactionIndex}

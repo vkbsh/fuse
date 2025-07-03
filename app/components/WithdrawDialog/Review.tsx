@@ -1,6 +1,6 @@
 import { UiWalletAccount } from "@wallet-standard/react";
 import { useWalletAccountTransactionSigner } from "@solana/react";
-import { address, Address, LAMPORTS_PER_SOL, TransactionSigner } from "gill";
+import { address, Address, assertIsAddress, LAMPORTS_PER_SOL } from "gill";
 
 import Button from "~/components/ui/Button";
 
@@ -13,26 +13,25 @@ import {
 import { toast } from "~/state/toast";
 import { useWithdrawStore } from "~/state/withdraw";
 import { SOL_MINT_ADDRESS } from "~/service/balance";
-import { useFetchLatestTransaction } from "~/hooks/resources";
+import { useRefetchTransactions } from "~/hooks/resources";
 
 export default function Review({
   onClose,
+  vaultAddress,
   walletAccount,
   multisigAddress,
   transactionIndex,
 }: {
   onClose: () => void;
+  vaultAddress: Address;
   multisigAddress: Address;
   transactionIndex: number;
   walletAccount: UiWalletAccount;
 }) {
+  const refetchTransactions = useRefetchTransactions(multisigAddress);
   const { toAddress, token, amount, addError, reset } = useWithdrawStore();
-  const fetchLastTransaction = useFetchLatestTransaction(
-    multisigAddress,
-    transactionIndex,
-  );
 
-  const signer: TransactionSigner = useWalletAccountTransactionSigner(
+  const signer = useWalletAccountTransactionSigner(
     walletAccount,
     "solana:mainnet",
   );
@@ -49,18 +48,26 @@ export default function Review({
         addError("amount", "Invalid amount");
       }
 
-      return;
+      return false;
+    }
+
+    try {
+      assertIsAddress(toAddress);
+    } catch (e) {
+      addError("toAddress", "Invalid address");
+      return false;
     }
 
     const nextTxIndex = BigInt(transactionIndex + 1);
     const memberAddress = address(walletAccount.address);
     const creatorAddress = address(walletAccount.address);
 
-    let transactionMessage = null;
     const memo = "auto approve";
-    const isNative = token?.mint === SOL_MINT_ADDRESS;
+    const isSolTransfer = token.mint === SOL_MINT_ADDRESS;
 
-    if (isNative) {
+    let transactionMessage = null;
+
+    if (isSolTransfer) {
       transactionMessage = await createTransferSolMessage({
         signer,
         toAddress,
@@ -70,6 +77,7 @@ export default function Review({
       transactionMessage = await createTransferTokenMessage({
         signer,
         toAddress,
+        vaultAddress,
         fromToken: token,
         amount: amount * 10 ** token.decimals,
       });
@@ -86,27 +94,20 @@ export default function Review({
         transactionIndex: nextTxIndex,
       });
 
+      reset();
       console.log("TransferWithProposalApprove confirmed: ", signature);
     } catch (e: any) {
       toast.error("Failed to initiate transfer");
       console.error("Error [Initiate, Proposal, Approve]: ", e);
     } finally {
-      await fetchLastTransaction();
-      reset();
+      await refetchTransactions();
       onClose();
     }
   };
 
   return (
     <div className="flex flex-row gap-2 justify-center">
-      <Button
-        size="md"
-        onClick={() => {
-          reset();
-          onClose();
-        }}
-        variant="cancel"
-      >
+      <Button size="md" onClick={onClose} variant="cancel">
         Cancel
       </Button>
       <Button size="md" variant="secondary" onClick={handleTx}>

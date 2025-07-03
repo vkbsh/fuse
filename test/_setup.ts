@@ -1,115 +1,115 @@
-import * as multisig from "@sqds/multisig";
-import { Connection, Keypair, PublicKey, Signer } from "web3js1";
-
 import {
   getMintSize,
-  getTokenSize,
   getMintToInstruction,
+  TOKEN_PROGRAM_ADDRESS,
   TOKEN_2022_PROGRAM_ADDRESS,
   getInitializeMintInstruction,
-  getInitializeAccountInstruction,
+  getAssociatedTokenAccountAddress,
+  getCreateAssociatedTokenIdempotentInstruction,
 } from "gill/programs/token";
 
 import {
-  pipe,
   address,
   Address,
   lamports,
-  Commitment,
   KeyPairSigner,
   airdropFactory,
   LAMPORTS_PER_SOL,
   TransactionSigner,
   generateKeyPairSigner,
-  createTransactionMessage,
-  getSignatureFromTransaction,
-  CompilableTransactionMessage,
-  sendAndConfirmTransactionFactory,
-  signTransactionMessageWithSigners,
-  setTransactionMessageFeePayerSigner,
-  appendTransactionMessageInstructions,
-  TransactionMessageWithBlockhashLifetime,
-  setTransactionMessageLifetimeUsingBlockhash,
+  createKeyPairFromBytes,
+  createSignerFromKeyPair,
+  getMinimumBalanceForRentExemption,
 } from "gill";
 
 import { getCreateAccountInstruction } from "gill/programs";
+import { getMultisigPda, getVaultPda } from "~/program/multisig/pda";
+import { createAndConfirmMessage } from "~/program/multisig/message";
 
-import { useRpcStore, RPC_URL_TEST } from "~/state/rpc";
+import {
+  createMultisig,
+  generateLegacyKeyPair,
+} from "~/program/multisig/legacy";
+
+import { useRpcStore } from "~/state/rpc";
 
 const client = useRpcStore.getState();
-const connection = new Connection(RPC_URL_TEST, "confirmed");
-export async function getMultisigInfo({
-  multisigPda,
-}: {
-  multisigPda: PublicKey;
-}) {
-  const multisigInfo = await multisig.accounts.Multisig.fromAccountAddress(
-    // @ts-expect-error: incompatible type of Connection (solana web3js1 squads vs fuse)
-    connection,
-    multisigPda,
+
+export async function getTestAccountsWithBalances() {
+  const creatorKeyPair = generateLegacyKeyPair();
+  const createKeyKeyPair = generateLegacyKeyPair();
+  const secondMemberKeyPair = generateLegacyKeyPair();
+  const rentCollectorKeyPair = generateLegacyKeyPair();
+  const toTokenKeyPair = generateLegacyKeyPair();
+  const toSolKeyPair = generateLegacyKeyPair();
+
+  const createKey = await createSignerFromKeyPair(
+    await createKeyPairFromBytes(createKeyKeyPair.secretKey),
   );
 
-  return multisigInfo;
-}
+  const creator = await createSignerFromKeyPair(
+    await createKeyPairFromBytes(creatorKeyPair.secretKey),
+  );
+  const secondMember = await createSignerFromKeyPair(
+    await createKeyPairFromBytes(secondMemberKeyPair.secretKey),
+  );
 
-export function generateLegacyKeyPair(): Keypair {
-  return Keypair.generate();
-}
+  const rentCollector = await createSignerFromKeyPair(
+    await createKeyPairFromBytes(rentCollectorKeyPair.secretKey),
+  );
 
-export function getMultisigPda(createKey: Address): PublicKey {
-  const [multisigPda] = multisig.getMultisigPda({
-    createKey: new PublicKey(createKey),
+  const toToken = await createSignerFromKeyPair(
+    await createKeyPairFromBytes(toTokenKeyPair.secretKey),
+  );
+
+  const toSol = await createSignerFromKeyPair(
+    await createKeyPairFromBytes(toSolKeyPair.secretKey),
+  );
+
+  const multisigPda = await getMultisigPda({ createKey: createKey.address });
+  const multisigAddress = address(multisigPda);
+  const vaultAddress = await getVaultPda({
+    vaultIndex: 0,
+    multisigAddress,
   });
 
-  return multisigPda;
+  await Promise.all(
+    [creator, createKey, secondMember, { address: vaultAddress }].map(
+      async ({ address }) => await airdrop(address),
+    ),
+  );
+
+  await createMultisig({
+    multisigPda,
+    creator: createKeyKeyPair,
+    createKey: createKeyKeyPair,
+    rentCollector: rentCollector.address,
+    members: [
+      {
+        key: creator.address,
+        permissions: { mask: 7 },
+      },
+      {
+        key: secondMember.address,
+        permissions: { mask: 2 },
+      },
+    ],
+  });
+
+  return {
+    creator,
+    createKey,
+    secondMember,
+    vaultAddress,
+    multisigAddress,
+    receiverSolAddress: toSol.address,
+    receiverTokenAddress: toToken.address,
+    rentCollectorAddress: rentCollector.address,
+  };
 }
 
-export async function createMultisig({
-  creator,
-  members,
-  createKey,
-  multisigPda,
-  rentCollector,
-}: {
-  creator: Signer;
-  createKey: Signer;
-  multisigPda: PublicKey;
-  rentCollector: Address;
-  members: Array<{ key: Address; permissions: { mask: number } }>;
-}) {
-  const programConfigPda = multisig.getProgramConfigPda({})[0];
-
-  const programConfig =
-    await multisig.accounts.ProgramConfig.fromAccountAddress(
-      // @ts-expect-error: incompatible type of Connection (solana web3js1 squads vs fuse)
-      connection,
-      programConfigPda,
-    );
-
-  const legacyMembers = members.map((member) => ({
-    key: new PublicKey(member.key),
-    permissions: member.permissions,
-  }));
-
-  try {
-    const signature = await multisig.rpc.multisigCreateV2({
-      creator,
-      createKey,
-      // @ts-expect-error: incompatible type of Connection (solana web3js1 squads vs fuse)
-      connection,
-      multisigPda,
-      timeLock: 0,
-      threshold: 2,
-      configAuthority: null,
-      members: legacyMembers,
-      treasury: programConfig.treasury,
-      rentCollector: new PublicKey(rentCollector) ?? null,
-    });
-
-    await connection.confirmTransaction(signature);
-  } catch (error) {
-    console.log(error);
-  }
+export async function getBalance(address: Address) {
+  return client.rpc.getBalance(address).send();
 }
 
 export const airdrop = async (
@@ -123,27 +123,42 @@ export const airdrop = async (
   });
 };
 
-export const getBalance = async (address: Address) => {
-  return client.rpc.getBalance(address).send();
-};
+export async function getTokenAccountBalance(
+  mint: Address,
+  receiverTokenAddress: Address,
+) {
+  const ata = await getAssociatedTokenAccountAddress(
+    mint,
+    receiverTokenAddress,
+    TOKEN_2022_PROGRAM_ADDRESS,
+  );
+
+  const { value: balance } = await client.rpc
+    .getTokenAccountBalance(ata)
+    .send();
+
+  return balance;
+}
 
 export async function getMockToken({
-  creator,
+  payer,
   vaultPda,
 }: {
+  payer: KeyPairSigner;
   vaultPda: Address;
-  creator: KeyPairSigner;
 }) {
   const decimals = 6;
-  const mint = await createMint(creator, creator.address, decimals);
-
-  const ata = await createTokenWithAmount(
+  const mint = await createMint({
+    payer,
+    decimals,
+    mintAuthority: vaultPda,
+  });
+  const ata = await mintTo({
     mint,
-    creator.address,
-    BigInt(10 ** decimals),
-    creator,
-    creator,
-  );
+    payer,
+    owner: vaultPda,
+    amount: BigInt(10 ** decimals),
+  });
 
   return {
     ata,
@@ -152,104 +167,93 @@ export async function getMockToken({
   };
 }
 
-const createMint = async (
-  payer: TransactionSigner,
-  mintAuthority: Address,
-  decimals: number = 0,
-): Promise<Address> => {
+const createMint = async ({
+  payer,
+  decimals,
+  mintAuthority,
+}: {
+  payer: TransactionSigner;
+  mintAuthority: Address;
+  decimals: number;
+}): Promise<Address> => {
   const space = BigInt(getMintSize());
-  const [transactionMessage, rent, mint] = await Promise.all([
-    createDefaultTransaction(payer),
-    client.rpc.getMinimumBalanceForRentExemption(space).send(),
-    generateKeyPairSigner(),
-  ]);
+  const mint = await generateKeyPairSigner();
+
+  // const mintPda = await getEphemeralSignerPda({});
+
+  // TODO: SolanaError: missing required signature for instruction
+
   const instructions = [
     getCreateAccountInstruction({
       payer,
       space,
-      lamports: rent,
-      newAccount: mint,
-      programAddress: address(TOKEN_2022_PROGRAM_ADDRESS),
+      newAccount: mint, // Can't set VaultPDA. As newAccount should be a signer
+      programAddress: TOKEN_2022_PROGRAM_ADDRESS,
+      lamports: getMinimumBalanceForRentExemption(space),
     }),
-    getInitializeMintInstruction({
-      decimals,
-      mintAuthority,
-      mint: mint.address,
-    }),
+    getInitializeMintInstruction(
+      {
+        decimals,
+        mintAuthority,
+        mint: mint.address,
+        freezeAuthority: mintAuthority,
+      },
+      {
+        programAddress: TOKEN_2022_PROGRAM_ADDRESS,
+      },
+    ),
   ];
 
-  await pipe(
-    transactionMessage,
-    (tx) => appendTransactionMessageInstructions(instructions, tx),
-    (tx) => signAndSendTransaction(tx),
-  );
+  await createAndConfirmMessage({
+    feePayer: payer,
+    instructions,
+  });
 
   return mint.address;
 };
 
-const createTokenWithAmount = async (
-  mint: Address,
-  owner: Address,
-  amount: bigint,
-  payer: TransactionSigner,
-  mintAuthority: TransactionSigner,
-): Promise<Address> => {
-  const space = BigInt(getTokenSize());
-  const [transactionMessage, rent, token] = await Promise.all([
-    createDefaultTransaction(payer),
-    client.rpc.getMinimumBalanceForRentExemption(space).send(),
-    generateKeyPairSigner(),
-  ]);
+const mintTo = async ({
+  mint,
+  payer,
+  owner,
+  amount,
+}: {
+  mint: Address;
+  owner: Address;
+  amount: bigint;
+  payer: TransactionSigner;
+}): Promise<Address> => {
+  const ata = await getAssociatedTokenAccountAddress(
+    mint,
+    owner,
+    TOKEN_2022_PROGRAM_ADDRESS,
+  );
+
   const instructions = [
-    getCreateAccountInstruction({
+    getCreateAssociatedTokenIdempotentInstruction({
+      ata,
+      mint,
+      owner,
       payer,
-      space,
-      lamports: rent,
-      newAccount: token,
-      programAddress: TOKEN_2022_PROGRAM_ADDRESS,
+      tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
     }),
-    getInitializeAccountInstruction({ account: token.address, mint, owner }),
-    getMintToInstruction({ mint, token: token.address, mintAuthority, amount }),
+    getMintToInstruction(
+      {
+        mint,
+        amount,
+        token: ata,
+        mintAuthority: owner,
+      },
+      {
+        programAddress: TOKEN_2022_PROGRAM_ADDRESS,
+      },
+    ),
   ];
-  await pipe(
-    transactionMessage,
-    (tx) => appendTransactionMessageInstructions(instructions, tx),
-    (tx) => signAndSendTransaction(tx),
-  );
 
-  return token.address;
-};
-
-const signAndSendTransaction = async (
-  transactionMessage: CompilableTransactionMessage &
-    TransactionMessageWithBlockhashLifetime,
-  commitment: Commitment = "confirmed",
-) => {
-  const signedTransaction =
-    await signTransactionMessageWithSigners(transactionMessage);
-  const signature = getSignatureFromTransaction(signedTransaction);
-
-  await sendAndConfirmTransactionFactory(client)(signedTransaction, {
-    commitment,
+  await createAndConfirmMessage({
+    feePayer: payer,
+    instructions,
   });
-  return signature;
+
+  return ata;
 };
-
-const createDefaultTransaction = async (feePayer: TransactionSigner) => {
-  const { value: latestBlockhash } = await client.rpc
-    .getLatestBlockhash()
-    .send();
-  return pipe(
-    createTransactionMessage({ version: 0 }),
-    (tx) => setTransactionMessageFeePayerSigner(feePayer, tx),
-    (tx) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
-  );
-};
-
-export async function getTokenAccountBalance(ata: Address) {
-  const { value: balance } = await client.rpc
-    .getTokenAccountBalance(ata)
-    .send();
-
-  return balance;
-}
