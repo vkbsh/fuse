@@ -305,11 +305,11 @@ export async function createTransferTokenInstruction({
   signer,
   toAddress,
   fromToken,
-  vaultAddress,
+  authorityAddress,
 }: {
   amount: number;
   toAddress: Address;
-  vaultAddress: Address;
+  authorityAddress: Address;
   signer: TransactionSigner;
   fromToken: { decimals: number; mint: Address; ata: Address };
 }): Promise<IInstruction[]> {
@@ -332,7 +332,7 @@ export async function createTransferTokenInstruction({
       amount,
       destination: toAta,
       source: fromToken.ata,
-      authority: vaultAddress,
+      authority: authorityAddress,
     },
     {
       programAddress: TOKEN_2022_PROGRAM_ADDRESS,

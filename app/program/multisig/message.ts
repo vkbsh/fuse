@@ -88,19 +88,19 @@ export async function createTransferTokenMessage({
   signer,
   toAddress,
   fromToken,
-  vaultAddress,
+  authorityAddress,
 }: {
   amount: number;
   signer: TransactionSigner;
   toAddress: Address;
-  vaultAddress: Address;
+  authorityAddress: Address;
   fromToken: { decimals: number; mint: Address; ata: Address };
 }) {
   const transferTokenIxs = await createTransferTokenInstruction({
     signer,
     toAddress,
     fromToken,
-    vaultAddress,
+    authorityAddress,
     amount: Math.round(amount),
   });
 

@@ -151,12 +151,14 @@ export async function getMockToken({
   const mint = await createMint({
     payer,
     decimals,
-    mintAuthority: vaultPda,
+    mintAuthority: payer.address,
   });
+
   const ata = await mintTo({
     mint,
     payer,
     owner: vaultPda,
+    authority: payer.address,
     amount: BigInt(10 ** decimals),
   });
 
@@ -179,15 +181,11 @@ const createMint = async ({
   const space = BigInt(getMintSize());
   const mint = await generateKeyPairSigner();
 
-  // const mintPda = await getEphemeralSignerPda({});
-
-  // TODO: SolanaError: missing required signature for instruction
-
   const instructions = [
     getCreateAccountInstruction({
       payer,
       space,
-      newAccount: mint, // Can't set VaultPDA. As newAccount should be a signer
+      newAccount: mint,
       programAddress: TOKEN_2022_PROGRAM_ADDRESS,
       lamports: getMinimumBalanceForRentExemption(space),
     }),
@@ -217,10 +215,12 @@ const mintTo = async ({
   payer,
   owner,
   amount,
+  authority,
 }: {
   mint: Address;
   owner: Address;
   amount: bigint;
+  authority: Address;
   payer: TransactionSigner;
 }): Promise<Address> => {
   const ata = await getAssociatedTokenAccountAddress(
@@ -242,7 +242,7 @@ const mintTo = async ({
         mint,
         amount,
         token: ata,
-        mintAuthority: owner,
+        mintAuthority: authority,
       },
       {
         programAddress: TOKEN_2022_PROGRAM_ADDRESS,

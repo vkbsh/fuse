@@ -152,6 +152,7 @@ function instructionFromLegacyInstruction(
     programAddress: addressFromLegacyPublicKey(legacyInstruction.programId),
     accounts: legacyInstruction.keys.map((meta) => {
       let role = AccountRole.READONLY;
+
       if (meta.isWritable) {
         role = upgradeRoleToWritable(role);
       }
@@ -160,8 +161,8 @@ function instructionFromLegacyInstruction(
       }
 
       return {
-        address: addressFromLegacyPublicKey(meta.pubkey),
         role,
+        address: addressFromLegacyPublicKey(meta.pubkey),
       };
     }),
     data: legacyInstruction.data,
