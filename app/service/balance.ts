@@ -1,5 +1,8 @@
 import { address, Address } from "gill";
-import { TOKEN_PROGRAM_ADDRESS } from "gill/programs/token";
+import {
+  TOKEN_PROGRAM_ADDRESS,
+  TOKEN_2022_PROGRAM_ADDRESS,
+} from "gill/programs/token";
 
 import { useRpcStore } from "~/state/rpc";
 
@@ -26,7 +29,7 @@ export const SOL_MINT_ADDRESS = address(
 );
 
 export async function getBalance(vault: Address): Promise<Balance> {
-  const [lamports, tokenAccounts] = await Promise.all([
+  const [lamports, tokenAccounts, tokenAccounts2022] = await Promise.all([
     rpc
       .getBalance(vault)
       .send()
@@ -36,6 +39,18 @@ export async function getBalance(vault: Address): Promise<Balance> {
         vault,
         {
           programId: TOKEN_PROGRAM_ADDRESS,
+        },
+        {
+          encoding: "jsonParsed",
+        },
+      )
+      .send()
+      .then(({ value: accounts }) => accounts),
+    rpc
+      .getTokenAccountsByOwner(
+        vault,
+        {
+          programId: TOKEN_2022_PROGRAM_ADDRESS,
         },
         {
           encoding: "jsonParsed",
@@ -63,6 +78,7 @@ export async function getBalance(vault: Address): Promise<Balance> {
       },
     },
     ...tokenAccounts,
+    ...tokenAccounts2022,
   ].map((spl) => {
     const { account, pubkey } = spl;
     const mintAddress = account.data.parsed.info.mint;

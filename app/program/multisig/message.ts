@@ -70,8 +70,8 @@ export async function createTransferSolMessage({
   amount,
   toAddress,
 }: {
-  source: Address;
   amount: number;
+  source: Address;
   toAddress: Address;
 }) {
   const transferSolIx = createTransferSolInstruction({

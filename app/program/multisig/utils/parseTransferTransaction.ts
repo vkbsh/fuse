@@ -72,7 +72,7 @@ export async function parseTransactionMessage(
     const programAddress = accountKeys[ixLegacy.programIdIndex] as
       | typeof TOKEN_PROGRAM_ADDRESS
       | typeof SYSTEM_PROGRAM_ADDRESS
-      | typeof TOKEN_PROGRAM_ADDRESS;
+      | typeof TOKEN_2022_PROGRAM_ADDRESS;
 
     const ix = {
       data: new Uint8Array(ixLegacy.data),
@@ -140,7 +140,7 @@ export async function parseTransactionMessage(
           convertFromLegacyInstruction({
             accountKeys,
             accounts: createATAIx.accountIndexes,
-            programAddress: TOKEN_PROGRAM_ADDRESS,
+            programAddress: TOKEN_PROGRAM_ADDRESS, // TODO: ??? TOKEN_PROGRAM_ADDRESS ???
             data: new Uint8Array(createATAIx.data),
           }),
         );
@@ -157,7 +157,7 @@ export async function parseTransactionMessage(
               convertFromLegacyInstruction({
                 accountKeys,
                 accounts: transferTokenIx.accountIndexes,
-                programAddress: TOKEN_PROGRAM_ADDRESS,
+                programAddress: TOKEN_2022_PROGRAM_ADDRESS, // TODO: ??? TOKEN_PROGRAM_ADDRESS ???
                 data: new Uint8Array(transferTokenIx.data),
               }),
             );

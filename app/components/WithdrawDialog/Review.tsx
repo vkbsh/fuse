@@ -48,14 +48,14 @@ export default function Review({
         addError("amount", "Invalid amount");
       }
 
-      return false;
+      return;
     }
 
     try {
       assertIsAddress(toAddress);
     } catch (e) {
       addError("toAddress", "Invalid address");
-      return false;
+      return;
     }
 
     const nextTxIndex = BigInt(transactionIndex + 1);

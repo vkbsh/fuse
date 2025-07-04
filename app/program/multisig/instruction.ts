@@ -23,7 +23,6 @@ import {
 } from "~/program/multisig/codec";
 
 import {
-  TOKEN_PROGRAM_ADDRESS,
   TOKEN_2022_PROGRAM_ADDRESS,
   getTransferInstruction,
   getAssociatedTokenAccountAddress,
@@ -316,7 +315,7 @@ export async function createTransferTokenInstruction({
   const toAta = await getAssociatedTokenAccountAddress(
     fromToken.mint,
     toAddress,
-    TOKEN_2022_PROGRAM_ADDRESS,
+    TOKEN_2022_PROGRAM_ADDRESS, // TODO: ?? TOKEN_PROGRAM_ADDRESS ??
   );
 
   const createATAIx = getCreateAssociatedTokenIdempotentInstruction({
@@ -325,7 +324,7 @@ export async function createTransferTokenInstruction({
     payer: signer,
     owner: toAddress,
     mint: fromToken.mint,
-    tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
+    tokenProgram: TOKEN_2022_PROGRAM_ADDRESS, // TODO: ?? TOKEN_PROGRAM_ADDRESS ??
   });
 
   const transferIx = getTransferInstruction(
@@ -336,7 +335,7 @@ export async function createTransferTokenInstruction({
       authority: authorityAddress,
     },
     {
-      programAddress: TOKEN_2022_PROGRAM_ADDRESS,
+      programAddress: TOKEN_2022_PROGRAM_ADDRESS, // TODO: ??  ??TOKEN_PROGRAM_ADDRESS
     },
   );
 

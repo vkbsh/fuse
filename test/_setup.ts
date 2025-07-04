@@ -1,7 +1,6 @@
 import {
   getMintSize,
   getMintToInstruction,
-  TOKEN_PROGRAM_ADDRESS,
   TOKEN_2022_PROGRAM_ADDRESS,
   getInitializeMintInstruction,
   getAssociatedTokenAccountAddress,

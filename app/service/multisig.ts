@@ -264,6 +264,10 @@ async function getTransactionsByMultisigAndIndex(
         transactionPdaInfo.value,
       ) as EncodedAccount;
 
+      if (!parsedTransaction?.data) {
+        return null;
+      }
+
       let vaultTransaction;
 
       try {

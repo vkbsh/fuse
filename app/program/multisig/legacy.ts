@@ -21,6 +21,7 @@ import {
 
 import {
   TOKEN_PROGRAM_ADDRESS,
+  TOKEN_2022_PROGRAM_ADDRESS,
   ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
 } from "gill/programs/token";
 
@@ -121,6 +122,7 @@ export function convertFromLegacyInstruction({
   programAddress:
     | typeof TOKEN_PROGRAM_ADDRESS
     | typeof SYSTEM_PROGRAM_ADDRESS
+    | typeof TOKEN_2022_PROGRAM_ADDRESS
     | typeof ASSOCIATED_TOKEN_PROGRAM_ADDRESS;
 }): {
   data: Uint8Array;
