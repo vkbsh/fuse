@@ -102,14 +102,16 @@ export async function getTestAccountsWithBalances() {
     secondMember,
     vaultAddress,
     multisigAddress,
-    receiverSolAddress: toSol.address,
-    receiverTokenAddress: toToken.address,
+    recipientSolAddress: toSol.address,
+    recipientTokenAddress: toToken.address,
     rentCollectorAddress: rentCollector.address,
   };
 }
 
 export async function getBalance(address: Address) {
-  return client.rpc.getBalance(address).send();
+  const { value: balance } = await client.rpc.getBalance(address).send();
+
+  return balance;
 }
 
 export const airdrop = async (
@@ -125,11 +127,11 @@ export const airdrop = async (
 
 export async function getTokenAccountBalance(
   mint: Address,
-  receiverTokenAddress: Address,
+  recipientTokenAddress: Address,
 ) {
   const ata = await getAssociatedTokenAccountAddress(
     mint,
-    receiverTokenAddress,
+    recipientTokenAddress,
     TOKEN_2022_PROGRAM_ADDRESS,
   );
 
@@ -140,12 +142,12 @@ export async function getTokenAccountBalance(
   return balance;
 }
 
-export async function getMockToken({
+export async function createMintAndMintTo({
   payer,
-  vaultPda,
+  recipient,
 }: {
   payer: KeyPairSigner;
-  vaultPda: Address;
+  recipient: Address;
 }) {
   const decimals = 6;
   const mint = await createMint({
@@ -157,7 +159,7 @@ export async function getMockToken({
   const ata = await mintTo({
     mint,
     payer,
-    owner: vaultPda,
+    owner: recipient,
     authority: payer.address,
     amount: BigInt(10 ** decimals),
   });

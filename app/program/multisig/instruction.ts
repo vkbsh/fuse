@@ -4,7 +4,6 @@ import {
   AccountRole,
   IInstruction,
   EncodedAccount,
-  TransactionSigner,
   ReadonlyUint8Array,
   parseBase64RpcAccount,
 } from "gill";
@@ -285,17 +284,18 @@ export async function createCloseAccountsInstruction({
 }
 
 export function createTransferSolInstruction({
-  signer,
+  source,
   amount,
   toAddress,
 }: {
-  signer: TransactionSigner;
+  source: Address;
   amount: Lamports;
   toAddress: Address;
 }): TransferSolInstruction {
   return getTransferSolInstruction({
     amount,
-    source: signer,
+    // @ts-ignore: VaultPda can't be signer
+    source,
     destination: toAddress,
   });
 }
@@ -308,9 +308,9 @@ export async function createTransferTokenInstruction({
   authorityAddress,
 }: {
   amount: number;
+  signer: Address;
   toAddress: Address;
   authorityAddress: Address;
-  signer: TransactionSigner;
   fromToken: { decimals: number; mint: Address; ata: Address };
 }): Promise<IInstruction[]> {
   const toAta = await getAssociatedTokenAccountAddress(
@@ -321,6 +321,7 @@ export async function createTransferTokenInstruction({
 
   const createATAIx = getCreateAssociatedTokenIdempotentInstruction({
     ata: toAta,
+    // @ts-ignore: VaultPda can't be signer
     payer: signer,
     owner: toAddress,
     mint: fromToken.mint,

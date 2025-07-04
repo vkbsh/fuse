@@ -12,10 +12,13 @@ import {
 
 import {
   getBalance,
-  getMockToken,
+  createMintAndMintTo,
   getTokenAccountBalance,
   getTestAccountsWithBalances,
 } from "./_setup";
+
+const amount = 0.07357;
+let transactionIndex = 1n;
 
 describe("Interacting with the Multisig Program", async () => {
   const {
@@ -23,31 +26,16 @@ describe("Interacting with the Multisig Program", async () => {
     secondMember,
     vaultAddress,
     multisigAddress,
-    receiverSolAddress,
-    receiverTokenAddress,
+    recipientSolAddress,
+    recipientTokenAddress,
     rentCollectorAddress,
   } = await getTestAccountsWithBalances();
-
-  console.log({
-    creator,
-    secondMember,
-    vaultAddress,
-    multisigAddress,
-    receiverSolAddress,
-    receiverTokenAddress,
-    rentCollectorAddress,
-  });
-
-  const amount = 0.07357;
-  let transactionIndex = 1n;
-
-  // beforeAll(async () => {});
 
   describe("Transfer SOL", async () => {
     test("Create VaultTransaction with: [TransferSOL, ProposalCreate, ProposalApprove]", async () => {
       const transactionMessage = await createTransferSolMessage({
-        signer: creator,
-        toAddress: receiverSolAddress,
+        source: vaultAddress,
+        toAddress: recipientSolAddress,
         amount: amount * LAMPORTS_PER_SOL,
       });
 
@@ -83,9 +71,13 @@ describe("Interacting with the Multisig Program", async () => {
     });
 
     test("Should verify account state after transaction execution", async () => {
-      const balance = await getBalance(receiverSolAddress);
+      const recipientBalance = await getBalance(recipientSolAddress);
+      const vaultBalance = await getBalance(vaultAddress);
 
-      expect(balance.value).equal(BigInt(amount * LAMPORTS_PER_SOL));
+      expect(vaultBalance).equal(
+        BigInt(LAMPORTS_PER_SOL) - BigInt(amount * LAMPORTS_PER_SOL),
+      );
+      expect(recipientBalance).equal(BigInt(amount * LAMPORTS_PER_SOL));
     });
   });
 
@@ -94,20 +86,19 @@ describe("Interacting with the Multisig Program", async () => {
     const transactionIndex = 2n;
 
     beforeAll(async () => {
-      fromToken = await getMockToken({
+      // Create Mint by Creator and mint to Vault
+      fromToken = await createMintAndMintTo({
         payer: creator,
-        vaultPda: vaultAddress,
+        recipient: vaultAddress,
       });
-
-      console.log("fromToken", fromToken);
     });
 
     test("Create VaultTransaction with: [TransferToken, ProposalCreate, ProposalApprove]", async () => {
       const transactionMessage = await createTransferTokenMessage({
         fromToken,
-        signer: creator,
-        toAddress: receiverTokenAddress,
+        signer: vaultAddress,
         authorityAddress: vaultAddress,
+        toAddress: recipientTokenAddress,
         amount: Math.round(amount * 10 ** fromToken.decimals),
       });
 
@@ -150,13 +141,23 @@ describe("Interacting with the Multisig Program", async () => {
       }
     });
 
-    // test("Should verify account state after transaction execution", async () => {
-    //   const balance = await getTokenAccountBalance(
-    //     fromToken.mint,
-    //     receiverTokenAddress,
-    //   );
+    test("Should verify account state after transaction execution", async () => {
+      const recipientBalance = await getTokenAccountBalance(
+        fromToken.mint,
+        recipientTokenAddress,
+      );
+      const vaultBalance = await getTokenAccountBalance(
+        fromToken.mint,
+        vaultAddress,
+      );
 
-    //   expect(balance.uiAmountString).equal(amount.toString());
-    // });
+      expect(vaultBalance.amount).equal(
+        (
+          10 ** fromToken.decimals -
+          amount * 10 ** fromToken.decimals
+        ).toString(),
+      );
+      expect(recipientBalance.uiAmountString).equal(amount.toString());
+    });
   });
 });

@@ -14,7 +14,6 @@ import {
   Address,
   AccountRole,
   IInstruction,
-  TransactionSigner,
   ReadonlyUint8Array,
   upgradeRoleToSigner,
   upgradeRoleToWritable,
@@ -170,13 +169,13 @@ function instructionFromLegacyInstruction(
 }
 
 export async function createLegacyTransactionMessage(
-  signer: TransactionSigner,
+  signer: Address,
   instructions: IInstruction[],
 ): Promise<LegacyTransactionMessage> {
   const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
 
   return new LegacyTransactionMessage({
-    payerKey: new PublicKey(signer.address),
+    payerKey: new PublicKey(signer),
     instructions: instructions.map((ix) => {
       const accounts = ix.accounts ? ix.accounts : [];
 
@@ -224,31 +223,4 @@ export function createLegacyVaultInstruction({
   );
 
   return instructionFromLegacyInstruction(createVaultTransactionIx);
-}
-
-export async function createLegacyVaultExecuteInstruction({
-  memberAddress,
-  multisigAddress,
-  transactionIndex,
-}: {
-  memberAddress: Address;
-  multisigAddress: Address;
-  transactionIndex: bigint;
-}): Promise<IInstruction> {
-  console.log("createVaultExecuteInstruction", {
-    memberAddress,
-    multisigAddress,
-    transactionIndex,
-  });
-
-  const { instruction: executeVaultTransactionIx } =
-    await multisig.instructions.vaultTransactionExecute({
-      // @ts-expect-error: incompatible type of TransactionMessage (solana web3js1 squads vs fuse)
-      connection,
-      transactionIndex,
-      member: new PublicKey(memberAddress),
-      multisigPda: new PublicKey(multisigAddress),
-    });
-
-  return instructionFromLegacyInstruction(executeVaultTransactionIx);
 }

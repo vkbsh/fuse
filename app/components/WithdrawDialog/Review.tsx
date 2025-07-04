@@ -69,16 +69,16 @@ export default function Review({
 
     if (isSolTransfer) {
       transactionMessage = await createTransferSolMessage({
-        signer,
+        source: vaultAddress,
         toAddress,
         amount: amount * LAMPORTS_PER_SOL,
       });
     } else {
       transactionMessage = await createTransferTokenMessage({
-        signer,
         toAddress,
-        vaultAddress,
         fromToken: token,
+        signer: vaultAddress,
+        authorityAddress: vaultAddress,
         amount: amount * 10 ** token.decimals,
       });
     }

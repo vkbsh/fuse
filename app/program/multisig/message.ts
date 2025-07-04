@@ -24,7 +24,6 @@ import {
   LegacyTransactionMessage,
   createLegacyVaultInstruction,
   createLegacyTransactionMessage,
-  createLegacyVaultExecuteInstruction,
 } from "~/program/multisig/legacy";
 
 import { useRpcStore } from "~/state/rpc";
@@ -67,21 +66,21 @@ export async function createAndConfirmMessage({
 }
 
 export async function createTransferSolMessage({
-  signer,
+  source,
   amount,
   toAddress,
 }: {
-  signer: TransactionSigner;
+  source: Address;
   amount: number;
   toAddress: Address;
 }) {
   const transferSolIx = createTransferSolInstruction({
-    signer,
+    source,
     toAddress,
     amount: lamports(BigInt(Math.round(amount))),
   });
 
-  return createLegacyTransactionMessage(signer, [transferSolIx]);
+  return createLegacyTransactionMessage(source, [transferSolIx]);
 }
 
 export async function createTransferTokenMessage({
@@ -92,7 +91,7 @@ export async function createTransferTokenMessage({
   authorityAddress,
 }: {
   amount: number;
-  signer: TransactionSigner;
+  signer: Address;
   toAddress: Address;
   authorityAddress: Address;
   fromToken: { decimals: number; mint: Address; ata: Address };
@@ -243,12 +242,7 @@ export async function sendAndConfirmExecuteAndCloseAccountsMessage({
   rentCollectorAddress: Address;
 }) {
   const instructions = [
-    // await createVaultTransactionExecuteInstruction({
-    //   memberAddress,
-    //   multisigAddress,
-    //   transactionIndex,
-    // }),
-    await createLegacyVaultExecuteInstruction({
+    await createVaultTransactionExecuteInstruction({
       memberAddress,
       multisigAddress,
       transactionIndex,
