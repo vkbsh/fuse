@@ -23,8 +23,8 @@ import {
 } from "~/program/multisig/codec";
 
 import {
-  TOKEN_2022_PROGRAM_ADDRESS,
   getTransferInstruction,
+  getTransferCheckedInstruction,
   getAssociatedTokenAccountAddress,
   getCreateAssociatedTokenIdempotentInstruction,
 } from "gill/programs/token";
@@ -310,12 +310,17 @@ export async function createTransferTokenInstruction({
   signer: Address;
   toAddress: Address;
   authorityAddress: Address;
-  fromToken: { decimals: number; mint: Address; ata: Address };
+  fromToken: {
+    decimals: number;
+    mint: Address;
+    ata: Address;
+    programIdAddress: Address;
+  };
 }): Promise<IInstruction[]> {
   const toAta = await getAssociatedTokenAccountAddress(
     fromToken.mint,
     toAddress,
-    TOKEN_2022_PROGRAM_ADDRESS, // TODO: ?? TOKEN_PROGRAM_ADDRESS ??
+    fromToken.programIdAddress,
   );
 
   const createATAIx = getCreateAssociatedTokenIdempotentInstruction({
@@ -324,18 +329,20 @@ export async function createTransferTokenInstruction({
     payer: signer,
     owner: toAddress,
     mint: fromToken.mint,
-    tokenProgram: TOKEN_2022_PROGRAM_ADDRESS, // TODO: ?? TOKEN_PROGRAM_ADDRESS ??
+    tokenProgram: fromToken.programIdAddress,
   });
 
-  const transferIx = getTransferInstruction(
+  const transferIx = getTransferCheckedInstruction(
     {
       amount,
       destination: toAta,
+      mint: fromToken.mint,
       source: fromToken.ata,
       authority: authorityAddress,
+      decimals: fromToken.decimals,
     },
     {
-      programAddress: TOKEN_2022_PROGRAM_ADDRESS, // TODO: ??  ??TOKEN_PROGRAM_ADDRESS
+      programAddress: fromToken.programIdAddress,
     },
   );
 

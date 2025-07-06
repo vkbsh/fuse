@@ -6,14 +6,14 @@ import { useWalletByName } from "~/hooks/wallet";
 import { useMultisigAccount } from "~/hooks/resources";
 
 import Dialog from "~/components/ui/Dialog";
+
 import Review from "./Review";
 import EnterAmount from "./EnterAmount";
 import ChooseWallet from "./ChooseWallet";
 
 export default function WithdrawDialog() {
-  const { walletStorage } = useWalletStore();
-  const { multisigStorage } = useWalletStore();
   const { isOpen, onOpenChange } = useDialog("withdraw");
+  const { walletStorage, multisigStorage } = useWalletStore();
 
   const multisigAddress = multisigStorage?.address as Address;
   const vaultAddress = multisigStorage?.defaultVault as Address;

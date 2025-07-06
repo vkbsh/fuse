@@ -13,7 +13,7 @@ type SplTokenBalance = {
   amount: number;
   decimals: number;
   address: Address;
-  programId: Address;
+  programIdAddress: Address;
 };
 
 type SplTokenBalances = {
@@ -75,6 +75,7 @@ export async function getBalance(vault: Address): Promise<Balance> {
             },
           },
         },
+        owner: TOKEN_PROGRAM_ADDRESS,
       },
     },
     ...tokenAccounts,
@@ -82,6 +83,7 @@ export async function getBalance(vault: Address): Promise<Balance> {
   ].map((spl) => {
     const { account, pubkey } = spl;
     const mintAddress = account.data.parsed.info.mint;
+    const programIdAddress = account.owner;
 
     const amount = Number(account.data.parsed.info.tokenAmount.amount);
     const decimals = account.data.parsed.info.tokenAmount.decimals;
@@ -93,6 +95,7 @@ export async function getBalance(vault: Address): Promise<Balance> {
         decimals,
         address: pubkey,
         mint: mintAddress,
+        programIdAddress,
       } as SplTokenBalance,
     };
   });

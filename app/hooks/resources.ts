@@ -160,6 +160,7 @@ export const useTokenInfo = (vaultAddress: Address) => {
           decimals: Number(m.data?.decimals),
           amount: tokens[i].amount,
         }),
+        programIdAddress: balanceData?.spl?.[tokens[i].mint]?.programIdAddress,
       };
     })
     .filter(Boolean);

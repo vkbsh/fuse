@@ -140,7 +140,7 @@ export async function parseTransactionMessage(
           convertFromLegacyInstruction({
             accountKeys,
             accounts: createATAIx.accountIndexes,
-            programAddress: TOKEN_PROGRAM_ADDRESS, // TODO: ??? TOKEN_PROGRAM_ADDRESS ???
+            programAddress: "any",
             data: new Uint8Array(createATAIx.data),
           }),
         );
@@ -157,7 +157,7 @@ export async function parseTransactionMessage(
               convertFromLegacyInstruction({
                 accountKeys,
                 accounts: transferTokenIx.accountIndexes,
-                programAddress: TOKEN_2022_PROGRAM_ADDRESS, // TODO: ??? TOKEN_PROGRAM_ADDRESS ???
+                programAddress: "any",
                 data: new Uint8Array(transferTokenIx.data),
               }),
             );
