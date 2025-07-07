@@ -1,7 +1,8 @@
 import {
+  TOKEN_PROGRAM_ADDRESS,
+  TOKEN_2022_PROGRAM_ADDRESS,
   getMintSize,
   getMintToInstruction,
-  TOKEN_2022_PROGRAM_ADDRESS,
   getInitializeMintInstruction,
   getAssociatedTokenAccountAddress,
   getCreateAssociatedTokenIdempotentInstruction,
@@ -144,14 +145,19 @@ export async function getTokenAccountBalance(
 export async function createMintAndMintTo({
   payer,
   recipient,
+  tokenProgramAddress = TOKEN_2022_PROGRAM_ADDRESS,
 }: {
   payer: KeyPairSigner;
   recipient: Address;
+  tokenProgramAddress?:
+    | typeof TOKEN_PROGRAM_ADDRESS
+    | typeof TOKEN_2022_PROGRAM_ADDRESS;
 }) {
   const decimals = 6;
   const mint = await createMint({
     payer,
     decimals,
+    tokenProgramAddress,
     mintAuthority: payer.address,
   });
 
@@ -159,6 +165,7 @@ export async function createMintAndMintTo({
     mint,
     payer,
     owner: recipient,
+    tokenProgramAddress,
     authority: payer.address,
     amount: BigInt(10 ** decimals),
   });
@@ -167,6 +174,7 @@ export async function createMintAndMintTo({
     ata,
     mint,
     decimals,
+    programIdAddress: tokenProgramAddress,
   };
 }
 
@@ -174,10 +182,14 @@ const createMint = async ({
   payer,
   decimals,
   mintAuthority,
+  tokenProgramAddress,
 }: {
-  payer: TransactionSigner;
-  mintAuthority: Address;
   decimals: number;
+  mintAuthority: Address;
+  payer: TransactionSigner;
+  tokenProgramAddress:
+    | typeof TOKEN_PROGRAM_ADDRESS
+    | typeof TOKEN_2022_PROGRAM_ADDRESS;
 }): Promise<Address> => {
   const space = BigInt(getMintSize());
   const mint = await generateKeyPairSigner();
@@ -187,7 +199,7 @@ const createMint = async ({
       payer,
       space,
       newAccount: mint,
-      programAddress: TOKEN_2022_PROGRAM_ADDRESS,
+      programAddress: tokenProgramAddress,
       lamports: getMinimumBalanceForRentExemption(space),
     }),
     getInitializeMintInstruction(
@@ -198,7 +210,7 @@ const createMint = async ({
         freezeAuthority: mintAuthority,
       },
       {
-        programAddress: TOKEN_2022_PROGRAM_ADDRESS,
+        programAddress: tokenProgramAddress,
       },
     ),
   ];
@@ -217,17 +229,21 @@ const mintTo = async ({
   owner,
   amount,
   authority,
+  tokenProgramAddress,
 }: {
   mint: Address;
   owner: Address;
   amount: bigint;
   authority: Address;
   payer: TransactionSigner;
+  tokenProgramAddress?:
+    | typeof TOKEN_PROGRAM_ADDRESS
+    | typeof TOKEN_2022_PROGRAM_ADDRESS;
 }): Promise<Address> => {
   const ata = await getAssociatedTokenAccountAddress(
     mint,
     owner,
-    TOKEN_2022_PROGRAM_ADDRESS,
+    tokenProgramAddress,
   );
 
   const instructions = [
@@ -236,7 +252,7 @@ const mintTo = async ({
       mint,
       owner,
       payer,
-      tokenProgram: TOKEN_2022_PROGRAM_ADDRESS,
+      tokenProgram: tokenProgramAddress,
     }),
     getMintToInstruction(
       {
@@ -246,7 +262,7 @@ const mintTo = async ({
         mintAuthority: authority,
       },
       {
-        programAddress: TOKEN_2022_PROGRAM_ADDRESS,
+        programAddress: tokenProgramAddress,
       },
     ),
   ];

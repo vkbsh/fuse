@@ -10,6 +10,11 @@ import {
 } from "gill";
 
 import {
+  TOKEN_PROGRAM_ADDRESS,
+  TOKEN_2022_PROGRAM_ADDRESS,
+} from "gill/programs/token";
+
+import {
   createTransferSolInstruction,
   createTransferTokenInstruction,
   createCloseAccountsInstruction,
@@ -94,7 +99,14 @@ export async function createTransferTokenMessage({
   signer: Address;
   toAddress: Address;
   authorityAddress: Address;
-  fromToken: { decimals: number; mint: Address; ata: Address };
+  fromToken: {
+    decimals: number;
+    mint: Address;
+    ata: Address;
+    programIdAddress:
+      | typeof TOKEN_PROGRAM_ADDRESS
+      | typeof TOKEN_2022_PROGRAM_ADDRESS;
+  };
 }) {
   const transferTokenIxs = await createTransferTokenInstruction({
     signer,
