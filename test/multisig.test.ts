@@ -16,6 +16,7 @@ import {
 } from "gill/programs/token";
 
 import {
+  TokenFrom,
   getBalance,
   createMintAndMintTo,
   getTokenAccountBalance,
@@ -86,104 +87,16 @@ describe("Interacting with the Multisig Program", async () => {
     });
   });
 
-  // describe("Transfer Token", async () => {
-  //   let fromToken: { decimals: number; mint: Address; ata: Address };
-  //   const transactionIndex = 2n;
-
-  //   beforeAll(async () => {
-  //     // Create Mint by Creator and mint to Vault
-  //     fromToken = await createMintAndMintTo({
-  //       payer: creator,
-  //       recipient: vaultAddress,
-  //       tokenProgramAddress: TOKEN_PROGRAM_ADDRESS,
-  //     });
-  //   });
-
-  //   test("Create VaultTransaction with: [TransferToken, ProposalCreate, ProposalApprove]", async () => {
-  //     const transactionMessage = await createTransferTokenMessage({
-  //       fromToken,
-  //       signer: vaultAddress,
-  //       authorityAddress: vaultAddress,
-  //       toAddress: recipientTokenAddress,
-  //       amount: Math.round(amount * 10 ** fromToken.decimals),
-  //     });
-
-  //     try {
-  //       await sendAndConfirmTransferWithProposalApproveMessage({
-  //         multisigAddress,
-  //         transactionIndex,
-  //         feePayer: creator,
-  //         transactionMessage,
-  //         memberAddress: creator.address,
-  //         creatorAddress: creator.address,
-  //         memo: "approve from test by creator",
-  //       });
-  //     } catch (e) {
-  //       console.error("Error [Transfer, Proposal, Approve]: ", e);
-  //     }
-  //   });
-
-  //   test("Approve proposal by a Member", async () => {
-  //     await sendAndConfirmProposalApproveMessage({
-  //       memo: "Approved by a Member",
-  //       transactionIndex,
-  //       feePayer: secondMember,
-  //       multisigAddress: multisigAddress,
-  //       memberAddress: secondMember.address,
-  //     });
-  //   });
-
-  //   test("Execute VaultTransaction & Close Accounts", async () => {
-  //     try {
-  //       await sendAndConfirmExecuteAndCloseAccountsMessage({
-  //         transactionIndex,
-  //         feePayer: creator,
-  //         rentCollectorAddress,
-  //         memberAddress: creator.address,
-  //         multisigAddress: multisigAddress,
-  //       });
-  //     } catch (e) {
-  //       console.error("Error [Execute, Close Accounts]: ", e);
-  //     }
-  //   });
-
-  //   test("Should verify account state after transaction execution", async () => {
-  //     const recipientBalance = await getTokenAccountBalance(
-  //       fromToken.mint,
-  //       recipientTokenAddress,
-  //     );
-  //     const vaultBalance = await getTokenAccountBalance(
-  //       fromToken.mint,
-  //       vaultAddress,
-  //     );
-
-  //     expect(vaultBalance.amount).equal(
-  //       (
-  //         10 ** fromToken.decimals -
-  //         amount * 10 ** fromToken.decimals
-  //       ).toString(),
-  //     );
-  //     expect(recipientBalance.uiAmountString).equal(amount.toString());
-  //   });
-  // });
-
-  describe("Transfer Token 2022", async () => {
-    let fromToken: {
-      decimals: number;
-      mint: Address;
-      ata: Address;
-      programIdAddress:
-        | typeof TOKEN_PROGRAM_ADDRESS
-        | typeof TOKEN_2022_PROGRAM_ADDRESS;
-    };
-    const transactionIndex = 2n;
+  describe("Transfer Token", async () => {
+    let fromToken: TokenFrom;
 
     beforeAll(async () => {
+      transactionIndex = 2n;
       // Create Mint by Creator and mint to Vault
       fromToken = await createMintAndMintTo({
         payer: creator,
         recipient: vaultAddress,
-        tokenProgramAddress: TOKEN_2022_PROGRAM_ADDRESS,
+        tokenProgramAddress: TOKEN_PROGRAM_ADDRESS,
       });
     });
 
@@ -191,6 +104,7 @@ describe("Interacting with the Multisig Program", async () => {
       const vaultBalance = await getTokenAccountBalance(
         fromToken.mint,
         vaultAddress,
+        fromToken.programIdAddress,
       );
 
       expect(vaultBalance.amount).equal((10 ** fromToken.decimals).toString());
@@ -248,10 +162,105 @@ describe("Interacting with the Multisig Program", async () => {
       const recipientBalance = await getTokenAccountBalance(
         fromToken.mint,
         recipientTokenAddress,
+        fromToken.programIdAddress,
       );
       const vaultBalance = await getTokenAccountBalance(
         fromToken.mint,
         vaultAddress,
+        fromToken.programIdAddress,
+      );
+
+      expect(vaultBalance.amount).equal(
+        (
+          10 ** fromToken.decimals -
+          amount * 10 ** fromToken.decimals
+        ).toString(),
+      );
+      expect(recipientBalance.uiAmountString).equal(amount.toString());
+    });
+  });
+
+  describe("Transfer Token 2022", async () => {
+    let fromToken: TokenFrom;
+
+    beforeAll(async () => {
+      transactionIndex = 3n;
+      // Create Mint by Creator and mint to Vault
+      fromToken = await createMintAndMintTo({
+        payer: creator,
+        recipient: vaultAddress,
+        tokenProgramAddress: TOKEN_2022_PROGRAM_ADDRESS,
+      });
+    });
+
+    test("Should verify account state before transaction execution", async () => {
+      const vaultBalance = await getTokenAccountBalance(
+        fromToken.mint,
+        vaultAddress,
+        fromToken.programIdAddress,
+      );
+
+      expect(vaultBalance.amount).equal((10 ** fromToken.decimals).toString());
+    });
+
+    test("Create VaultTransaction with: [TransferToken, ProposalCreate, ProposalApprove]", async () => {
+      const transactionMessage = await createTransferTokenMessage({
+        fromToken,
+        signer: vaultAddress,
+        authorityAddress: vaultAddress,
+        toAddress: recipientTokenAddress,
+        amount: Math.round(amount * 10 ** fromToken.decimals),
+      });
+
+      try {
+        await sendAndConfirmTransferWithProposalApproveMessage({
+          multisigAddress,
+          transactionIndex,
+          feePayer: creator,
+          transactionMessage,
+          memberAddress: creator.address,
+          creatorAddress: creator.address,
+          memo: "approve from test by creator",
+        });
+      } catch (e) {
+        console.error("Error [Transfer, Proposal, Approve]: ", e);
+      }
+    });
+
+    test("Approve proposal by a Member", async () => {
+      await sendAndConfirmProposalApproveMessage({
+        memo: "Approved by a Member",
+        transactionIndex,
+        feePayer: secondMember,
+        multisigAddress: multisigAddress,
+        memberAddress: secondMember.address,
+      });
+    });
+
+    test("Execute VaultTransaction & Close Accounts", async () => {
+      try {
+        await sendAndConfirmExecuteAndCloseAccountsMessage({
+          transactionIndex,
+          feePayer: creator,
+          rentCollectorAddress,
+          memberAddress: creator.address,
+          multisigAddress: multisigAddress,
+        });
+      } catch (e) {
+        console.error("Error [Execute, Close Accounts]: ", e);
+      }
+    });
+
+    test("Should verify account state after transaction execution", async () => {
+      const recipientBalance = await getTokenAccountBalance(
+        fromToken.mint,
+        recipientTokenAddress,
+        fromToken.programIdAddress,
+      );
+      const vaultBalance = await getTokenAccountBalance(
+        fromToken.mint,
+        vaultAddress,
+        fromToken.programIdAddress,
       );
 
       expect(vaultBalance.amount).equal(

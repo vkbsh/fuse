@@ -33,6 +33,15 @@ import {
 
 import { useRpcStore } from "~/state/rpc";
 
+export type TokenFrom = {
+  decimals: number;
+  mint: Address;
+  ata: Address;
+  programIdAddress:
+    | typeof TOKEN_PROGRAM_ADDRESS
+    | typeof TOKEN_2022_PROGRAM_ADDRESS;
+};
+
 const client = useRpcStore.getState();
 
 export async function getTestAccountsWithBalances() {
@@ -128,11 +137,14 @@ export const airdrop = async (
 export async function getTokenAccountBalance(
   mint: Address,
   recipientTokenAddress: Address,
+  tokenProgramAddress:
+    | typeof TOKEN_PROGRAM_ADDRESS
+    | typeof TOKEN_2022_PROGRAM_ADDRESS,
 ) {
   const ata = await getAssociatedTokenAccountAddress(
     mint,
     recipientTokenAddress,
-    TOKEN_2022_PROGRAM_ADDRESS,
+    tokenProgramAddress,
   );
 
   const { value: balance } = await client.rpc
@@ -145,11 +157,11 @@ export async function getTokenAccountBalance(
 export async function createMintAndMintTo({
   payer,
   recipient,
-  tokenProgramAddress = TOKEN_2022_PROGRAM_ADDRESS,
+  tokenProgramAddress,
 }: {
   payer: KeyPairSigner;
   recipient: Address;
-  tokenProgramAddress?:
+  tokenProgramAddress:
     | typeof TOKEN_PROGRAM_ADDRESS
     | typeof TOKEN_2022_PROGRAM_ADDRESS;
 }) {
@@ -236,7 +248,7 @@ const mintTo = async ({
   amount: bigint;
   authority: Address;
   payer: TransactionSigner;
-  tokenProgramAddress?:
+  tokenProgramAddress:
     | typeof TOKEN_PROGRAM_ADDRESS
     | typeof TOKEN_2022_PROGRAM_ADDRESS;
 }): Promise<Address> => {
