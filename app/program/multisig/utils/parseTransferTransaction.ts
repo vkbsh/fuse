@@ -6,9 +6,6 @@ import {
   ParsedTransferSolInstruction,
 } from "gill/programs";
 
-// TODO: Try to use this
-import { getTransactionCodec } from "@solana/transactions";
-
 import {
   TOKEN_PROGRAM_ADDRESS,
   TOKEN_2022_PROGRAM_ADDRESS,
@@ -18,11 +15,7 @@ import {
   parseCreateAssociatedTokenIdempotentInstruction,
 } from "gill/programs/token";
 
-import { convertFromLegacyInstruction } from "~/program/multisig/legacy";
-
-const nativeToken = {
-  address: address("So11111111111111111111111111111111111111112"),
-};
+const SOL_MINT_ADDRESS = address("So11111111111111111111111111111111111111112");
 
 type Message = {
   accountKeys: Address[];
@@ -115,7 +108,7 @@ export async function parseTransactionMessage(
 
     result = {
       amount: Number(data.amount),
-      mintAddress: nativeToken.address,
+      mintAddress: SOL_MINT_ADDRESS,
       fromAccount: accounts.source.address,
       toAccount: accounts.destination.address,
     };
@@ -136,14 +129,14 @@ export async function parseTransactionMessage(
       isTokenProgram(programAddressTransferToken)
     ) {
       try {
-        const decodedATI = parseCreateAssociatedTokenIdempotentInstruction(
-          convertFromLegacyInstruction({
-            accountKeys,
-            accounts: createATAIx.accountIndexes,
-            programAddress: "any",
-            data: new Uint8Array(createATAIx.data),
-          }),
-        );
+        const decodedATI = parseCreateAssociatedTokenIdempotentInstruction({
+          data: new Uint8Array(createATAIx.data),
+          programAddress: programAddressCreateATA,
+          accounts: createATAIx.accountIndexes.map((index) => ({
+            address: accountKeys[index],
+            role: 1, // !!! ANY role (to satisfy the type) !!!
+          })),
+        });
 
         if (decodedATI) {
           const accountsATI = decodedATI?.accounts;
@@ -153,14 +146,14 @@ export async function parseTransactionMessage(
           const mintAddress = accountsATI.mint.address;
 
           try {
-            const { accounts, data } = parseTransferInstruction(
-              convertFromLegacyInstruction({
-                accountKeys,
-                accounts: transferTokenIx.accountIndexes,
-                programAddress: "any",
-                data: new Uint8Array(transferTokenIx.data),
-              }),
-            );
+            const { accounts, data } = parseTransferInstruction({
+              data: new Uint8Array(transferTokenIx.data),
+              programAddress: programAddressTransferToken,
+              accounts: transferTokenIx.accountIndexes.map((index) => ({
+                address: accountKeys[index],
+                role: 1, // !!! ANY role (to satisfy the type) !!!
+              })),
+            });
 
             result = {
               mintAddress,

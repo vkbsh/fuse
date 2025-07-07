@@ -19,14 +19,6 @@ import {
   upgradeRoleToWritable,
 } from "gill";
 
-import {
-  TOKEN_PROGRAM_ADDRESS,
-  TOKEN_2022_PROGRAM_ADDRESS,
-  ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
-} from "gill/programs/token";
-
-import { SYSTEM_PROGRAM_ADDRESS } from "gill/programs";
-
 import { RPC_URL_TEST, useRpcStore } from "~/state/rpc";
 
 export type LegacyTransactionMessage = TMessage;
@@ -108,38 +100,6 @@ export async function getMultisigInfo({
   );
 
   return multisigInfo;
-}
-
-export function convertFromLegacyInstruction({
-  data,
-  accounts,
-  accountKeys,
-  programAddress,
-}: {
-  data: any;
-  accounts: number[];
-  accountKeys: Address[];
-  programAddress:
-    | typeof TOKEN_PROGRAM_ADDRESS
-    | typeof SYSTEM_PROGRAM_ADDRESS
-    | typeof TOKEN_2022_PROGRAM_ADDRESS
-    | typeof ASSOCIATED_TOKEN_PROGRAM_ADDRESS;
-}): {
-  data: Uint8Array;
-  programAddress: Address;
-  accounts: Array<{
-    address: Address;
-    role: 0 | 1 | 2 | 3;
-  }>;
-} {
-  return {
-    data: new Uint8Array(data),
-    programAddress,
-    accounts: accounts.map((index) => ({
-      address: accountKeys[index],
-      role: 1, // !!! ANY role (to satisfy the type) !!!
-    })),
-  };
 }
 
 function addressFromLegacyPublicKey(legacyPublicKey: PublicKey): Address {
