@@ -1,10 +1,12 @@
 import { describe, test, expect, beforeAll } from "vitest";
 
-import { Address, LAMPORTS_PER_SOL } from "gill";
+import { LAMPORTS_PER_SOL } from "gill";
 
 import {
+  createAndConfirmMessage,
   createTransferSolMessage,
   createTransferTokenMessage,
+  sendAndConfirmProposalCancelMessage,
   sendAndConfirmProposalApproveMessage,
   sendAndConfirmExecuteAndCloseAccountsMessage,
   sendAndConfirmTransferWithProposalApproveMessage,
@@ -14,6 +16,19 @@ import {
   TOKEN_PROGRAM_ADDRESS,
   TOKEN_2022_PROGRAM_ADDRESS,
 } from "gill/programs/token";
+
+import {
+  createLegacyVaultInstruction,
+  createLegacyTransactionMessage,
+} from "~/program/multisig/legacy";
+
+import {
+  createProposalCreateInstruction,
+  createProposalRejectInstruction,
+} from "~/program/multisig/instruction";
+
+import { getAddMemoInstruction } from "gill/programs";
+import { getProposalByIndex } from "~/service/multisig";
 
 import {
   TokenFrom,
@@ -30,6 +45,7 @@ describe("Interacting with the Multisig Program", async () => {
   const {
     creator,
     secondMember,
+    thirdMember,
     vaultAddress,
     multisigAddress,
     recipientSolAddress,
@@ -270,6 +286,169 @@ describe("Interacting with the Multisig Program", async () => {
         ).toString(),
       );
       expect(recipientBalance.uiAmountString).equal(amount.toString());
+    });
+  });
+
+  describe("Get Rejected Transaction", async () => {
+    beforeAll(async () => {
+      transactionIndex = 4n;
+    });
+
+    test("Create VaultTransaction with: [SendMemo, ProposalCreate, ProposalReject]", async () => {
+      const transactionMessage = await createLegacyTransactionMessage(
+        creator.address,
+        [
+          getAddMemoInstruction({
+            memo: "Rejecte",
+          }),
+        ],
+      );
+
+      await createAndConfirmMessage({
+        feePayer: creator,
+        instructions: [
+          createLegacyVaultInstruction({
+            multisigAddress,
+            transactionIndex,
+            transactionMessage,
+            creatorAddress: creator.address,
+          }),
+          await createProposalCreateInstruction({
+            multisigAddress,
+            transactionIndex,
+            creatorAddress: creator.address,
+          }),
+        ],
+      });
+    });
+
+    test("Reject Proposal by Creator", async () => {
+      await createAndConfirmMessage({
+        feePayer: creator,
+        instructions: [
+          await createProposalRejectInstruction({
+            multisigAddress,
+            transactionIndex,
+            memo: "Rejected by Creator",
+            memberAddress: creator.address,
+          }),
+        ],
+      });
+    });
+
+    test("Reject Proposal by a Member", async () => {
+      await createAndConfirmMessage({
+        feePayer: secondMember,
+        instructions: [
+          await createProposalRejectInstruction({
+            multisigAddress,
+            transactionIndex,
+            memo: "Rejected by a Member",
+            memberAddress: secondMember.address,
+          }),
+        ],
+      });
+    });
+
+    test("Should verify transaction status", async () => {
+      const proposal = await getProposalByIndex(
+        multisigAddress,
+        Number(transactionIndex),
+      );
+
+      expect(proposal?.status.__kind).equal("Rejected");
+    });
+  });
+
+  describe("Get Cancelled Transaction", async () => {
+    beforeAll(async () => {
+      transactionIndex = 5n;
+    });
+
+    test("Create VaultTransaction with: [SendMemo, ProposalCreate, ProposalCancel]", async () => {
+      const transactionMessage = await createLegacyTransactionMessage(
+        creator.address,
+        [
+          getAddMemoInstruction({
+            memo: "Cancel",
+            signers: [creator],
+          }),
+        ],
+      );
+
+      await createAndConfirmMessage({
+        feePayer: creator,
+        instructions: [
+          createLegacyVaultInstruction({
+            multisigAddress,
+            transactionIndex,
+            transactionMessage,
+            creatorAddress: creator.address,
+          }),
+          await createProposalCreateInstruction({
+            multisigAddress,
+            transactionIndex,
+            creatorAddress: creator.address,
+          }),
+        ],
+      });
+    });
+
+    test("Approve Proposal by Creator", async () => {
+      try {
+        await sendAndConfirmProposalApproveMessage({
+          memo: "Approve by Creator",
+          transactionIndex,
+          feePayer: creator,
+          memberAddress: creator.address,
+          multisigAddress: multisigAddress,
+        });
+      } catch (e) {
+        console.error("Error [Approve Proposal]: ", e);
+      }
+    });
+
+    test("Approve Proposal by a Member", async () => {
+      try {
+        await sendAndConfirmProposalApproveMessage({
+          memo: "Approve by a Member",
+          transactionIndex,
+          feePayer: secondMember,
+          multisigAddress: multisigAddress,
+          memberAddress: secondMember.address,
+        });
+      } catch (e) {
+        console.error("Error [Approve Proposal]: ", e);
+      }
+    });
+
+    test("Cancel Proposal by Creator", async () => {
+      await sendAndConfirmProposalCancelMessage({
+        memo: "Cancelled by Creator",
+        transactionIndex,
+        feePayer: creator,
+        multisigAddress: multisigAddress,
+        memberAddress: creator.address,
+      });
+    });
+
+    test("Cancel Proposal by a Third Member", async () => {
+      await sendAndConfirmProposalCancelMessage({
+        memo: "Cancelled by a Third Member",
+        transactionIndex,
+        feePayer: thirdMember,
+        multisigAddress: multisigAddress,
+        memberAddress: thirdMember.address,
+      });
+    });
+
+    test("Should verify transaction status", async () => {
+      const proposal = await getProposalByIndex(
+        multisigAddress,
+        Number(transactionIndex),
+      );
+
+      expect(proposal?.status.__kind).equal("Cancelled");
     });
   });
 });

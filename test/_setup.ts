@@ -48,6 +48,7 @@ export async function getTestAccountsWithBalances() {
   const creatorKeyPair = generateLegacyKeyPair();
   const createKeyKeyPair = generateLegacyKeyPair();
   const secondMemberKeyPair = generateLegacyKeyPair();
+  const thirdMemberKeyPair = generateLegacyKeyPair();
   const rentCollectorKeyPair = generateLegacyKeyPair();
   const toTokenKeyPair = generateLegacyKeyPair();
   const toSolKeyPair = generateLegacyKeyPair();
@@ -61,6 +62,10 @@ export async function getTestAccountsWithBalances() {
   );
   const secondMember = await createSignerFromKeyPair(
     await createKeyPairFromBytes(secondMemberKeyPair.secretKey),
+  );
+
+  const thirdMember = await createSignerFromKeyPair(
+    await createKeyPairFromBytes(thirdMemberKeyPair.secretKey),
   );
 
   const rentCollector = await createSignerFromKeyPair(
@@ -83,9 +88,13 @@ export async function getTestAccountsWithBalances() {
   });
 
   await Promise.all(
-    [creator, createKey, secondMember, { address: vaultAddress }].map(
-      async ({ address }) => await airdrop(address),
-    ),
+    [
+      creator,
+      createKey,
+      secondMember,
+      thirdMember,
+      { address: vaultAddress },
+    ].map(async ({ address }) => await airdrop(address)),
   );
 
   await createMultisig({
@@ -102,6 +111,10 @@ export async function getTestAccountsWithBalances() {
         key: secondMember.address,
         permissions: { mask: 2 },
       },
+      {
+        key: thirdMember.address,
+        permissions: { mask: 2 },
+      },
     ],
   });
 
@@ -109,6 +122,7 @@ export async function getTestAccountsWithBalances() {
     creator,
     createKey,
     secondMember,
+    thirdMember,
     vaultAddress,
     multisigAddress,
     recipientSolAddress: toSol.address,

@@ -23,7 +23,6 @@ import {
 } from "~/program/multisig/codec";
 
 import {
-  getTransferInstruction,
   getTransferCheckedInstruction,
   getAssociatedTokenAccountAddress,
   getCreateAssociatedTokenIdempotentInstruction,
