@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeAll } from "vitest";
 
 import { LAMPORTS_PER_SOL } from "gill";
+import { getAddMemoInstruction } from "gill/programs";
 
 import {
   createAndConfirmMessage,
@@ -27,11 +28,17 @@ import {
   createProposalRejectInstruction,
 } from "~/program/multisig/instruction";
 
-import { getAddMemoInstruction } from "gill/programs";
+import { FromToken } from "~/program/multisig/message";
+
+// TODO: Add tests for:
+// TODO: - parse Transfer SOL
+// TODO: - parse Transfer Token
+// TODO: - parse Transfer Token 2022
+import { parseTransactionMessage } from "~/program/multisig/utils/parseTransferTransaction";
+
 import { getProposalByIndex } from "~/service/multisig";
 
 import {
-  TokenFrom,
   getBalance,
   createMintAndMintTo,
   getTokenAccountBalance,
@@ -104,7 +111,7 @@ describe("Interacting with the Multisig Program", async () => {
   });
 
   describe("Transfer Token", async () => {
-    let fromToken: TokenFrom;
+    let fromToken: FromToken;
 
     beforeAll(async () => {
       transactionIndex = 2n;
@@ -197,7 +204,7 @@ describe("Interacting with the Multisig Program", async () => {
   });
 
   describe("Transfer Token 2022", async () => {
-    let fromToken: TokenFrom;
+    let fromToken: FromToken;
 
     beforeAll(async () => {
       transactionIndex = 3n;

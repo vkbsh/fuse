@@ -83,7 +83,6 @@ export async function parseTransactionMessage(
 
     if (isSystemProgram(programAddress)) {
       try {
-        // parsedTx = parseTransferSolInstruction(ix);
         parsedTx = parseTransferSolInstruction(ix);
       } catch (error) {
         console.error("Failed to parse Transfer SOL Instruction: ", error);

@@ -9,14 +9,14 @@ import {
 
 import { getAmount } from "~/utils/amount";
 import { getBalance } from "~/service/balance";
+import { FromToken } from "~/program/multisig/message";
 import { fetchTokenMeta, fetchTokenPrice, TokenMeta } from "~/service/token";
 
-export type TokenData = TokenMeta & {
-  ata: Address;
-  mint: Address;
-  amount: number;
-  usdAmount: number;
-};
+export type TokenData = TokenMeta &
+  FromToken & {
+    amount: number;
+    usdAmount: number;
+  };
 
 export type QueryKey =
   | "balance"
@@ -163,7 +163,7 @@ export const useTokenInfo = (vaultAddress: Address) => {
         programIdAddress: balanceData?.spl?.[tokens[i].mint]?.programIdAddress,
       };
     })
-    .filter(Boolean);
+    .filter(Boolean) as TokenData[];
 
   const totalAmount = data.reduce(
     (acc, token) =>

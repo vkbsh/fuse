@@ -33,15 +33,6 @@ import {
 
 import { useRpcStore } from "~/state/rpc";
 
-export type TokenFrom = {
-  decimals: number;
-  mint: Address;
-  ata: Address;
-  programIdAddress:
-    | typeof TOKEN_PROGRAM_ADDRESS
-    | typeof TOKEN_2022_PROGRAM_ADDRESS;
-};
-
 const client = useRpcStore.getState();
 
 export async function getTestAccountsWithBalances() {

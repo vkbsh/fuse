@@ -33,6 +33,15 @@ import {
 
 import { useRpcStore } from "~/state/rpc";
 
+export type FromToken = {
+  decimals: number;
+  mint: Address;
+  ata: Address;
+  programIdAddress:
+    | typeof TOKEN_PROGRAM_ADDRESS
+    | typeof TOKEN_2022_PROGRAM_ADDRESS;
+};
+
 const { rpc, sendAndConfirmTransaction } = useRpcStore.getState();
 
 export async function createAndConfirmMessage({
@@ -99,14 +108,7 @@ export async function createTransferTokenMessage({
   signer: Address;
   toAddress: Address;
   authorityAddress: Address;
-  fromToken: {
-    decimals: number;
-    mint: Address;
-    ata: Address;
-    programIdAddress:
-      | typeof TOKEN_PROGRAM_ADDRESS
-      | typeof TOKEN_2022_PROGRAM_ADDRESS;
-  };
+  fromToken: FromToken;
 }) {
   const transferTokenIxs = await createTransferTokenInstruction({
     signer,
