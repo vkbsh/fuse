@@ -148,35 +148,31 @@ export async function parseVaultTransactionMessage(
           programAddress: programAddressCreateATA,
           accounts: createATAIx.accountIndexes.map((index) => ({
             address: accountKeys[index],
-            role: 1, // !!! ANY role (to satisfy the type) !!!
+            role: 1, // ANY role (to satisfy the type)
           })),
         });
 
         if (decodedATI) {
           const accountsATI = decodedATI?.accounts;
 
-          const ata = accountsATI.ata.address;
           const toAccount = accountsATI.owner.address;
           const mintAddress = accountsATI.mint.address;
 
           try {
-            const { accounts, data } = parseTransferInstruction({
+            const { data } = parseTransferInstruction({
               data: new Uint8Array(transferTokenIx.data),
               programAddress: programAddressTransferToken,
               accounts: transferTokenIx.accountIndexes.map((index) => ({
                 address: accountKeys[index],
-                role: 1, // !!! ANY role (to satisfy the type) !!!
+                role: 1, // ANY role (to satisfy the type)
               })),
             });
 
             result = {
               mintAddress,
+              toAccount,
               amount: Number(data.amount),
-              toAccount:
-                accounts.destination.address === ata
-                  ? toAccount
-                  : accounts.destination.address,
-              fromAccount: accounts.source.address,
+              fromAccount: decodedATI.accounts.payer.address,
             };
           } catch (e) {
             console.error("Failed to parse Transfer Instruction: ", e);

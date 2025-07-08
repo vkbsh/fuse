@@ -28,16 +28,13 @@ import {
   createProposalRejectInstruction,
 } from "~/program/multisig/instruction";
 
-import { FromToken } from "~/program/multisig/message";
-
-// TODO: Add tests for:
-// TODO: - parse Transfer SOL
-// TODO: - parse Transfer Token
-// TODO: - parse Transfer Token 2022
 import {
   getProposalAccount,
   getParsedVaultTransactionMessage,
 } from "~/program/multisig/utils/parseTransferTransaction";
+
+import { FromToken } from "~/program/multisig/message";
+import { SOL_MINT_ADDRESS } from "~/program/multisig/address";
 
 import {
   getBalance,
@@ -45,7 +42,6 @@ import {
   getTokenAccountBalance,
   getTestAccountsWithBalances,
 } from "./_setup";
-import { SOL_MINT_ADDRESS } from "~/program/multisig/address";
 
 const amount = 0.07357;
 let transactionIndex = 0n;
@@ -222,8 +218,9 @@ describe("Interacting with Multisig Program", async () => {
       expect(parsedMessage?.amount).equal(
         Math.round(amount * 10 ** fromToken.decimals),
       );
-      // expect(parsedMessage?.toAccount).equal(recipientTokenAddress); // TODO: fix parsing to show recipientTokenAddress instead of ATA
-      // expect(parsedMessage?.fromAccount).equal(vaultAddress); // TODO: fix account
+
+      expect(parsedMessage?.toAccount).equal(recipientTokenAddress);
+      expect(parsedMessage?.fromAccount).equal(vaultAddress);
       expect(parsedMessage?.mintAddress).equal(fromToken.mint);
       expect(parsedMessage?.creator).equal(creator.address);
       expect(proposal?.status.__kind).equal("Active");
@@ -355,8 +352,8 @@ describe("Interacting with Multisig Program", async () => {
       expect(parsedMessage?.amount).equal(
         Math.round(amount * 10 ** fromToken.decimals),
       );
-      // expect(parsedMessage?.toAccount).equal(recipientTokenAddress); // TODO: fix parsing to show recipientTokenAddress instead of ATA
-      // expect(parsedMessage?.fromAccount).equal(vaultAddress); // TODO: fix account
+      expect(parsedMessage?.toAccount).equal(recipientTokenAddress);
+      expect(parsedMessage?.fromAccount).equal(vaultAddress);
       expect(parsedMessage?.mintAddress).equal(fromToken.mint);
       expect(parsedMessage?.creator).equal(creator.address);
       expect(proposal?.status.__kind).equal("Active");
