@@ -34,9 +34,10 @@ import { FromToken } from "~/program/multisig/message";
 // TODO: - parse Transfer SOL
 // TODO: - parse Transfer Token
 // TODO: - parse Transfer Token 2022
-import { parseTransactionMessage } from "~/program/multisig/utils/parseTransferTransaction";
-
-import { getProposalByIndex } from "~/service/multisig";
+import {
+  getProposalAccount,
+  getParsedVaultTransactionMessage,
+} from "~/program/multisig/utils/parseTransferTransaction";
 
 import {
   getBalance,
@@ -44,11 +45,12 @@ import {
   getTokenAccountBalance,
   getTestAccountsWithBalances,
 } from "./_setup";
+import { SOL_MINT_ADDRESS } from "~/program/multisig/address";
 
 const amount = 0.07357;
-let transactionIndex = 1n;
+let transactionIndex = 0n;
 
-describe("Interacting with the Multisig Program", async () => {
+describe("Interacting with Multisig Program", async () => {
   const {
     creator,
     secondMember,
@@ -61,6 +63,16 @@ describe("Interacting with the Multisig Program", async () => {
   } = await getTestAccountsWithBalances();
 
   describe("Transfer SOL", async () => {
+    beforeAll(async () => {
+      transactionIndex = 1n;
+    });
+
+    test("Should verify account state before transaction execution", async () => {
+      const vaultBalance = await getBalance(vaultAddress);
+
+      expect(vaultBalance).equal(BigInt(LAMPORTS_PER_SOL));
+    });
+
     test("Create VaultTransaction with: [TransferSOL, ProposalCreate, ProposalApprove]", async () => {
       const transactionMessage = await createTransferSolMessage({
         source: vaultAddress,
@@ -79,6 +91,26 @@ describe("Interacting with the Multisig Program", async () => {
       });
     });
 
+    test("Should parse SOL Transfer transaction message", async () => {
+      const parsedMessage = await getParsedVaultTransactionMessage({
+        multisigAddress,
+        transactionIndex,
+      });
+
+      const proposal = await getProposalAccount(
+        multisigAddress,
+        Number(transactionIndex),
+      );
+
+      expect(parsedMessage).not.null;
+      expect(parsedMessage?.amount).equal(amount * LAMPORTS_PER_SOL);
+      expect(parsedMessage?.toAccount).equal(recipientSolAddress);
+      expect(parsedMessage?.fromAccount).equal(vaultAddress);
+      expect(parsedMessage?.mintAddress).equal(SOL_MINT_ADDRESS);
+      expect(parsedMessage?.creator).equal(creator.address);
+      expect(proposal?.status.__kind).equal("Active");
+    });
+
     test("Approve proposal by a Member", async () => {
       await sendAndConfirmProposalApproveMessage({
         memo: "Approved by a Member",
@@ -89,6 +121,15 @@ describe("Interacting with the Multisig Program", async () => {
       });
     });
 
+    test("Should change proposal status to Approved", async () => {
+      const proposal = await getProposalAccount(
+        multisigAddress,
+        Number(transactionIndex),
+      );
+
+      expect(proposal?.status.__kind).equal("Approved");
+    });
+
     test("Execute VaultTransaction & Close Accounts", async () => {
       await sendAndConfirmExecuteAndCloseAccountsMessage({
         transactionIndex,
@@ -97,6 +138,15 @@ describe("Interacting with the Multisig Program", async () => {
         memberAddress: creator.address,
         multisigAddress: multisigAddress,
       });
+    });
+
+    test("After execution, proposal should be null", async () => {
+      const proposal = await getProposalAccount(
+        multisigAddress,
+        Number(transactionIndex),
+      );
+
+      expect(proposal).null;
     });
 
     test("Should verify account state after transaction execution", async () => {
@@ -157,6 +207,28 @@ describe("Interacting with the Multisig Program", async () => {
       }
     });
 
+    test("Should parse Token Transfer transaction message", async () => {
+      const parsedMessage = await getParsedVaultTransactionMessage({
+        multisigAddress,
+        transactionIndex,
+      });
+
+      const proposal = await getProposalAccount(
+        multisigAddress,
+        Number(transactionIndex),
+      );
+
+      expect(parsedMessage).not.null;
+      expect(parsedMessage?.amount).equal(
+        Math.round(amount * 10 ** fromToken.decimals),
+      );
+      // expect(parsedMessage?.toAccount).equal(recipientTokenAddress); // TODO: fix parsing to show recipientTokenAddress instead of ATA
+      // expect(parsedMessage?.fromAccount).equal(vaultAddress); // TODO: fix account
+      expect(parsedMessage?.mintAddress).equal(fromToken.mint);
+      expect(parsedMessage?.creator).equal(creator.address);
+      expect(proposal?.status.__kind).equal("Active");
+    });
+
     test("Approve proposal by a Member", async () => {
       await sendAndConfirmProposalApproveMessage({
         memo: "Approved by a Member",
@@ -165,6 +237,15 @@ describe("Interacting with the Multisig Program", async () => {
         multisigAddress: multisigAddress,
         memberAddress: secondMember.address,
       });
+    });
+
+    test("Should change proposal status to Approved", async () => {
+      const proposal = await getProposalAccount(
+        multisigAddress,
+        Number(transactionIndex),
+      );
+
+      expect(proposal?.status.__kind).equal("Approved");
     });
 
     test("Execute VaultTransaction & Close Accounts", async () => {
@@ -179,6 +260,15 @@ describe("Interacting with the Multisig Program", async () => {
       } catch (e) {
         console.error("Error [Execute, Close Accounts]: ", e);
       }
+    });
+
+    test("After execution, proposal should be null", async () => {
+      const proposal = await getProposalAccount(
+        multisigAddress,
+        Number(transactionIndex),
+      );
+
+      expect(proposal).null;
     });
 
     test("Should verify account state after transaction execution", async () => {
@@ -250,6 +340,28 @@ describe("Interacting with the Multisig Program", async () => {
       }
     });
 
+    test("Should parse Token 2022 Transfer transaction message", async () => {
+      const parsedMessage = await getParsedVaultTransactionMessage({
+        multisigAddress,
+        transactionIndex,
+      });
+
+      const proposal = await getProposalAccount(
+        multisigAddress,
+        Number(transactionIndex),
+      );
+
+      expect(parsedMessage).not.null;
+      expect(parsedMessage?.amount).equal(
+        Math.round(amount * 10 ** fromToken.decimals),
+      );
+      // expect(parsedMessage?.toAccount).equal(recipientTokenAddress); // TODO: fix parsing to show recipientTokenAddress instead of ATA
+      // expect(parsedMessage?.fromAccount).equal(vaultAddress); // TODO: fix account
+      expect(parsedMessage?.mintAddress).equal(fromToken.mint);
+      expect(parsedMessage?.creator).equal(creator.address);
+      expect(proposal?.status.__kind).equal("Active");
+    });
+
     test("Approve proposal by a Member", async () => {
       await sendAndConfirmProposalApproveMessage({
         memo: "Approved by a Member",
@@ -258,6 +370,15 @@ describe("Interacting with the Multisig Program", async () => {
         multisigAddress: multisigAddress,
         memberAddress: secondMember.address,
       });
+    });
+
+    test("Should change proposal status to Approved", async () => {
+      const proposal = await getProposalAccount(
+        multisigAddress,
+        Number(transactionIndex),
+      );
+
+      expect(proposal?.status.__kind).equal("Approved");
     });
 
     test("Execute VaultTransaction & Close Accounts", async () => {
@@ -272,6 +393,15 @@ describe("Interacting with the Multisig Program", async () => {
       } catch (e) {
         console.error("Error [Execute, Close Accounts]: ", e);
       }
+    });
+
+    test("After execution, proposal should be null", async () => {
+      const proposal = await getProposalAccount(
+        multisigAddress,
+        Number(transactionIndex),
+      );
+
+      expect(proposal).null;
     });
 
     test("Should verify account state after transaction execution", async () => {
@@ -296,7 +426,7 @@ describe("Interacting with the Multisig Program", async () => {
     });
   });
 
-  describe("Get Rejected Transaction", async () => {
+  describe("Reject Transaction", async () => {
     beforeAll(async () => {
       transactionIndex = 4n;
     });
@@ -358,7 +488,7 @@ describe("Interacting with the Multisig Program", async () => {
     });
 
     test("Should verify transaction status", async () => {
-      const proposal = await getProposalByIndex(
+      const proposal = await getProposalAccount(
         multisigAddress,
         Number(transactionIndex),
       );
@@ -367,7 +497,7 @@ describe("Interacting with the Multisig Program", async () => {
     });
   });
 
-  describe("Get Cancelled Transaction", async () => {
+  describe("Cancel Transaction", async () => {
     beforeAll(async () => {
       transactionIndex = 5n;
     });
@@ -450,7 +580,7 @@ describe("Interacting with the Multisig Program", async () => {
     });
 
     test("Should verify transaction status", async () => {
-      const proposal = await getProposalByIndex(
+      const proposal = await getProposalAccount(
         multisigAddress,
         Number(transactionIndex),
       );

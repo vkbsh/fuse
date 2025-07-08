@@ -21,7 +21,7 @@ export default function Dashboard({
   return (
     <>
       <AutoReconnectWallet name={walletName} />
-      <div className="h-screen w-full max-w-[1280px] m-auto p-6 flex flex-col gap-10 justify-between">
+      <div className="h-screen w-full max-w-[1280px] m-auto p-6 flex flex-col gap-10 justify-between select-none">
         <header className="h-[42px] flex items-center justify-between">
           <VaultAccount vaultAddress={vaultAddress} />
           <MemberKeysDropdown />

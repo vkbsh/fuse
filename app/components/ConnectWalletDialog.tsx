@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { UiWallet, useConnect, useWallets } from "@wallet-standard/react";
 
 import Dialog from "~/components/ui/Dialog";
+import Animate from "~/components/animated/Animate";
 
 import { toast } from "~/state/toast";
 import { useDialog } from "~/state/dialog";
@@ -11,45 +12,46 @@ import { useMultisigWallets } from "~/hooks/resources";
 import { SOLANA_SIGN_AND_SEND_TRANSACTION_FEATURE } from "~/hooks/wallet";
 
 import { abbreviateAddress } from "~/utils/address";
-import Animate from "./animated/Animate";
 
 export default function ConnectWalletDialog() {
   const { isOpen, onOpenChange } = useDialog("connectWallet");
-
-  return (
-    <Dialog isOpen={isOpen} onOpenChange={onOpenChange}>
-      <WalletOptions />
-    </Dialog>
-  );
-}
-
-function WalletOptions() {
   const wallets = useWallets();
-
   const supportedWallets = wallets.filter((w) =>
     w.features.includes(SOLANA_SIGN_AND_SEND_TRANSACTION_FEATURE),
   );
 
   return (
-    <div className="flex flex-col gap-6 w-80 p-8 m-auto bg-black text-white rounded-[40px]">
-      <span className="text-xl font-bold text-center">Select wallet</span>
-      <hr className=" opacity-20" />
-      <div className="flex flex-col gap-6">
-        {!supportedWallets.length && (
-          <div className="flex justify-center items-center py-8">
-            <span>No supported wallets found</span>
-          </div>
-        )}
-        {supportedWallets.map((wallet) => (
-          <WalletOption key={wallet.name} wallet={wallet} />
-        ))}
+    <Dialog isOpen={isOpen} onOpenChange={onOpenChange}>
+      <div className="flex flex-col gap-6 w-80 p-8 m-auto bg-black text-white rounded-[40px]">
+        <span className="text-xl font-bold text-center">Select wallet</span>
+        <hr className=" opacity-20" />
+        <div className="flex flex-col gap-6">
+          {!supportedWallets.length && (
+            // TODO: Animate
+            <div className="flex justify-center items-center py-8">
+              <span>No supported wallets found</span>
+            </div>
+          )}
+          {supportedWallets.map((wallet) => (
+            <WalletOption
+              key={wallet.name}
+              wallet={wallet}
+              onOpenChange={onOpenChange}
+            />
+          ))}
+        </div>
       </div>
-    </div>
+    </Dialog>
   );
 }
 
-function WalletOption({ wallet }: { wallet: UiWallet }) {
-  const { onOpenChange } = useDialog("connectWallet");
+function WalletOption({
+  wallet,
+  onOpenChange,
+}: {
+  wallet: UiWallet;
+  onOpenChange: (open: boolean) => void;
+}) {
   const [isConnecting, connect] = useConnect(wallet);
   const [isConnectionInitiated, setConnectionInitiated] = useState(false);
   const account = wallet.accounts[0];
@@ -121,8 +123,32 @@ function ConnectMultisig({
 
   const multisig = multisigWallets?.[0];
 
+  // const handleConnectClick = useCallback(async () => {
+  //   try {
+  //     const existingAccounts = [...wallet.accounts];
+  //     const nextAccounts = await connect();
+  //     // Try to choose the first never-before-seen account.
+  //     for (const nextAccount of nextAccounts) {
+  //       if (
+  //         !existingAccounts.some((existingAccount) =>
+  //           uiWalletAccountsAreSame(nextAccount, existingAccount),
+  //         )
+  //       ) {
+  //         onAccountSelect(nextAccount);
+  //         return;
+  //       }
+  //     }
+  //     // Failing that, choose the first account in the list.
+  //     if (nextAccounts[0]) {
+  //       onAccountSelect(nextAccounts[0]);
+  //     }
+  //   } catch (e) {
+  //     onError(e);
+  //   }
+  // }, [connect, onAccountSelect, onError, wallet.accounts]);
+
   useEffect(() => {
-    if (isFetched && accountAddress && !isLoading) {
+    if (isFetched && accountAddress) {
       if (!multisig) {
         toast.error(
           "Can't find multisig wallet for " + abbreviateAddress(accountAddress),
@@ -141,12 +167,10 @@ function ConnectMultisig({
     }
   }, [
     multisig,
-    isLoading,
     isFetched,
     accountAddress,
     multisigWallets,
     walletWithAccount.name,
-    walletWithAccount.icon,
   ]);
 
   return null;

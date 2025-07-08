@@ -68,7 +68,7 @@ export function getAmount({
   price?: number;
   decimals: number;
 }) {
-  if (!decimals || !amount || !price) return 0;
+  if (!decimals || !amount) return 0;
 
   return (Number(amount) / 10 ** decimals) * price;
 }

@@ -4,6 +4,8 @@ import {
   TOKEN_2022_PROGRAM_ADDRESS,
 } from "gill/programs/token";
 
+import { SOL_MINT_ADDRESS } from "~/program/multisig/address";
+
 import { useRpcStore } from "~/state/rpc";
 
 const { rpc } = useRpcStore.getState();
@@ -23,10 +25,6 @@ type SplTokenBalances = {
 type Balance = {
   spl: SplTokenBalances;
 };
-
-export const SOL_MINT_ADDRESS = address(
-  "So11111111111111111111111111111111111111112",
-);
 
 export async function getBalance(vault: Address): Promise<Balance> {
   const [lamports, tokenAccounts, tokenAccounts2022] = await Promise.all([

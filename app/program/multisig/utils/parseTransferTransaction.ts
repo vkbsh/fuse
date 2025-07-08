@@ -1,4 +1,4 @@
-import { address, Address } from "gill";
+import { Address, EncodedAccount, parseBase64RpcAccount } from "gill";
 
 import {
   SYSTEM_PROGRAM_ADDRESS,
@@ -15,7 +15,17 @@ import {
   parseCreateAssociatedTokenIdempotentInstruction,
 } from "gill/programs/token";
 
-const SOL_MINT_ADDRESS = address("So11111111111111111111111111111111111111112");
+import {
+  getProposalAccountCodec,
+  getVaultTransactionCodec,
+} from "~/program/multisig/codec";
+
+import { SOL_MINT_ADDRESS } from "~/program/multisig/address";
+import { getProposalPda, getTransactionPda } from "~/program/multisig/pda";
+
+import { useRpcStore } from "~/state/rpc";
+
+const { rpc } = useRpcStore.getState();
 
 type Message = {
   accountKeys: Address[];
@@ -26,12 +36,17 @@ type Message = {
   }>;
 };
 
-type Result = {
+type ParsedVaultTransactionMessage = {
   amount: number;
   toAccount: Address;
   fromAccount: Address;
   mintAddress: Address;
 };
+
+export type ParsedVaultTransactionMessageWithCreator =
+  ParsedVaultTransactionMessage & {
+    creator: Address | null;
+  };
 
 function isTokenProgram(programAddress: Address): boolean {
   return (
@@ -48,16 +63,16 @@ function isAssociatedTokenProgram(programAddress: Address): boolean {
   return programAddress === ASSOCIATED_TOKEN_PROGRAM_ADDRESS;
 }
 
-export async function parseTransactionMessage(
+export async function parseVaultTransactionMessage(
   message: Message,
-): Promise<Result | null> {
+): Promise<ParsedVaultTransactionMessage | null> {
   const { accountKeys = [], instructions = [] } = message || {};
 
   if (instructions.length === 0) {
     return null;
   }
 
-  let result: Result | null = null;
+  let result: ParsedVaultTransactionMessage | null = null;
 
   // Transfer (SOL/Token) Instruction
   if (instructions.length === 1) {
@@ -185,4 +200,97 @@ export async function parseTransactionMessage(
   }
 
   return result;
+}
+
+export async function getProposalAccount(
+  multisigAddress: Address,
+  transactionIndex: number,
+) {
+  const proposalPda = await getProposalPda({
+    multisigAddress,
+    transactionIndex: BigInt(transactionIndex),
+  });
+
+  const proposalPdaInfo = await rpc
+    .getAccountInfo(proposalPda, { encoding: "base64" })
+    .send();
+
+  if (!proposalPdaInfo.value) {
+    return null;
+  }
+
+  const { data: proposalDataAccount } = parseBase64RpcAccount(
+    proposalPda,
+    proposalPdaInfo.value,
+  );
+
+  const proposal = getProposalAccountCodec().decode(proposalDataAccount);
+
+  return proposal;
+}
+
+export async function getVaultTransaction({
+  multisigAddress,
+  transactionIndex,
+}: {
+  multisigAddress: Address;
+  transactionIndex: bigint;
+}) {
+  const transactionPda = await getTransactionPda({
+    multisigAddress,
+    transactionIndex,
+  });
+
+  const transactionPdaInfo = await rpc
+    .getAccountInfo(transactionPda, {
+      encoding: "base64",
+    })
+    .send();
+
+  const parsedTransaction = parseBase64RpcAccount(
+    transactionPda,
+    transactionPdaInfo.value,
+  ) as EncodedAccount;
+
+  if (!parsedTransaction?.data) {
+    return null;
+  }
+
+  let vaultTransaction;
+
+  try {
+    vaultTransaction = getVaultTransactionCodec().decode(
+      parsedTransaction?.data,
+    );
+    return vaultTransaction;
+  } catch (e) {
+    console.error("Decode vaultTransaction: ", transactionIndex, e);
+    return null;
+  }
+}
+
+export async function getParsedVaultTransactionMessage({
+  multisigAddress,
+  transactionIndex,
+}: {
+  multisigAddress: Address;
+  transactionIndex: bigint;
+}): Promise<ParsedVaultTransactionMessageWithCreator | null> {
+  const vaultTransaction = await getVaultTransaction({
+    multisigAddress,
+    transactionIndex,
+  });
+
+  const parsedMessage = vaultTransaction?.message
+    ? await parseVaultTransactionMessage(vaultTransaction.message)
+    : null;
+
+  if (!parsedMessage || !vaultTransaction?.creator) {
+    return null;
+  }
+
+  return {
+    ...(parsedMessage || {}),
+    creator: vaultTransaction?.creator || null,
+  };
 }

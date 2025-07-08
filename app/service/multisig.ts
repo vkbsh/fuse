@@ -1,6 +1,5 @@
 import {
   Address,
-  EncodedAccount,
   AccountInfoBase,
   Base64EncodedBytes,
   Base58EncodedBytes,
@@ -12,7 +11,6 @@ import {
 import {
   getMultisigAccountCodec,
   getProposalAccountCodec,
-  getVaultTransactionCodec,
 } from "~/program/multisig/codec";
 
 import {
@@ -21,13 +19,11 @@ import {
   PROPOSAL_ACCOUNT_DISCRIMINATOR_BASE64,
 } from "~/program/multisig/address";
 
+import { getVaultPda } from "~/program/multisig/pda";
 import {
-  getVaultPda,
-  getProposalPda,
-  getTransactionPda,
-} from "~/program/multisig/pda";
-
-import { parseTransactionMessage } from "~/program/multisig/utils/parseTransferTransaction";
+  getParsedVaultTransactionMessage,
+  ParsedVaultTransactionMessageWithCreator,
+} from "~/program/multisig/utils/parseTransferTransaction";
 
 import { useRpcStore } from "~/state/rpc";
 
@@ -46,9 +42,9 @@ type Wallet = {
   };
 };
 
-export type Transaction = {
+export type VaultTransaction = {
   status: any;
-  message: any;
+  message: ParsedVaultTransactionMessageWithCreator;
   timestamp: number;
   approved: Address[];
   rejected: Address[];
@@ -82,15 +78,15 @@ export async function getMultisigAccount(multisigAddress: Address) {
 }
 
 export async function getTransactionsByMultisig(
-  keyAddress: Address | null,
+  multisigAddress: Address | null,
   staleTransactionIndex: number | null,
 ) {
-  if (!keyAddress)
-    throw new Error("Missing keyAddress in getTransactionsByMemberKey()");
+  if (!multisigAddress)
+    throw new Error("Missing multisigAddress in getTransactionsByMultisig()");
 
   try {
     const transactions = await getTransactionsByMultisigAndIndex(
-      keyAddress,
+      multisigAddress,
       staleTransactionIndex,
     );
 
@@ -123,34 +119,6 @@ export async function getWalletByMemberKey(
   ]);
 
   return wallets.flat();
-}
-
-export async function getProposalAccount({
-  multisigAddress,
-  transactionIndex,
-}: {
-  multisigAddress: Address;
-  transactionIndex: bigint;
-}) {
-  const proposalPda = await getProposalPda({
-    multisigAddress,
-    transactionIndex,
-  });
-
-  const proposalPdaInfo = await rpc
-    .getAccountInfo(proposalPda, { encoding: "base64" })
-    .send();
-
-  if (!proposalPdaInfo.value) {
-    return null;
-  }
-
-  const { data: proposalDataAccount } = parseBase64RpcAccount(
-    proposalPda,
-    proposalPdaInfo.value,
-  );
-
-  return getProposalAccountCodec().decode(proposalDataAccount);
 }
 
 async function getWalletByKeyAndIndex(
@@ -203,7 +171,7 @@ async function getWalletByKeyAndIndex(
 async function getTransactionsByMultisigAndIndex(
   multisigAddress: Address,
   staleTransactionIndex: number | null,
-): Promise<(Transaction | null)[] | null> {
+): Promise<(VaultTransaction | null)[] | null> {
   let accounts: ProgramAccountInfo[];
 
   try {
@@ -239,49 +207,17 @@ async function getTransactionsByMultisigAndIndex(
       const { data } = parseBase64RpcAccount(tx.pubkey, tx.account);
       const { status, rejected, approved, cancelled, transactionIndex } =
         getProposalAccountCodec().decode(data);
+      const isStale = Number(transactionIndex) <= (staleTransactionIndex || 0);
+      const isDraft = status.__kind === "Draft";
 
-      if (
-        (Number(transactionIndex) <= (staleTransactionIndex || 0) &&
-          !["Cancelled", "Rejected"].includes(status.__kind)) ||
-        status.__kind === "Draft"
-      ) {
+      if (isStale || isDraft) {
         return null;
       }
 
-      const transactionPda = await getTransactionPda({
+      const parsedMessage = await getParsedVaultTransactionMessage({
         multisigAddress,
-        transactionIndex: transactionIndex,
+        transactionIndex,
       });
-
-      const transactionPdaInfo = await rpc
-        .getAccountInfo(transactionPda, {
-          encoding: "base64",
-        })
-        .send();
-
-      const parsedTransaction = parseBase64RpcAccount(
-        transactionPda,
-        transactionPdaInfo.value,
-      ) as EncodedAccount;
-
-      if (!parsedTransaction?.data) {
-        return null;
-      }
-
-      let vaultTransaction;
-
-      try {
-        vaultTransaction = getVaultTransactionCodec().decode(
-          parsedTransaction?.data,
-        );
-      } catch (e) {
-        console.error("Decode vaultTransaction: ", transactionIndex, e);
-        return null;
-      }
-
-      const parsedMessage = vaultTransaction?.message
-        ? await parseTransactionMessage(vaultTransaction.message)
-        : null;
 
       if (!parsedMessage) {
         return null;
@@ -294,36 +230,9 @@ async function getTransactionsByMultisigAndIndex(
         status: status.__kind,
         message: parsedMessage,
         timestamp: Number(status.timestamp),
+        creator: parsedMessage.creator || null,
         transactionIndex: Number(transactionIndex),
-        creator: vaultTransaction ? vaultTransaction.creator : null,
       };
     }),
   );
-}
-
-export async function getProposalByIndex(
-  multisigAddress: Address,
-  transactionIndex: number,
-) {
-  const proposalPda = await getProposalPda({
-    multisigAddress,
-    transactionIndex: BigInt(transactionIndex),
-  });
-
-  const proposalPdaInfo = await rpc
-    .getAccountInfo(proposalPda, { encoding: "base64" })
-    .send();
-
-  if (!proposalPdaInfo.value) {
-    return null;
-  }
-
-  const { data: proposalDataAccount } = parseBase64RpcAccount(
-    proposalPda,
-    proposalPdaInfo.value,
-  );
-
-  const proposal = getProposalAccountCodec().decode(proposalDataAccount);
-
-  return proposal;
 }

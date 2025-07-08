@@ -42,7 +42,7 @@ export default function Dialog({
                   {children}
                   <Animate key="dialog-close" variant="slideDownModal">
                     <Close asChild>
-                      <Button className="w-[50px] h-[50px] p-0 rounded-full absolute -bottom-18 left-0 right-0 m-auto">
+                      <Button className="w-[50px] h-[50px] p-0 rounded-full absolute -bottom-18 left-0 right-0 m-auto -z-10">
                         <IconClose />
                       </Button>
                     </Close>
