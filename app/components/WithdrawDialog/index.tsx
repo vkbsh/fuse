@@ -1,18 +1,21 @@
 import { Address } from "gill";
+import { CircleArrowDown } from "lucide-react";
 
 import { useDialog } from "~/state/dialog";
 import { useWalletStore } from "~/state/wallet";
 import { useWalletByName } from "~/hooks/wallet";
 import { useMultisigAccount } from "~/hooks/resources";
 
-import Dialog from "~/components/ui/Dialog";
+import Dialog from "~/components/Dialog";
+import { Button } from "~/components/ui/button";
+import { hasCloudPermission } from "~/program/multisig/utils/member";
 
 import Review from "./Review";
 import EnterAmount from "./EnterAmount";
 import ChooseWallet from "./ChooseWallet";
 
 export default function WithdrawDialog() {
-  const { isOpen, onOpenChange } = useDialog("withdraw");
+  const { onOpenChange } = useDialog("withdraw");
   const { walletStorage, multisigStorage } = useWalletStore();
 
   const multisigAddress = multisigStorage?.address as Address;
@@ -21,20 +24,37 @@ export default function WithdrawDialog() {
   const { data: multisigAccount } = useMultisigAccount(multisigAddress);
   const transactionIndex = Number(multisigAccount?.transactionIndex);
 
+  const hasAllPermissions = hasCloudPermission(
+    multisigStorage?.account?.members || [],
+    walletStorage?.address,
+  );
+
   return (
-    <Dialog isOpen={isOpen} onOpenChange={onOpenChange}>
-      <div className="flex flex-col gap-6 w-[516px] p-8 m-auto bg-black text-white rounded-[40px]">
-        <h3 className="text-xl font-bold text-center">Withdraw</h3>
-        {transactionIndex && walletStorage && (
-          <Withdraw
-            onOpenChange={onOpenChange}
-            vaultAddress={vaultAddress}
-            walletName={walletStorage.name}
-            multisigAddress={multisigAddress}
-            transactionIndex={transactionIndex}
-          />
-        )}
-      </div>
+    <Dialog
+      name="withdraw"
+      title="Withdraw"
+      trigger={
+        <Button
+          className="w-[127px]"
+          disabled={!hasAllPermissions}
+          onClick={() => onOpenChange(true)}
+        >
+          <span className="rounded-full w-[16px] h-[16px] flex items-center justify-center">
+            <CircleArrowDown />
+          </span>
+          <span>Withdraw</span>
+        </Button>
+      }
+    >
+      {transactionIndex && walletStorage && (
+        <Withdraw
+          onOpenChange={onOpenChange}
+          vaultAddress={vaultAddress}
+          walletName={walletStorage.name}
+          multisigAddress={multisigAddress}
+          transactionIndex={transactionIndex}
+        />
+      )}
     </Dialog>
   );
 }

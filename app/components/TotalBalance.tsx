@@ -1,10 +1,7 @@
 import { Address } from "gill";
-import { AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 
-import Animate from "~/components/animated/Animate";
-import AnimateString from "~/components/animated/AnimateString";
-
-import { roundCoin } from "~/utils/amount";
+import { roundCoin } from "~/lib/amount";
 import { useTokenInfo } from "~/hooks/resources";
 
 export default function TotalBalance({
@@ -29,13 +26,11 @@ function Balance({ vaultAddress }: { vaultAddress: Address }) {
       <span>$</span>
       <AnimatePresence>
         {totalAmount ? (
-          <Animate variant="fadeIn">
-            <AnimateString string={roundedAmount} />
-          </Animate>
+          <motion.div>
+            <span>{roundedAmount}</span>
+          </motion.div>
         ) : (
-          <Animate variant="fadeIn" className="opacity-40 blur-xs">
-            --.--
-          </Animate>
+          <motion.div className="opacity-40 blur-xs">--.--</motion.div>
         )}
       </AnimatePresence>
     </div>

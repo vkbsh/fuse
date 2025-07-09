@@ -1,14 +1,12 @@
 import { Address } from "gill";
-import { AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 
 import { useDialog } from "~/state/dialog";
 import { useWalletStore } from "~/state/wallet";
 import { useWithdrawStore } from "~/state/withdraw";
 import { useTokenInfo } from "~/hooks/resources";
-
 import { hasCloudPermission } from "~/program/multisig/utils/member";
 
-import Animate from "~/components/animated/Animate";
 import Coin from "./Coin";
 
 export default function Coins({ vaultAddress }: { vaultAddress: Address }) {
@@ -36,13 +34,12 @@ export default function Coins({ vaultAddress }: { vaultAddress: Address }) {
           };
 
           return (
-            <Animate
-              variant="fadeInList"
+            <motion.div
               key={token.address}
               transition={{ duration: 0.6, delay: i * 0.06 }}
             >
               <Coin token={token} onClick={handleClick} />
-            </Animate>
+            </motion.div>
           );
         })}
       </AnimatePresence>

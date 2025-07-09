@@ -1,5 +1,12 @@
-import Dropdown from "~/components/ui/Dropdown";
-import { IconConnect } from "~/components/ui/icons/IconConnect";
+import { CloudIcon } from "lucide-react";
+
+import {
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+} from "~/components/ui/dropdown-menu";
+import { Button } from "~/components/ui/button";
 
 import { useDialog } from "~/state/dialog";
 import { useWalletStore } from "~/state/wallet";
@@ -44,30 +51,32 @@ export default function MemberKeysDropdown() {
           wallet.name === walletStorage?.name;
 
         return (
-          <div key={wallet.address} onClick={(e) => e.stopPropagation()}>
+          <DropdownMenuItem
+            key={wallet.address}
+            onClick={(e) => e.stopPropagation()}
+          >
             <MemberKey
-              key={wallet.address}
               wallet={wallet}
               active={active}
               permissionLabel={wallet.permissionLabel}
             />
-          </div>
+          </DropdownMenuItem>
         );
       }),
-    <button
-      onClick={() => onOpenChange(true)}
-      className="w-full cursor-pointer p-2 flex flex-row justify-between opacity-75 duration-500 hover:opacity-100"
-    >
-      <span>Connect a key</span>
-      <IconConnect />
-    </button>,
+    <DropdownMenuItem>
+      <Button onClick={() => onOpenChange(true)}>
+        <span>Connect a key</span>
+        <CloudIcon />
+      </Button>
+    </DropdownMenuItem>,
   ];
 
   return (
-    <Dropdown
-      align="end"
-      items={items}
-      trigger={<SelectedMemberKey wallet={walletStorage} />}
-    />
+    <DropdownMenu>
+      <DropdownMenuTrigger>
+        <SelectedMemberKey wallet={walletStorage} />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>{items}</DropdownMenuContent>
+    </DropdownMenu>
   );
 }

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type DialogName = "withdraw" | "transaction" | "connectWallet";
+export type DialogName = "withdraw" | "connectWallet";
 
 type DialogState = {
   data: Record<DialogName, any>;

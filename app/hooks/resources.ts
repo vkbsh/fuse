@@ -7,7 +7,7 @@ import {
   getTransactionsByMultisig,
 } from "~/service/multisig";
 
-import { getAmount } from "~/utils/amount";
+import { getAmount } from "~/lib/amount";
 import { getBalance } from "~/service/balance";
 import { FromToken } from "~/program/multisig/message";
 import { fetchTokenMeta, fetchTokenPrice, TokenMeta } from "~/service/token";

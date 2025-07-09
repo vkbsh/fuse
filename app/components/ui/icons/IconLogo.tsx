@@ -1,9 +1,16 @@
-export function IconLogo({ size = 16 }: { size?: number }) {
+export function IconLogo({
+  size = 16,
+  className,
+}: {
+  size?: number;
+  className?: string;
+}) {
   return (
     <svg
       width={size}
-      viewBox="0 0 16 16"
+      className={className}
       fill="none"
+      viewBox="0 0 16 16"
       xmlns="http://www.w3.org/2000/svg"
     >
       <path

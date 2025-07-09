@@ -1,15 +1,13 @@
 import { Address, address } from "gill";
 import { useState } from "react";
-import { AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 
-import Animate from "~/components/animated/Animate";
 import { IconLogo } from "~/components/ui/icons/IconLogo";
-import AnimateString from "~/components/animated/AnimateString";
 
 import { useTokenInfo } from "~/hooks/resources";
-import { getRoundedUSD } from "~/utils/amount";
+import { getRoundedUSD } from "~/lib/amount";
 import { useWithdrawStore } from "~/state/withdraw";
-import { abbreviateAddress } from "~/utils/address";
+import { abbreviateAddress } from "~/lib/address";
 
 const ChooseWallet = ({ vaultAddress }: { vaultAddress: Address }) => {
   const { totalAmount } = useTokenInfo(vaultAddress);
@@ -38,7 +36,7 @@ const ChooseWallet = ({ vaultAddress }: { vaultAddress: Address }) => {
         </div>
         <span className="flex flex-row font-semibold text-base">
           <span>$</span>
-          <AnimateString string={getRoundedUSD(totalAmount) + ""} />
+          <span>{getRoundedUSD(totalAmount)}</span>
         </span>
       </div>
       <div className="relative h-14 border border-white-30 rounded-[20px] px-4 py-2.5 flex flex-row gap-2 items-center">
@@ -57,12 +55,9 @@ const ChooseWallet = ({ vaultAddress }: { vaultAddress: Address }) => {
         />
         <AnimatePresence>
           {errors?.toAddress && (
-            <Animate
-              variant="slideDown"
-              className="absolute text-xs -bottom-5 w-full text-status-error"
-            >
+            <motion.div className="absolute text-xs -bottom-5 w-full text-status-error">
               {errors.toAddress}
-            </Animate>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>

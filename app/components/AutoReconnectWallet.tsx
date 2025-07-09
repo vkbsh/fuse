@@ -1,10 +1,10 @@
+import { toast } from "sonner";
 import { address } from "gill";
 import { useEffect } from "react";
 import { UiWallet, useConnect, useWallets } from "@wallet-standard/react";
 
-import { toast } from "~/state/toast";
 import { useWalletStore } from "~/state/wallet";
-import { abbreviateAddress } from "~/utils/address";
+import { abbreviateAddress } from "~/lib/address";
 import { isKeyMember } from "~/program/multisig/utils/member";
 import { SOLANA_SIGN_AND_SEND_TRANSACTION_FEATURE } from "~/hooks/wallet";
 

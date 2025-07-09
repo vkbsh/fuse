@@ -1,14 +1,10 @@
 import { Address } from "gill";
-import { AnimatePresence } from "motion/react";
 import { ReactNode } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { SquareDot, CircleDot, CirclePlus } from "lucide-react";
 
-import Animate from "~/components/animated/Animate";
-import { IconCircleDot } from "~/components/ui/icons/IconCircleDot";
-import { IconCirclePlus } from "~/components/ui/icons/IconCirclePlus";
-import { IconSquareDot } from "~/components/ui/icons/IconSquareDot";
-
-import { abbreviateAddress } from "~/utils/address";
-import { cn } from "~/utils/tw";
+import { abbreviateAddress } from "~/lib/address";
+import { cn } from "~/lib/utils";
 
 export type Status =
   | "Active"
@@ -46,35 +42,35 @@ export default function TransactionProgress({
           key="Initiated"
           label="Initiated"
           active={true}
-          icon={<IconCirclePlus />}
+          icon={<CirclePlus />}
           addresses={[initiated]}
         />
         <ProgressStatus
           key="Approved"
           label="Approved"
           active={isAllApproved}
-          icon={<IconSquareDot />}
+          icon={<SquareDot />}
           addresses={approved}
         />
         <ProgressStatus
           key="Cancelled"
           label="Cancelled"
           active={isCancelled}
-          icon={<IconCircleDot />}
+          icon={<CircleDot />}
           addresses={cancelled}
         />
         <ProgressStatus
           key="Rejected"
           label="Rejected"
           active={isRejected}
-          icon={<IconCircleDot />}
+          icon={<CircleDot />}
           addresses={rejected}
         />
         <ProgressStatus
           key="Executed"
           label="Executed"
           active={isExecuting || isExecuted}
-          icon={<IconCircleDot />}
+          icon={<CircleDot />}
           addresses={[executed]}
         />
       </AnimatePresence>

@@ -11,8 +11,9 @@ import { LinksFunction } from "@remix-run/node";
 import { QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
+import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 
+import ThemeProvider from "~/components/ThemeProvider";
 import "./global.css";
 
 export const links: LinksFunction = () => [
@@ -23,7 +24,7 @@ export default function App() {
   const queryClient = useMemo(() => new QueryClient(), []);
   const persister = useMemo(
     () =>
-      createSyncStoragePersister({
+      createAsyncStoragePersister({
         key: "fuse:query-client",
         storage:
           typeof window !== "undefined" ? window.localStorage : undefined,
@@ -49,7 +50,9 @@ export default function App() {
         },
       }}
     >
-      <Outlet />
+      <ThemeProvider>
+        <Outlet />
+      </ThemeProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </PersistQueryClientProvider>
   );

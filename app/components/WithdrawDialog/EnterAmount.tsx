@@ -1,15 +1,14 @@
 import { Address } from "gill";
+import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useDebounce } from "@uidotdev/usehooks";
 
-import Button from "~/components/ui/Button";
+import { Button } from "~/components/ui/button";
 import SelectToken from "~/components/SelectToken";
-import Animate from "~/components/animated/Animate";
-import AnimateString from "~/components/animated/AnimateString";
 
 import { useTokenPrice } from "~/hooks/resources";
 import { useWithdrawStore } from "~/state/withdraw";
-import { getRoundedToken, getRoundedSOL } from "~/utils/amount";
+import { getRoundedToken, getRoundedSOL } from "~/lib/amount";
 
 const EnterAmount = ({ vaultAddress }: { vaultAddress: Address }) => {
   const { set, amount, token, removeError, errors } = useWithdrawStore();
@@ -73,26 +72,22 @@ const EnterAmount = ({ vaultAddress }: { vaultAddress: Address }) => {
               className="w-full text-2xl outline-0"
             />
             {errors?.amount && (
-              <Animate
+              <motion.div
                 key="error-amount"
-                variant="slideDown"
                 className="absolute w-full text-xs text-status-error -bottom-6 text-nowrap"
               >
                 {errors?.amount}
-              </Animate>
+              </motion.div>
             )}
           </div>
         </label>
-        <Button onClick={setMax} size="md" variant="max">
-          MAX
-        </Button>
+        <Button onClick={setMax}>MAX</Button>
       </div>
       <div className="flex flex-row gap-2 items-center justify-between mt-2 text-white-60">
         <div className="text-base flex">
-          $
-          <AnimateString string={calculatedAmount?.toFixed(2) + ""} />
+          $<span>{calculatedAmount?.toFixed(2)}</span>
         </div>
-        <AnimateString string={maxAmountLabel + ""} />
+        <span>{maxAmountLabel}</span>
       </div>
     </>
   );

@@ -1,12 +1,17 @@
 import { Address } from "gill";
 import { useEffect } from "react";
+import { ChevronDown } from "lucide-react";
 
-import Dropdown from "~/components/ui/Dropdown";
-import { IconChevronDown } from "~/components/ui/icons/IconChevronDown";
+import {
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 
 import { useWithdrawStore } from "~/state/withdraw";
 import { useTokenInfo, TokenData } from "~/hooks/resources";
-import { getRoundedSOL, getRoundedToken } from "~/utils/amount";
+import { getRoundedSOL, getRoundedToken } from "~/lib/amount";
 
 export default function SelectToken({
   vaultAddress,
@@ -35,37 +40,47 @@ export default function SelectToken({
     const name = item.name === "Wrapped SOL" ? "Solana" : item.name;
 
     return (
-      <div
-        key={item.mint}
-        onClick={() => set("token", item)}
-        className="flex items-center cursor-pointer w-[300px] h-[46px] p-4 rounded-[14px] text-white border border-transparent hover:text-select-text-hover hover:bg-select-bg-hover hover:border-select-border-hover duration-500"
-      >
-        <div className="flex flex-row items-center justify-between  w-full">
-          <div className="flex flex-row items-center gap-2">
-            <img
-              src={item.logoURI}
-              alt={item.name}
-              className="w-7 h-7 rounded-full"
-            />
-            <span className="font-semibold text-base max-w-28 truncate">
-              {name}
-            </span>
+      <DropdownMenuItem key={item.mint}>
+        <div
+          onClick={() => set("token", item)}
+          className="flex items-center cursor-pointer w-[300px] h-[46px] p-4 rounded-[14px]"
+        >
+          <div className="flex flex-row items-center justify-between  w-full">
+            <div className="flex flex-row items-center gap-2">
+              <img
+                src={item.logoURI}
+                alt={item.name}
+                className="w-7 h-7 rounded-full"
+              />
+              <span className="font-semibold text-base max-w-28 truncate">
+                {name}
+              </span>
+            </div>
+            <div className="flex flex-row gap-1">
+              <div className="uppercase font-medium text-sm max-w-32 truncate">
+                {amount}
+              </div>
+              <span>{item.symbol}</span>
+            </div>
           </div>
-          <span className="uppercase font-medium text-sm max-w-32 truncate">
-            {amount} {item.symbol}
-          </span>
         </div>
-      </div>
+      </DropdownMenuItem>
     );
   });
 
   return (
-    <Dropdown
-      align="start"
-      items={itemsComponent}
-      className="overflow-scroll max-h-[226px] ring-white-30 relative z-30"
-      trigger={<SelectedToken token={selected} />}
-    />
+    <DropdownMenu>
+      <DropdownMenuTrigger>
+        <SelectedToken token={selected} />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        side="bottom"
+        className="max-h-[242px]"
+      >
+        {itemsComponent}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -83,7 +98,7 @@ const SelectedToken = ({ token }: { token: TokenData | null }) => {
         {token?.symbol}
       </span>
       <span className="text-white-30 ml-auto">
-        <IconChevronDown />
+        <ChevronDown />
       </span>
     </div>
   );

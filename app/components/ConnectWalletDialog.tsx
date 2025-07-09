@@ -1,30 +1,35 @@
-import { address } from "gill";
+import { toast } from "sonner";
+import { motion } from "motion/react";
+import { Address, address } from "gill";
 import { useCallback, useEffect, useState } from "react";
-import { UiWallet, useConnect, useWallets } from "@wallet-standard/react";
 
-import Dialog from "~/components/ui/Dialog";
-import Animate from "~/components/animated/Animate";
+import {
+  UiWallet,
+  useConnect,
+  useWallets,
+  uiWalletAccountsAreSame,
+} from "@wallet-standard/react";
 
-import { toast } from "~/state/toast";
+import Dialog from "~/components/Dialog";
+
 import { useDialog } from "~/state/dialog";
 import { useWalletStore } from "~/state/wallet";
 import { useMultisigWallets } from "~/hooks/resources";
 import { SOLANA_SIGN_AND_SEND_TRANSACTION_FEATURE } from "~/hooks/wallet";
 
-import { abbreviateAddress } from "~/utils/address";
+import { abbreviateAddress } from "~/lib/address";
 
 export default function ConnectWalletDialog() {
-  const { isOpen, onOpenChange } = useDialog("connectWallet");
+  const { onOpenChange } = useDialog("connectWallet");
+
   const wallets = useWallets();
   const supportedWallets = wallets.filter((w) =>
     w.features.includes(SOLANA_SIGN_AND_SEND_TRANSACTION_FEATURE),
   );
 
   return (
-    <Dialog isOpen={isOpen} onOpenChange={onOpenChange}>
-      <div className="flex flex-col gap-6 w-80 p-8 m-auto bg-black text-white rounded-[40px]">
-        <span className="text-xl font-bold text-center">Select wallet</span>
-        <hr className=" opacity-20" />
+    <Dialog title="Select wallet" name="connectWallet">
+      <div className="flex flex-col gap-6 w-60">
         <div className="flex flex-col gap-6">
           {!supportedWallets.length && (
             // TODO: Animate
@@ -34,8 +39,8 @@ export default function ConnectWalletDialog() {
           )}
           {supportedWallets.map((wallet) => (
             <WalletOption
-              key={wallet.name}
               wallet={wallet}
+              key={wallet.name}
               onOpenChange={onOpenChange}
             />
           ))}
@@ -54,12 +59,29 @@ function WalletOption({
 }) {
   const [isConnecting, connect] = useConnect(wallet);
   const [isConnectionInitiated, setConnectionInitiated] = useState(false);
-  const account = wallet.accounts[0];
-  const accountAddress = account?.address && address(account?.address);
+  const [accountAddress, setAccountAddress] = useState<Address | null>(null);
 
   const handleConnectClick = useCallback(async () => {
     try {
-      await connect();
+      const existingAccounts = [...wallet.accounts];
+      const nextAccounts = await connect();
+
+      //     // Try to choose the first never-before-seen account.
+      for (const nextAccount of nextAccounts) {
+        if (
+          !existingAccounts.some((existingAccount) =>
+            uiWalletAccountsAreSame(nextAccount, existingAccount),
+          )
+        ) {
+          setAccountAddress(address(nextAccount.address));
+          return;
+        }
+      }
+      // Failing that, choose the first account in the list.
+      if (nextAccounts[0]) {
+        setAccountAddress(address(nextAccounts[0].address));
+      }
+
       setConnectionInitiated(() => true);
     } catch (e) {
       toast.error("Failed to connect to wallet");
@@ -70,21 +92,22 @@ function WalletOption({
 
   if (isConnecting) {
     return (
-      <Animate
+      <motion.div
         key={wallet.name}
-        variant="fadeIn"
         className="flex flex-row items-center gap-6"
       >
         <span className="h-[40px]">Connecting...</span>
-      </Animate>
+      </motion.div>
     );
   }
 
   return (
     <>
-      {isConnectionInitiated && account && (
+      {isConnectionInitiated && accountAddress && (
         <ConnectMultisig
-          walletWithAccount={wallet}
+          walletIcon={wallet.icon}
+          walletName={wallet.name}
+          accountAddress={accountAddress}
           onClose={() => onOpenChange(false)}
         />
       )}
@@ -103,14 +126,15 @@ function WalletOption({
 
 function ConnectMultisig({
   onClose,
-  walletWithAccount,
+  walletName,
+  walletIcon,
+  accountAddress,
 }: {
   onClose: () => void;
-  walletWithAccount: UiWallet;
+  walletName: string;
+  walletIcon: string;
+  accountAddress: Address;
 }) {
-  const account = walletWithAccount.accounts[0];
-  const accountAddress = address(account?.address);
-
   const {
     isLoading,
     isFetched,
@@ -123,30 +147,6 @@ function ConnectMultisig({
 
   const multisig = multisigWallets?.[0];
 
-  // const handleConnectClick = useCallback(async () => {
-  //   try {
-  //     const existingAccounts = [...wallet.accounts];
-  //     const nextAccounts = await connect();
-  //     // Try to choose the first never-before-seen account.
-  //     for (const nextAccount of nextAccounts) {
-  //       if (
-  //         !existingAccounts.some((existingAccount) =>
-  //           uiWalletAccountsAreSame(nextAccount, existingAccount),
-  //         )
-  //       ) {
-  //         onAccountSelect(nextAccount);
-  //         return;
-  //       }
-  //     }
-  //     // Failing that, choose the first account in the list.
-  //     if (nextAccounts[0]) {
-  //       onAccountSelect(nextAccounts[0]);
-  //     }
-  //   } catch (e) {
-  //     onError(e);
-  //   }
-  // }, [connect, onAccountSelect, onError, wallet.accounts]);
-
   useEffect(() => {
     if (isFetched && accountAddress) {
       if (!multisig) {
@@ -155,23 +155,17 @@ function ConnectMultisig({
         );
       } else {
         addwalletStorage({
+          icon: walletIcon,
+          name: walletName,
           address: accountAddress,
-          name: walletWithAccount.name,
-          icon: walletWithAccount.icon,
         });
         addMultisig(multisig);
-        selectWalletName(walletWithAccount.name);
+        selectWalletName(walletName);
       }
 
       onClose();
     }
-  }, [
-    multisig,
-    isFetched,
-    accountAddress,
-    multisigWallets,
-    walletWithAccount.name,
-  ]);
+  }, [multisig, isFetched, accountAddress, multisigWallets]);
 
   return null;
 }

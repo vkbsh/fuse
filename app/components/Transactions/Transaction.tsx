@@ -1,14 +1,12 @@
 import { Address } from "gill";
 import { useState } from "react";
-import { AnimatePresence } from "motion/react";
-
-import Animate from "~/components/animated/Animate";
-import { IconArrowUp } from "~/components/ui/icons/IconArrowUp";
+import { ArrowUp } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 
 import { useWalletStore } from "~/state/wallet";
 
-import { cn } from "~/utils/tw";
-import { abbreviateAddress } from "~/utils/address";
+import { cn } from "~/lib/utils";
+import { abbreviateAddress } from "~/lib/address";
 import { useWalletByName } from "~/hooks/wallet";
 
 import Footer from "./TransactionFooter";
@@ -80,7 +78,7 @@ export default function Transaction({
       >
         <div className="flex flex-row items-center gap-4">
           <span className="relative w-[42px] h-[42px] bg-foreground text-foreground-text rounded-[14px] flex shrink-0 items-center justify-center">
-            <IconArrowUp />
+            <ArrowUp />
             <img
               alt={name}
               src={logoURI}
@@ -121,9 +119,8 @@ export default function Transaction({
       </div>
       <AnimatePresence>
         {isOpen && walletAccount && (
-          <Animate
+          <motion.div
             layout
-            variant="collapse"
             className="w-full overflow-hidden bg-trn-hover rounded-[20px]"
           >
             <div className="flex flex-1 flex-col gap-6 justify-end w-full p-6">
@@ -144,7 +141,7 @@ export default function Transaction({
                 rentCollectorAddress={rentCollectorAddress}
               />
             </div>
-          </Animate>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

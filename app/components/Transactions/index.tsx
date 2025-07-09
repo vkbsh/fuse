@@ -1,5 +1,5 @@
 import { Address } from "gill";
-import { AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 
 import {
   useTokensMeta,
@@ -7,7 +7,6 @@ import {
   useMultisigAccount,
 } from "~/hooks/resources";
 
-import Animate from "~/components/animated/Animate";
 import Transaction from "./Transaction";
 import { MultisigAccount } from "~/program/multisig/codec";
 
@@ -50,13 +49,21 @@ function WithAccount({
 
   const tokensMeta = useTokensMeta(
     Array.from(
-      new Set(transactionList?.map((txData) => txData?.message?.mintAddress)),
+      new Set(
+        transactionList?.map(
+          (txData) => txData?.message?.mintAddress as Address,
+        ) || [],
+      ),
     ),
   );
 
   const transactions = transactionList?.map((txData) => {
     const { mintAddress } = txData?.message || {};
     const tokenMeta = tokensMeta.find((t) => t.data?.address === mintAddress);
+
+    if (!tokenMeta?.data || !txData?.message) {
+      return null;
+    }
 
     return {
       ...txData,
@@ -78,9 +85,7 @@ function WithAccount({
           if (!txData) return null;
 
           return (
-            <Animate
-              layout
-              variant="fadeInList"
+            <motion.div
               key={Number(txData.transactionIndex)}
               transition={{ duration: 0.6, delay: i * 0.06 }}
             >
@@ -95,22 +100,20 @@ function WithAccount({
                 rentCollectorAddress={rentCollectorAddress}
                 transactionIndex={txData.transactionIndex || 0}
               />
-            </Animate>
+            </motion.div>
           );
         })}
         {isLoading && !transactions?.length && (
-          <Animate
-            layout
-            variant="fadeIn"
+          <motion.div
+            key="loading"
             className="absolute top-0 m-auto left-0 right-0 flex w-full h-[68px] justify-center items-center rounded-[20px] text-black-40"
           >
             Loading...
-          </Animate>
+          </motion.div>
         )}
         {isFetched && !transactions?.length && (
-          <Animate
-            layout
-            variant="fadeIn"
+          <motion.div
+            key="empty"
             className="absolute top-0 m-auto left-0 right-0 flex flex-col justify-center items-center"
           >
             <img
@@ -120,7 +123,7 @@ function WithAccount({
             <span className="font-semibold text-lg opacity-40">
               No transactions yet
             </span>
-          </Animate>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

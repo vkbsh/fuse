@@ -1,8 +1,7 @@
-import Animate from "~/components/animated/Animate";
-import { IconChevronDown } from "~/components/ui/icons/IconChevronDown";
+import { motion } from "motion/react";
 
 import { LSWallet } from "~/state/wallet";
-import { abbreviateAddress } from "~/utils/address";
+import { abbreviateAddress } from "~/lib/address";
 
 export default function SelectedMemberKey({
   wallet,
@@ -14,13 +13,12 @@ export default function SelectedMemberKey({
   }
 
   return (
-    <div className="cursor-pointer flex flex-row gap-3 items-center">
-      <Animate
+    <button className="cursor-pointer flex flex-row gap-3 items-center">
+      <motion.div
         key={wallet.address}
-        variant="slideDown"
         className="flex flex-row gap-3 items-center"
       >
-        <span className="flex w-[42px] h-[42px] rounded-full bg-foreground justify-center items-center text-black">
+        <span className="flex rounded-full justify-center items-center">
           <img
             src={wallet.icon}
             alt={wallet.name}
@@ -30,8 +28,7 @@ export default function SelectedMemberKey({
         <span className="font-semibold w-[90px] text-sm text-primary-text">
           {abbreviateAddress(wallet.address)}
         </span>
-      </Animate>
-      <IconChevronDown />
-    </div>
+      </motion.div>
+    </button>
   );
 }

@@ -1,8 +1,9 @@
+import { toast } from "sonner";
 import { UiWalletAccount } from "@wallet-standard/react";
 import { useWalletAccountTransactionSigner } from "@solana/react";
 import { address, Address, assertIsAddress, LAMPORTS_PER_SOL } from "gill";
 
-import Button from "~/components/ui/Button";
+import { Button } from "~/components/ui/button";
 
 import {
   createTransferSolMessage,
@@ -10,9 +11,8 @@ import {
   sendAndConfirmTransferWithProposalApproveMessage,
 } from "~/program/multisig/message";
 
-import { toast } from "~/state/toast";
 import { useWithdrawStore } from "~/state/withdraw";
-import { SOL_MINT_ADDRESS } from "~/service/balance";
+import { SOL_MINT_ADDRESS } from "~/program/multisig/address";
 import { useRefetchTransactions } from "~/hooks/resources";
 
 export default function Review({
@@ -107,12 +107,8 @@ export default function Review({
 
   return (
     <div className="flex flex-row gap-2 justify-center">
-      <Button size="md" onClick={onClose} variant="cancel">
-        Cancel
-      </Button>
-      <Button size="md" variant="secondary" onClick={handleTx}>
-        Initiate
-      </Button>
+      <Button onClick={onClose}>Cancel</Button>
+      <Button onClick={handleTx}>Initiate</Button>
     </div>
   );
 }

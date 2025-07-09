@@ -1,8 +1,9 @@
+import { toast } from "sonner";
 import { address, Address } from "gill";
 import { UiWalletAccount } from "@wallet-standard/react";
 import { useWalletAccountTransactionSigner } from "@solana/react";
 
-import Button from "~/components/ui/Button";
+import { Button } from "~/components/ui/button";
 import { useRefetchTransactions } from "~/hooks/resources";
 
 import {
@@ -15,7 +16,6 @@ import {
 
 import { hasCloudPermission } from "~/program/multisig/utils/member";
 
-import { toast } from "~/state/toast";
 import { useWalletStore } from "~/state/wallet";
 
 export default function TransactionFooter({
@@ -146,47 +146,25 @@ export default function TransactionFooter({
     <>
       {["Cancelled", "Rejected"].includes(status) && (
         <div className="flex flex-row justify-center gap-4">
-          <Button size="md" variant="bordered" onClick={closeAccounts}>
-            Reclaim rent
-          </Button>
+          <Button onClick={closeAccounts}>Reclaim rent</Button>
         </div>
       )}
       {status === "Active" && (
         <div className="flex flex-row justify-center gap-4">
-          <Button
-            size="md"
-            variant="bordered"
-            onClick={rejectHandler}
-            disabled={isRejectDisabled}
-          >
+          <Button onClick={rejectHandler} disabled={isRejectDisabled}>
             Reject
           </Button>
-          <Button
-            size="md"
-            variant="bordered"
-            onClick={approveHandler}
-            disabled={isApproveDisabled}
-          >
+          <Button onClick={approveHandler} disabled={isApproveDisabled}>
             Approve
           </Button>
         </div>
       )}
       {status === "Approved" && (
         <div className="flex flex-row justify-center gap-4">
-          <Button
-            size="md"
-            variant="bordered"
-            onClick={cancelHandler}
-            disabled={isCancelDisabled}
-          >
+          <Button onClick={cancelHandler} disabled={isCancelDisabled}>
             Cancel
           </Button>
-          <Button
-            size="md"
-            variant="bordered"
-            onClick={executeHandler}
-            disabled={isExecuteDisabled}
-          >
+          <Button onClick={executeHandler} disabled={isExecuteDisabled}>
             Execute
           </Button>
         </div>

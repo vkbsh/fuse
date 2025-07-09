@@ -218,7 +218,6 @@ describe("Interacting with Multisig Program", async () => {
       expect(parsedMessage?.amount).equal(
         Math.round(amount * 10 ** fromToken.decimals),
       );
-
       expect(parsedMessage?.toAccount).equal(recipientTokenAddress);
       expect(parsedMessage?.fromAccount).equal(vaultAddress);
       expect(parsedMessage?.mintAddress).equal(fromToken.mint);

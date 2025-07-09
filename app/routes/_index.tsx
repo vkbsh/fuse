@@ -1,13 +1,13 @@
 import { MetaFunction } from "@remix-run/node";
-import { AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 
 import Connect from "~/components/Connect";
-import Toasts from "~/components/ui/Toast";
 import Dashboard from "~/components/Dashboard";
-import Animate from "~/components/animated/Animate";
+import { Toaster } from "~/components/ui/sonner";
 import ConnectWalletDialog from "~/components/ConnectWalletDialog";
 
 import { useWalletStore } from "~/state/wallet";
+import { useAnimationProps } from "~/hooks/animation";
 
 export const meta: MetaFunction = () => {
   return [
@@ -17,30 +17,27 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Index() {
+  const fadeInProps = useAnimationProps("fadeIn");
   const { multisigStorage, walletStorage } = useWalletStore();
 
   return (
     <>
       <AnimatePresence initial={false}>
         {!multisigStorage || !walletStorage ? (
-          <Animate
-            key="connect"
-            variant="fadeIn"
-            className="h-full flex items-center justify-center"
-          >
+          <motion.div key="connect" {...fadeInProps}>
             <Connect />
-          </Animate>
+          </motion.div>
         ) : (
-          <Animate key="dashboard" variant="fadeIn">
+          <motion.div key="dashboard" {...fadeInProps}>
             <Dashboard
               walletName={walletStorage.name}
               multisigAddress={multisigStorage.address}
               vaultAddress={multisigStorage.defaultVault}
             />
-          </Animate>
+          </motion.div>
         )}
       </AnimatePresence>
-      <Toasts />
+      <Toaster />
       <ConnectWalletDialog />
     </>
   );

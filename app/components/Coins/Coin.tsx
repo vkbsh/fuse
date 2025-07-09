@@ -1,6 +1,4 @@
-import AnimateString from "~/components/animated/AnimateString";
-
-import { roundCoin } from "~/utils/amount";
+import { roundCoin } from "~/lib/amount";
 
 export default function Coin({
   token,
@@ -27,16 +25,14 @@ export default function Coin({
             {name === "Wrapped SOL" ? "Solana" : name}
           </span>
           <span className="opacity-40 font-medium flex flex-row gap-1">
-            <span className="flex flex-row">
-              <AnimateString string={roundedAmount} />
-            </span>
+            <span className="flex flex-row">{roundedAmount}</span>
             <span>{symbol}</span>
           </span>
         </span>
       </div>
       <div className="font-medium flex mt-auto">
         <span>$</span>
-        <AnimateString string={roundedUsdAmount} />
+        <span>{roundedUsdAmount}</span>
       </div>
     </div>
   );

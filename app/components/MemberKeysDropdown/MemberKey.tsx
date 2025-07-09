@@ -1,9 +1,12 @@
-import Tooltip from "~/components/ui/Tooltip";
-import { IconConnect } from "~/components/ui/icons/IconConnect";
-import { IconDisconnect } from "~/components/ui/icons/IconDisconnect";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "~/components/ui/tooltip";
+import { CloudOff, Cloud } from "lucide-react";
 
-import { cn } from "~/utils/tw";
-import { abbreviateAddress } from "~/utils/address";
+import { cn } from "~/lib/utils";
+import { abbreviateAddress } from "~/lib/address";
 import { LSWallet, useWalletStore } from "~/state/wallet";
 
 export default function MemberKey({
@@ -39,21 +42,27 @@ export default function MemberKey({
           />
         </div>
         <div className="flex flex-row gap-2">
-          <Tooltip text="Disconnect">
-            <button
-              onClick={() => removewalletStorage(wallet.name)}
-              className="cursor-pointer ml-auto hover:text-status-error duration-500"
-            >
-              <IconDisconnect />
-            </button>
+          <Tooltip>
+            <TooltipTrigger>
+              <button
+                onClick={() => removewalletStorage(wallet.name)}
+                className="cursor-pointer ml-auto hover:text-status-error duration-500"
+              >
+                <CloudOff />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Disconnect</TooltipContent>
           </Tooltip>
-          <Tooltip text="Connect">
-            <button
-              onClick={() => selectWalletName(wallet.name)}
-              className="cursor-pointer ml-auto hover:text-status-success duration-500"
-            >
-              <IconConnect />
-            </button>
+          <Tooltip>
+            <TooltipTrigger>
+              <button
+                onClick={() => selectWalletName(wallet.name)}
+                className="cursor-pointer ml-auto hover:text-status-success duration-500"
+              >
+                <Cloud />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Connect</TooltipContent>
           </Tooltip>
         </div>
       </div>
