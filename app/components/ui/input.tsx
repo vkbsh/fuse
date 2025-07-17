@@ -1,21 +1,41 @@
-import * as React from "react"
+import { motion } from "motion/react";
+import { forwardRef, Ref } from "react";
 
-import { cn } from "~/lib/utils"
+import { cn } from "~/lib/utils";
 
-function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+type InputProps = React.ComponentProps<typeof motion.input> & {
+  error?: boolean;
+  disabled?: boolean;
+  className?: string;
+};
+
+const Input = forwardRef((props: InputProps, ref: Ref<HTMLInputElement>) => {
+  const { className, error, ...rest } = props;
   return (
-    <input
-      type={type}
+    <motion.input
+      ref={ref}
+      type="text"
+      tabIndex={-1}
       data-slot="input"
+      spellCheck="false"
+      autoCorrect="off"
+      autoCapitalize="off"
+      autoComplete="off"
+      autoFocus={false}
+      transition={{ duration: 0.3 }}
+      whileFocus={{
+        borderColor: "var(--color-foreground)",
+      }}
+      animate={{
+        borderColor: error ? "var(--color-destructive)" : "var(--color-ring)",
+      }}
       className={cn(
-        "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
-        "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
-        className
+        "placeholder:text-muted-foreground flex h-9 w-full min-w-0 rounded-md px-3 py-1 border border-ring outline-none disabled:pointer-events-none text-sm",
+        className,
       )}
-      {...props}
+      {...rest}
     />
-  )
-}
+  );
+});
 
-export { Input }
+export { Input };

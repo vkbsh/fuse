@@ -10,6 +10,8 @@ export type Variant =
   | "slideDown"
   | "fadeInList"
   | "slideDropdown"
+  | "fadeInFuseHero"
+  | "fadeInFuseTitle"
   | "slideDownModal";
 
 export const variants: { [key in Variant]: Variants } = {
@@ -29,6 +31,34 @@ export const variants: { [key in Variant]: Variants } = {
       opacity: 0,
     },
   },
+  fadeInFuseHero: {
+    initial: {
+      opacity: 0,
+    },
+    animate: {
+      opacity: 1,
+      scale: [0.9, 1.1, 1],
+      transition: { duration: 1.5 },
+    },
+    exit: {
+      opacity: 0,
+      scale: 0,
+    },
+  },
+  fadeInFuseTitle: {
+    initial: {
+      height: 0,
+      opacity: 0,
+    },
+    animate: {
+      height: "auto",
+      opacity: 1,
+    },
+    exit: {
+      height: 0,
+      opacity: 0,
+    },
+  },
   fadeInList: {
     initial: { opacity: 0 },
     animate: { opacity: 1 },
@@ -45,9 +75,9 @@ export const variants: { [key in Variant]: Variants } = {
     exit: { y: -15, opacity: 0 },
   },
   slideDropdown: {
-    initial: { y: -10, opacity: 0 },
-    animate: { y: 0, opacity: 1 },
-    exit: { y: -10, opacity: 0 },
+    initial: { y: -5, opacity: 0 },
+    animate: { y: 10, opacity: 1 },
+    exit: { y: -5, opacity: 0 },
   },
   counter: {
     initial: { y: -10, opacity: 0 },
@@ -58,9 +88,9 @@ export const variants: { [key in Variant]: Variants } = {
     },
   },
   slideDownModal: {
-    initial: { y: -35, opacity: 0 },
+    initial: { y: -20, opacity: 0 },
     animate: { y: 0, opacity: 1 },
-    exit: { y: -35, opacity: 0 },
+    exit: { y: -20, opacity: 0 },
   },
   collapse: {
     initial: { height: 0, opacity: 0 },
@@ -69,7 +99,7 @@ export const variants: { [key in Variant]: Variants } = {
   },
   blur: {
     initial: { backdropFilter: "blur(0px)" },
-    animate: { backdropFilter: "blur(8px)", transition: { duration: 0.6 } },
+    animate: { backdropFilter: "blur(6px)", transition: { duration: 0.6 } },
     exit: { backdropFilter: "blur(0px)", transition: { duration: 0.3 } },
   },
 };

@@ -142,6 +142,8 @@ export const useTokenInfo = (vaultAddress: Address) => {
     meta.some((m) => m.isLoading) || price.some((p) => p.isLoading);
   const isError = meta.some((m) => m.isError) || price.some((p) => p.isError);
   const isAllFetched = meta.every((m) => m.data) && price.every((p) => p.data);
+  const isFetched =
+    meta.every((m) => m.isFetched) && price.every((p) => p.isFetched);
 
   const data = meta
     .map((m, i) => {
@@ -163,6 +165,7 @@ export const useTokenInfo = (vaultAddress: Address) => {
         programIdAddress: balanceData?.spl?.[tokens[i].mint]?.programIdAddress,
       };
     })
+    // TODO: add .sort((a, b) => {})
     .filter(Boolean) as TokenData[];
 
   const totalAmount = data.reduce(
@@ -174,6 +177,7 @@ export const useTokenInfo = (vaultAddress: Address) => {
   return {
     data,
     isError,
+    isFetched,
     isLoading,
     totalAmount,
     isAllFetched,

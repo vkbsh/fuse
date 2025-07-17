@@ -1,14 +1,16 @@
+import { useState } from "react";
 import { CloudIcon } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 
 import {
   DropdownMenu,
-  DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuContent,
 } from "~/components/ui/dropdown-menu";
 import { Button } from "~/components/ui/button";
+import { DialogTrigger } from "~/components/ui/dialog";
+import ConnectWalletDialog from "~/components/ConnectWalletDialog";
 
-import { useDialog } from "~/state/dialog";
 import { useWalletStore } from "~/state/wallet";
 
 import {
@@ -21,10 +23,10 @@ import MemberKey from "./MemberKey";
 import SelectedMemberKey from "./SelectedMemberKey";
 
 export default function MemberKeysDropdown() {
-  const { onOpenChange } = useDialog("connectWallet");
+  const [isOpen, onOpenChange] = useState(false);
   const { walletHistory, walletStorage, multisigStorage } = useWalletStore();
 
-  const items = [
+  const memberKeys = [
     ...(walletHistory || [])
       .map((wallet) => {
         const members = multisigStorage?.account?.members || [];
@@ -36,7 +38,6 @@ export default function MemberKeysDropdown() {
           name: wallet.name,
         };
       })
-      .sort((a, b) => a.name.localeCompare(b.name))
       .sort((a, b) => {
         const order: { [key: string]: number } = {
           [CLOUD_KEY_LABEL]: 0,
@@ -45,38 +46,49 @@ export default function MemberKeysDropdown() {
 
         return order[a.permissionLabel] - order[b.permissionLabel];
       })
-      .map((wallet) => {
-        const active =
-          wallet.address === walletStorage?.address &&
-          wallet.name === walletStorage?.name;
-
-        return (
-          <DropdownMenuItem
-            key={wallet.address}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <MemberKey
-              wallet={wallet}
-              active={active}
-              permissionLabel={wallet.permissionLabel}
-            />
-          </DropdownMenuItem>
-        );
-      }),
-    <DropdownMenuItem>
-      <Button onClick={() => onOpenChange(true)}>
-        <span>Connect a key</span>
-        <CloudIcon />
-      </Button>
-    </DropdownMenuItem>,
+      .sort((a, b) => a.name.localeCompare(b.name)),
   ];
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger>
+    <DropdownMenu open={isOpen} onOpenChange={onOpenChange} modal={false}>
+      <DropdownMenuTrigger asChild>
         <SelectedMemberKey wallet={walletStorage} />
       </DropdownMenuTrigger>
-      <DropdownMenuContent>{items}</DropdownMenuContent>
+      <DropdownMenuContent align="end" isOpen={isOpen}>
+        <div className="flex flex-col gap-4">
+          <AnimatePresence initial={false}>
+            {memberKeys.map((wallet) => {
+              const active =
+                wallet.address === walletStorage?.address &&
+                wallet.name === walletStorage?.name;
+
+              return (
+                <motion.div
+                  key={wallet.address + wallet.name}
+                  transition={{ duration: 0.3 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <MemberKey
+                    wallet={wallet}
+                    isConnected={active}
+                    permissionLabel={wallet.permissionLabel}
+                  />
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+          <ConnectWalletDialog>
+            <DialogTrigger asChild>
+              <Button variant="secondary">
+                <CloudIcon size={16} />
+                <span>Connect a key</span>
+              </Button>
+            </DialogTrigger>
+          </ConnectWalletDialog>
+        </div>
+      </DropdownMenuContent>
     </DropdownMenu>
   );
 }

@@ -1,35 +1,43 @@
 import { toast } from "sonner";
+import { CircleArrowUp } from "lucide-react";
 import { UiWalletAccount } from "@wallet-standard/react";
 import { useWalletAccountTransactionSigner } from "@solana/react";
 import { address, Address, assertIsAddress, LAMPORTS_PER_SOL } from "gill";
 
 import { Button } from "~/components/ui/button";
+import { TokenData, useRefetchTransactions } from "~/hooks/resources";
 
 import {
   createTransferSolMessage,
   createTransferTokenMessage,
   sendAndConfirmTransferWithProposalApproveMessage,
 } from "~/program/multisig/message";
-
-import { useWithdrawStore } from "~/state/withdraw";
 import { SOL_MINT_ADDRESS } from "~/program/multisig/address";
-import { useRefetchTransactions } from "~/hooks/resources";
 
 export default function Review({
+  token,
+  amount,
+  errors,
   onClose,
+  addError,
+  toAddress,
   vaultAddress,
   walletAccount,
   multisigAddress,
   transactionIndex,
 }: {
+  toAddress: string;
   onClose: () => void;
+  amount: number | null;
   vaultAddress: Address;
+  token: TokenData | null;
   multisigAddress: Address;
   transactionIndex: number;
   walletAccount: UiWalletAccount;
+  errors: { [key: string]: string } | null;
+  addError: (key: string, message: string) => void;
 }) {
   const refetchTransactions = useRefetchTransactions(multisigAddress);
-  const { toAddress, token, amount, addError, reset } = useWithdrawStore();
 
   const signer = useWalletAccountTransactionSigner(
     walletAccount,
@@ -37,45 +45,44 @@ export default function Review({
   );
 
   const handleTx = async () => {
-    if (!toAddress || !token || !amount) {
-      if (!toAddress) {
-        addError("toAddress", "Invalid address");
-      }
-      if (!token) {
-        addError("token", "Invalid token");
-      }
-      if (!amount) {
-        addError("amount", "Invalid amount");
-      }
+    if (!token) {
+      addError("token", "Invalid token");
+    }
 
-      return;
+    if (!amount) {
+      addError("amount", "Invalid amount");
+    } else if (amount <= 0) {
+      addError("amount", "Amount must be greater than 0");
+    } else if (amount > Number(token?.amount)) {
+      addError("amount", "Insufficient balance");
     }
 
     try {
       assertIsAddress(toAddress);
     } catch (e) {
       addError("toAddress", "Invalid address");
+    }
+
+    if (!toAddress || !token || !amount || errors) {
       return;
     }
 
     const nextTxIndex = BigInt(transactionIndex + 1);
     const memberAddress = address(walletAccount.address);
     const creatorAddress = address(walletAccount.address);
-
-    const memo = "auto approve";
     const isSolTransfer = token.mint === SOL_MINT_ADDRESS;
 
     let transactionMessage = null;
 
     if (isSolTransfer) {
       transactionMessage = await createTransferSolMessage({
-        toAddress,
+        toAddress: address(toAddress),
         source: vaultAddress,
         amount: amount * LAMPORTS_PER_SOL,
       });
     } else {
       transactionMessage = await createTransferTokenMessage({
-        toAddress,
+        toAddress: address(toAddress),
         fromToken: token,
         signer: vaultAddress,
         authorityAddress: vaultAddress,
@@ -84,8 +91,8 @@ export default function Review({
     }
 
     try {
-      const signature = await sendAndConfirmTransferWithProposalApproveMessage({
-        memo,
+      await sendAndConfirmTransferWithProposalApproveMessage({
+        memo: "auto approve",
         memberAddress,
         creatorAddress,
         multisigAddress,
@@ -94,21 +101,21 @@ export default function Review({
         transactionIndex: nextTxIndex,
       });
 
-      reset();
-      console.log("TransferWithProposalApprove confirmed: ", signature);
+      await refetchTransactions();
     } catch (e: any) {
       toast.error("Failed to initiate transfer");
       console.error("Error [Initiate, Proposal, Approve]: ", e);
     } finally {
-      await refetchTransactions();
       onClose();
     }
   };
 
   return (
     <div className="flex flex-row gap-2 justify-center">
-      <Button onClick={onClose}>Cancel</Button>
-      <Button onClick={handleTx}>Initiate</Button>
+      <Button variant="secondary" onClick={handleTx}>
+        <CircleArrowUp size={16} />
+        Withdraw
+      </Button>
     </div>
   );
 }

@@ -36,7 +36,7 @@ export default function TransactionProgress({
   const isExecuting = false;
 
   return (
-    <div className="flex flex-row justify-between gap-4 text-sm font-semibold mx-auto">
+    <div className="flex flex-row justify-between gap-4 text-sm mx-auto">
       <AnimatePresence>
         <ProgressStatus
           key="Initiated"
@@ -91,14 +91,10 @@ function ProgressStatus({
 }) {
   return (
     addresses?.[0] && (
-      <div className="w-[130px] flex flex-col items-center gap-5 text-black-30">
-        <span
-          className={cn("text-black-30 duration-500", active && "text-black")}
-        >
-          {icon}
-        </span>
+      <div className="w-[130px] flex flex-col items-center gap-5">
+        <span className="">{icon}</span>
         <div className="flex flex-col gap-1 items-center">
-          <span className="text-black">{label}</span>
+          <span className="">{label}</span>
           <div className="flex flex-row gap-1">
             <div className="flex flex-col">
               <span>With</span>

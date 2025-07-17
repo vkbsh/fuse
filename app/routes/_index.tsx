@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "motion/react";
 import Connect from "~/components/Connect";
 import Dashboard from "~/components/Dashboard";
 import { Toaster } from "~/components/ui/sonner";
-import ConnectWalletDialog from "~/components/ConnectWalletDialog";
 
 import { useWalletStore } from "~/state/wallet";
 import { useAnimationProps } from "~/hooks/animation";
@@ -22,7 +21,7 @@ export default function Index() {
 
   return (
     <>
-      <AnimatePresence initial={false}>
+      <AnimatePresence>
         {!multisigStorage || !walletStorage ? (
           <motion.div key="connect" {...fadeInProps}>
             <Connect />
@@ -38,7 +37,6 @@ export default function Index() {
         )}
       </AnimatePresence>
       <Toaster />
-      <ConnectWalletDialog />
     </>
   );
 }

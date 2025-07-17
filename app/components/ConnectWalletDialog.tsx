@@ -1,7 +1,7 @@
 import { toast } from "sonner";
 import { motion } from "motion/react";
 import { Address, address } from "gill";
-import { useCallback, useEffect, useState } from "react";
+import { ReactNode, useCallback, useEffect, useState } from "react";
 
 import {
   UiWallet,
@@ -10,42 +10,58 @@ import {
   uiWalletAccountsAreSame,
 } from "@wallet-standard/react";
 
-import Dialog from "~/components/Dialog";
+import { Dialog, DialogContent } from "~/components/ui/dialog";
 
-import { useDialog } from "~/state/dialog";
 import { useWalletStore } from "~/state/wallet";
 import { useMultisigWallets } from "~/hooks/resources";
 import { SOLANA_SIGN_AND_SEND_TRANSACTION_FEATURE } from "~/hooks/wallet";
 
 import { abbreviateAddress } from "~/lib/address";
 
-export default function ConnectWalletDialog() {
-  const { onOpenChange } = useDialog("connectWallet");
+export default function ConnectWalletDialog({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const { walletHistory } = useWalletStore();
 
   const wallets = useWallets();
   const supportedWallets = wallets.filter((w) =>
     w.features.includes(SOLANA_SIGN_AND_SEND_TRANSACTION_FEATURE),
   );
 
+  const [isOpen, onOpenChange] = useState(false);
+
   return (
-    <Dialog title="Select wallet" name="connectWallet">
-      <div className="flex flex-col gap-6 w-60">
-        <div className="flex flex-col gap-6">
-          {!supportedWallets.length && (
-            // TODO: Animate
-            <div className="flex justify-center items-center py-8">
-              <span>No supported wallets found</span>
-            </div>
-          )}
-          {supportedWallets.map((wallet) => (
-            <WalletOption
-              wallet={wallet}
-              key={wallet.name}
-              onOpenChange={onOpenChange}
-            />
-          ))}
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      {children}
+      <DialogContent isOpen={isOpen} title="Select wallet">
+        <div className="flex flex-col gap-6 w-60">
+          <div className="flex flex-col gap-6">
+            {!supportedWallets.length && (
+              // TODO: Animate
+              <div className="flex justify-center items-center py-8">
+                <span>No supported wallets found</span>
+              </div>
+            )}
+            {supportedWallets
+              .filter(
+                (w) =>
+                  !walletHistory.some(
+                    (wHistory) =>
+                      wHistory.name.toLowerCase() === w.name.toLowerCase(),
+                  ),
+              )
+              .map((wallet) => (
+                <WalletOption
+                  wallet={wallet}
+                  key={wallet.name}
+                  onOpenChange={onOpenChange}
+                />
+              ))}
+          </div>
         </div>
-      </div>
+      </DialogContent>
     </Dialog>
   );
 }
@@ -66,7 +82,7 @@ function WalletOption({
       const existingAccounts = [...wallet.accounts];
       const nextAccounts = await connect();
 
-      //     // Try to choose the first never-before-seen account.
+      // Try to choose the first never-before-seen account.
       for (const nextAccount of nextAccounts) {
         if (
           !existingAccounts.some((existingAccount) =>
@@ -102,7 +118,10 @@ function WalletOption({
   }
 
   return (
-    <>
+    <button
+      onClick={handleConnectClick}
+      className="relative flex flex-row items-center gap-4"
+    >
       {isConnectionInitiated && accountAddress && (
         <ConnectMultisig
           walletIcon={wallet.icon}
@@ -111,16 +130,11 @@ function WalletOption({
           onClose={() => onOpenChange(false)}
         />
       )}
-      <button
-        onClick={handleConnectClick}
-        className="cursor-pointer flex flex-row items-center gap-6"
-      >
-        <span className="w-[40px] h-[40px] rounded-[13px] bg-white flex items-center justify-center">
-          <img width={24} height={24} src={wallet.icon} alt={wallet.name} />
-        </span>
-        <span className="font-semibold text-base">{wallet.name}</span>
-      </button>
-    </>
+      <span className="w-[30px] h-[30px] flex items-center justify-center rounded-full overflow-hidden">
+        <img src={wallet.icon} alt={wallet.name} />
+      </span>
+      <span className="text-base">{wallet.name}</span>
+    </button>
   );
 }
 
@@ -166,6 +180,17 @@ function ConnectMultisig({
       onClose();
     }
   }, [multisig, isFetched, accountAddress, multisigWallets]);
+
+  if (isLoading) {
+    return (
+      <motion.div
+        key={walletName}
+        className="absolute flex flex-row items-center gap-6"
+      >
+        <span className="h-[40px]">Connecting...</span>
+      </motion.div>
+    );
+  }
 
   return null;
 }

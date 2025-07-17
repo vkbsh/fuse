@@ -6,14 +6,15 @@ import {
   ScrollRestoration,
 } from "@remix-run/react";
 import superjson from "superjson";
-import { ReactNode, useMemo } from "react";
 import { LinksFunction } from "@remix-run/node";
+import { ReactNode, useMemo, useEffect } from "react";
 import { QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 
-import ThemeProvider from "~/components/ThemeProvider";
+import { useThemeStore } from "~/state/theme";
+
 import "./global.css";
 
 export const links: LinksFunction = () => [
@@ -50,17 +51,28 @@ export default function App() {
         },
       }}
     >
-      <ThemeProvider>
-        <Outlet />
-      </ThemeProvider>
+      <Outlet />
       <ReactQueryDevtools initialIsOpen={false} />
     </PersistQueryClientProvider>
   );
 }
 
 export function Layout({ children }: { children: ReactNode }) {
+  const { theme, setTheme } = useThemeStore();
+
+  useEffect(() => {
+    if (!theme || theme === "system") {
+      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
+        .matches
+        ? "dark"
+        : "light";
+
+      setTheme(systemTheme);
+    }
+  }, [theme]);
+
   return (
-    <html lang="en">
+    <html lang="en" className={theme}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />

@@ -1,22 +1,31 @@
 import { Address } from "gill";
-import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useDebounce } from "@uidotdev/usehooks";
 
+import Field from "~/components/Field";
 import { Button } from "~/components/ui/button";
-import SelectToken from "~/components/SelectToken";
 
-import { useTokenPrice } from "~/hooks/resources";
-import { useWithdrawStore } from "~/state/withdraw";
+import { TokenData, useTokenPrice } from "~/hooks/resources";
 import { getRoundedToken, getRoundedSOL } from "~/lib/amount";
 
-const EnterAmount = ({ vaultAddress }: { vaultAddress: Address }) => {
-  const { set, amount, token, removeError, errors } = useWithdrawStore();
+const EnterAmount = ({
+  token,
+  error,
+  amount,
+  setAmount,
+  removeError,
+}: {
+  error?: string;
+  amount: number | null;
+  token: TokenData | null;
+  setAmount: (amount: number) => void;
+  removeError: (key: string) => void;
+}) => {
   const [value, setValue] = useState(amount ? amount + "" : "");
   const debounceValue = useDebounce(value, 700);
 
   const { data: price } = useTokenPrice(token?.mint as Address) || {};
-  const calculatedAmount = !errors?.amount
+  const calculatedAmount = !error
     ? Number(debounceValue) * Number(price || 0)
     : 0;
 
@@ -26,8 +35,8 @@ const EnterAmount = ({ vaultAddress }: { vaultAddress: Address }) => {
       ? getRoundedSOL(tokenAmount)
       : getRoundedToken(tokenAmount);
 
-  const validateInput = (value: string) => {
-    const regex = /^\d+([.,]\d*)?$/;
+  const parseInput = (value: string) => {
+    const regex = /^(0|[1-9]\d*)(\.\d*)?$/;
 
     if (!regex.test(value)) {
       return value.slice(0, -1).replace(",", ".");
@@ -36,58 +45,41 @@ const EnterAmount = ({ vaultAddress }: { vaultAddress: Address }) => {
     return value.replace(",", ".");
   };
 
-  const handleFocus = () => removeError("amount");
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const validatedValue = validateInput(e.target.value);
+    const validatedValue = parseInput(e.target.value);
 
     setValue(validatedValue);
+    setAmount(Number(validatedValue));
   };
 
   const setMax = () => {
     if (!tokenAmount) return;
 
     setValue(tokenAmount + "");
+    setAmount(tokenAmount);
   };
-
-  useEffect(() => {
-    removeError("amount");
-
-    if (value) {
-      set("amount", Number(value));
-    }
-  }, [value]);
 
   return (
     <>
-      <div className="relative flex flex-row gap-4 items-center justify-between">
-        <SelectToken vaultAddress={vaultAddress} />
-        <label htmlFor="amount" className="cursor-pointer flex flex-row w-full">
-          <div className="relative overflow-visible flex flex-row gap-1.5 items-center justify-between border rounded-2xl border-white-40 px-4 py-1">
-            <input
-              value={value}
-              autoComplete="off"
-              placeholder="0.00"
-              onFocus={handleFocus}
-              onChange={handleChange}
-              className="w-full text-2xl outline-0"
-            />
-            {errors?.amount && (
-              <motion.div
-                key="error-amount"
-                className="absolute w-full text-xs text-status-error -bottom-6 text-nowrap"
-              >
-                {errors?.amount}
-              </motion.div>
-            )}
-          </div>
-        </label>
-        <Button onClick={setMax}>MAX</Button>
+      <div className="flex flex-row gap-4 items-end justify-between">
+        <Field
+          value={value}
+          error={error}
+          label="Amount"
+          placeholder={`0.00 ${token?.symbol}`}
+          onChange={handleChange}
+          className="w-full  outline-0"
+          onFocus={() => removeError("amount")}
+        />
+        <Button variant="secondary" onClick={setMax}>
+          MAX
+        </Button>
       </div>
-      <div className="flex flex-row gap-2 items-center justify-between mt-2 text-white-60">
-        <div className="text-base flex">
-          $<span>{calculatedAmount?.toFixed(2)}</span>
-        </div>
-        <span>{maxAmountLabel}</span>
+      <div className="flex flex-row items-center justify-between text-sm cursor-default">
+        <span>${calculatedAmount?.toFixed(2)}</span>
+        <span>
+          {maxAmountLabel} {token?.symbol}
+        </span>
       </div>
     </>
   );

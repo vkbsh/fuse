@@ -1,105 +1,146 @@
 import { Address } from "gill";
-import { useEffect } from "react";
-import { ChevronDown } from "lucide-react";
+import { forwardRef, Ref, useEffect, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 
+import { Input } from "~/components/ui/input";
 import {
   DropdownMenu,
-  DropdownMenuItem,
-  DropdownMenuContent,
   DropdownMenuTrigger,
+  DropdownMenuContent,
 } from "~/components/ui/dropdown-menu";
 
-import { useWithdrawStore } from "~/state/withdraw";
-import { useTokenInfo, TokenData } from "~/hooks/resources";
+import { TokenData } from "~/hooks/resources";
+import { abbreviateAddress } from "~/lib/address";
 import { getRoundedSOL, getRoundedToken } from "~/lib/amount";
 
 export default function SelectToken({
+  token,
+  tokens,
+  setToken,
   vaultAddress,
 }: {
+  tokens: TokenData[];
   vaultAddress: Address;
+  token?: TokenData | null;
+  setToken: (token: TokenData) => void;
 }) {
-  const { set, token } = useWithdrawStore();
-  const { data: tokensInfo } = useTokenInfo(vaultAddress);
-
-  const items = tokensInfo;
-  const selected = token || tokensInfo?.[0];
+  const [isOpen, onOpenChange] = useState(false);
+  const selected = token || tokens?.[0];
 
   useEffect(() => {
-    if (selected?.address !== token?.ata) {
-      set("token", selected);
-    }
+    if (!selected) return;
+
+    setToken(selected);
   }, [selected]);
 
-  const itemsComponent = items.map((item) => {
-    if (!item) return null;
-
-    const amount =
-      item?.symbol?.toLocaleLowerCase() === "sol"
-        ? getRoundedSOL(item.amount)
-        : getRoundedToken(item.amount);
-    const name = item.name === "Wrapped SOL" ? "Solana" : item.name;
-
-    return (
-      <DropdownMenuItem key={item.mint}>
-        <div
-          onClick={() => set("token", item)}
-          className="flex items-center cursor-pointer w-[300px] h-[46px] p-4 rounded-[14px]"
-        >
-          <div className="flex flex-row items-center justify-between  w-full">
-            <div className="flex flex-row items-center gap-2">
-              <img
-                src={item.logoURI}
-                alt={item.name}
-                className="w-7 h-7 rounded-full"
-              />
-              <span className="font-semibold text-base max-w-28 truncate">
-                {name}
-              </span>
-            </div>
-            <div className="flex flex-row gap-1">
-              <div className="uppercase font-medium text-sm max-w-32 truncate">
-                {amount}
-              </div>
-              <span>{item.symbol}</span>
-            </div>
-          </div>
-        </div>
-      </DropdownMenuItem>
-    );
-  });
-
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger>
-        <SelectedToken token={selected} />
+    <DropdownMenu open={isOpen} onOpenChange={onOpenChange}>
+      <DropdownMenuTrigger asChild>
+        <SelectedToken token={selected} fromAddress={vaultAddress} />
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
-        side="bottom"
-        className="max-h-[242px]"
+        isOpen={isOpen}
+        className="flex flex-col gap-4 max-h-[190px] scroll-smooth overflow-y-auto scrollbar-hidden"
       >
-        {itemsComponent}
+        <AnimatePresence initial={false}>
+          {tokens.map((item) => {
+            if (!item) return null;
+
+            const amount =
+              item?.symbol?.toLocaleLowerCase() === "sol"
+                ? getRoundedSOL(item.amount)
+                : getRoundedToken(item.amount);
+            const name = item.name === "Wrapped SOL" ? "Solana" : item.name;
+
+            return (
+              <motion.div
+                key={item.mint}
+                transition={{ duration: 0.4 }}
+                exit={{ x: -8, filter: "blur(3px)" }}
+                initial={{
+                  x: -8,
+                  filter: "blur(3px)",
+                  backgroundColor: "var(--color-background)",
+                }}
+                whileInView={{
+                  x: 0,
+                  filter: "blur(0px)",
+                }}
+                onClick={() => setToken(item)}
+                className="flex items-center rounded-md cursor-default"
+              >
+                <div className="flex flex-row gap-2 items-center justify-between w-full">
+                  <div className="flex flex-row items-center gap-2">
+                    <img
+                      alt={item.name}
+                      src={item.logoURI}
+                      className="w-7 h-7 rounded-full"
+                    />
+                    <span className="max-w-18 truncate">{name}</span>
+                  </div>
+                  <div className="flex flex-row gap-1">
+                    <div className="uppercase font-medium max-w-22 truncate">
+                      {amount}
+                    </div>
+                    <span>{item.symbol}</span>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
 
-const SelectedToken = ({ token }: { token: TokenData | null }) => {
-  if (!token) return null;
+const SelectedToken = forwardRef(
+  (
+    props: {
+      token: TokenData;
+      fromAddress: Address;
+    },
+    ref: Ref<HTMLInputElement>,
+  ) => {
+    const { token, fromAddress, ...rest } = props;
 
-  return (
-    <div className="relative cursor-pointer px-2 pr-3.5 min-w-[130px] h-[40px] bg-white-20 flex flex-row gap-2 items-center rounded-full text-white border border-white-5">
-      <img
-        alt={token?.name}
-        src={token?.logoURI}
-        className="w-7 h-7 rounded-full"
-      />
-      <span className="uppercase font-semibold text-base ">
-        {token?.symbol}
-      </span>
-      <span className="text-white-30 ml-auto">
-        <ChevronDown />
-      </span>
-    </div>
-  );
-};
+    return (
+      <div
+        ref={ref}
+        {...rest}
+        className="relative flex flex-row gap-2 items-center w-full"
+      >
+        <div className="absolute left-3 top-0 bottom-0 my-auto flex items-center">
+          <AnimatePresence initial={false} mode="wait">
+            <motion.img
+              key={token?.logoURI}
+              initial={{
+                rotateY: -90,
+                filter: "blur(4px)",
+              }}
+              animate={{
+                rotateY: 0,
+                filter: "blur(0px)",
+              }}
+              exit={{
+                rotateY: -90,
+                filter: "blur(4px)",
+              }}
+              transition={{ duration: 0.15 }}
+              alt={token?.name}
+              src={token?.logoURI}
+              className="w-7 h-7 rounded-full"
+            />
+          </AnimatePresence>
+        </div>
+        <Input
+          disabled
+          tabIndex={-2}
+          className="pl-12"
+          value={abbreviateAddress(fromAddress)}
+        />
+      </div>
+    );
+  },
+);

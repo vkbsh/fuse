@@ -146,25 +146,43 @@ export default function TransactionFooter({
     <>
       {["Cancelled", "Rejected"].includes(status) && (
         <div className="flex flex-row justify-center gap-4">
-          <Button onClick={closeAccounts}>Reclaim rent</Button>
+          <Button variant="secondary" onClick={closeAccounts}>
+            Reclaim rent
+          </Button>
         </div>
       )}
       {status === "Active" && (
         <div className="flex flex-row justify-center gap-4">
-          <Button onClick={rejectHandler} disabled={isRejectDisabled}>
+          <Button
+            variant="secondary"
+            onClick={rejectHandler}
+            disabled={isRejectDisabled}
+          >
             Reject
           </Button>
-          <Button onClick={approveHandler} disabled={isApproveDisabled}>
+          <Button
+            variant="secondary"
+            onClick={approveHandler}
+            disabled={isApproveDisabled}
+          >
             Approve
           </Button>
         </div>
       )}
       {status === "Approved" && (
         <div className="flex flex-row justify-center gap-4">
-          <Button onClick={cancelHandler} disabled={isCancelDisabled}>
+          <Button
+            variant="secondary"
+            onClick={cancelHandler}
+            disabled={isCancelDisabled}
+          >
             Cancel
           </Button>
-          <Button onClick={executeHandler} disabled={isExecuteDisabled}>
+          <Button
+            variant="secondary"
+            onClick={executeHandler}
+            disabled={isExecuteDisabled}
+          >
             Execute
           </Button>
         </div>

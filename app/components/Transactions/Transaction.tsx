@@ -58,72 +58,79 @@ export default function Transaction({
     },
   );
 
+  // TODO: Animate with motion
   const statusColor = cn({
-    "text-status-primary": status === "Active",
-    "text-status-warning": status === "Approved",
-    "text-status-success": status === "Executed",
-    "text-status-error": ["Cancelled", "Rejected"].includes(status),
+    "text-success": status === "Active",
+    "text-warning": status === "Approved",
+    "text-destructive": ["Cancelled", "Rejected"].includes(status),
   });
 
   return (
-    <div className="flex flex-col items-center justify-between gap-2 select-none">
-      <div
-        onClick={() => onOpenChange(!isOpen)}
-        className={cn(
-          "flex flex-row items-center justify-between w-full rounded-[20px] p-3 cursor-pointer h-[72px] bg-white  hover:bg-trn-hover duration-500",
-          {
-            "bg-trn-hover": isOpen,
-          },
-        )}
-      >
-        <div className="flex flex-row items-center gap-4">
-          <span className="relative w-[42px] h-[42px] bg-foreground text-foreground-text rounded-[14px] flex shrink-0 items-center justify-center">
-            <ArrowUp />
-            <img
-              alt={name}
-              src={logoURI}
-              className="w-[20px] h-[20px] rounded-full absolute -top-1 -right-1"
-            />
-          </span>
-          <span className="flex items-start flex-col gap-0">
-            <span className="capitalize font-semibold text-base">Send</span>
-            <span className="flex gap-1 text-sm font-medium">
-              {amount?.toFixed(9).replace(/\.?0+$/, "")}{" "}
-              <span className="text-foreground-text  uppercase">
-                {symbol?.toLowerCase()}
+    <div className="flex flex-col items-center justify-between gap-2 rounded-xl">
+      <AnimatePresence initial={false}>
+        <motion.div
+          initial={{
+            x: -10,
+            filter: "blur(6px)",
+            backgroundColor: isOpen
+              ? "var(--color-ring)"
+              : "var(--color-background)",
+          }}
+          whileInView={{
+            x: 0,
+            filter: "blur(0px)",
+          }}
+          exit={{
+            x: -10,
+            filter: "blur(6px)",
+          }}
+          transition={{ duration: 0.4 }}
+          onClick={() => onOpenChange(!isOpen)}
+          className="w-full flex items-center justify-between rounded-xl p-3"
+        >
+          <div className="flex flex-row items-center gap-4">
+            <span className="relative w-12 h-12 rounded-xl border border-ring  flex shrink-0 items-center justify-center">
+              <ArrowUp />
+              <img
+                alt={name}
+                src={logoURI}
+                className="w-5 h-5 rounded-full absolute -top-1 -right-1"
+              />
+            </span>
+            <span className="flex items-start flex-col gap-0">
+              <span className="capitalize text-base">Send</span>
+              <span className="flex gap-1 text-sm font-medium">
+                {amount?.toFixed(9).replace(/\.?0+$/, "")}{" "}
+                <span className="uppercase">{symbol?.toLowerCase()}</span>
               </span>
             </span>
-          </span>
-        </div>
-        <div className="w-full flex flex-row mt-auto items-end justify-between gap-2 max-w-[300px]">
-          <div className="font-medium text-sm flex flex-row gap-2">
-            <span className="text-foreground-text">To</span>
-            <span className="font-semibold">
-              {abbreviateAddress(toAccount)}
+          </div>
+          <div className="w-full flex flex-row mt-auto items-end justify-between gap-2 max-w-[300px]">
+            <div className="font-medium text-sm flex flex-row gap-2">
+              <span className="">To</span>
+              <span>{abbreviateAddress(toAccount)}</span>
+            </div>
+            {timestamp && (
+              <span className="font-medium text-sm">{formattedDate}</span>
+            )}
+            <span
+              className={cn(statusColor, "w-18 text-sm text-right capitalize")}
+            >
+              {status === "Approved" ? "Ready" : status}
             </span>
           </div>
-          {timestamp && (
-            <span className="text-foreground-text font-medium text-sm">
-              {formattedDate}
-            </span>
-          )}
-          <span
-            className={cn(
-              statusColor,
-              "w-18 font-semibold text-sm text-right capitalize",
-            )}
-          >
-            {status === "Approved" ? "Ready" : status}
-          </span>
-        </div>
-      </div>
-      <AnimatePresence>
+        </motion.div>
+      </AnimatePresence>
+      <AnimatePresence mode="wait">
         {isOpen && walletAccount && (
           <motion.div
-            layout
-            className="w-full overflow-hidden bg-trn-hover rounded-[20px]"
+            initial={{ height: 0 }}
+            animate={{ height: "auto" }}
+            exit={{ height: 0 }}
+            transition={{ duration: 0.4 }}
+            className="w-full overflow-hidden !bg-background"
           >
-            <div className="flex flex-1 flex-col gap-6 justify-end w-full p-6">
+            <div className="flex flex-1 flex-col p-6 justify-end w-full">
               <Progress
                 status={status}
                 approved={approved}

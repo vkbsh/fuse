@@ -87,7 +87,10 @@ function WithAccount({
           return (
             <motion.div
               key={Number(txData.transactionIndex)}
-              transition={{ duration: 0.6, delay: i * 0.06 }}
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              transition={{ duration: 0.4, delay: i * 0.06 }}
             >
               <Transaction
                 status={txData.status}
@@ -106,23 +109,29 @@ function WithAccount({
         {isLoading && !transactions?.length && (
           <motion.div
             key="loading"
-            className="absolute top-0 m-auto left-0 right-0 flex w-full h-[68px] justify-center items-center rounded-[20px] text-black-40"
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            transition={{ duration: 0.6 }}
+            className="absolute top-0 m-auto left-0 right-0 flex w-full h-[68px] justify-center items-center rounded-[20px]"
           >
-            Loading...
+            TODO: Sceleton
           </motion.div>
         )}
         {isFetched && !transactions?.length && (
           <motion.div
             key="empty"
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            transition={{ duration: 0.6 }}
             className="absolute top-0 m-auto left-0 right-0 flex flex-col justify-center items-center"
           >
             <img
               alt="No transactions yet"
               src="/empty-transaction-placeholder.svg"
             />
-            <span className="font-semibold text-lg opacity-40">
-              No transactions yet
-            </span>
+            <span className="text-lg">No transactions yet</span>
           </motion.div>
         )}
       </AnimatePresence>

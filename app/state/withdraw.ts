@@ -9,7 +9,7 @@ type WithdrawState = {
   token: TokenData | null;
   memo: string | null;
   amount: number | null;
-  toAddress: Address | null;
+  toAddress: Address | string;
   errors: { [key: string]: string } | null;
   addError: (key: string, message: string) => void;
   removeError: (key: Keys) => void;
@@ -27,15 +27,15 @@ export const useWithdrawStore = create<WithdrawStore>((set) => ({
   memo: null,
   token: null,
   amount: null,
-  toAddress: null,
+  toAddress: "",
   reset: () =>
     set(() => ({
       amount: 0,
       memo: null,
       token: null,
-      toAddress: null,
-      fromAddress: null,
+      toAddress: "",
       errors: null,
+      fromAddress: null,
     })),
   set: (key, value) => set(() => ({ [key]: value })),
   addError: (key: string, message: string) =>
