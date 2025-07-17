@@ -1,6 +1,6 @@
 # Fuse - Web Client
 
-![Fuse](./public/images/fuse.svg)
+![Fuse](./public/fuse.svg)
 
 ## Description
 
