@@ -3,9 +3,6 @@
   "type": "module",
   "private": true,
   "version": "0.0.1",
-  "engines": {
-    "node": ">=22.17.0"
-  },
   "scripts": {
     "test": "vitest",
     "dev": "remix vite:dev",
