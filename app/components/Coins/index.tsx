@@ -14,8 +14,8 @@ import { useTokenInfo } from "~/hooks/resources";
 import { hasCloudPermission } from "~/program/multisig/utils/member";
 
 import Coin from "./Coin";
-import WithdrawDialog from "../WithdrawDialog";
-import { DialogTrigger } from "../ui/dialog";
+import WithdrawDialog from "~/components/WithdrawDialog";
+import { DialogTrigger } from "~/components/ui/dialog";
 
 export default function Coins({ vaultAddress }: { vaultAddress: Address }) {
   const container = useRef(null);
