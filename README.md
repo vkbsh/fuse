@@ -1,6 +1,6 @@
 # Fuse - Web Client
 
-![Fuse](./public/images/SDNA-fuse.jpg)
+![Fuse](./public/images/fuse.svg)
 
 ## Description
 
@@ -12,7 +12,7 @@ Whether you're a developer, crypto enthusiast, or Fuse user, this project offers
 
 This template is deployed to the following providers:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvkbsh%2Fdna-editor-demo)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvkbsh%2Ffuse)
 
 ^^^ make sure repo is public ^^^
 
