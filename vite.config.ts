@@ -23,9 +23,4 @@ export default defineConfig({
     tsconfigPaths(),
     tailwindcss(),
   ],
-  resolve: {
-    alias: {
-      "~/": `${process.cwd()}/app/`,
-    },
-  },
 });
