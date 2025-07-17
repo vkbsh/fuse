@@ -47,29 +47,29 @@ function DropdownMenuContent({
   return (
     <AnimatePresence initial={false}>
       {isOpen && (
-        <DropdownMenuPortal forceMount>
-          <DropdownMenuPrimitive.Content
-            asChild
-            align={align}
-            sideOffset={sideOffset}
-            data-slot="dropdown-menu-content"
-            className={cn(
-              "bg-popover p-4 z-50 rounded-md text-popover-foreground select-none",
-              className,
-            )}
-            {...props}
+        // <DropdownMenuPortal forceMount>
+        <DropdownMenuPrimitive.Content
+          asChild
+          align={align}
+          sideOffset={sideOffset}
+          data-slot="dropdown-menu-content"
+          className={cn(
+            "bg-popover p-4 z-50 rounded-md text-popover-foreground select-none",
+            className,
+          )}
+          {...props}
+        >
+          <motion.div
+            initial={{ y: -5, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -5, opacity: 0 }}
+            transition={{ duration: 0.4 }}
           >
-            <motion.div
-              initial={{ y: -5, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -5, opacity: 0 }}
-              transition={{ duration: 0.4 }}
-            >
-              <ShineBorder />
-              {children}
-            </motion.div>
-          </DropdownMenuPrimitive.Content>
-        </DropdownMenuPortal>
+            <ShineBorder />
+            {children}
+          </motion.div>
+        </DropdownMenuPrimitive.Content>
+        // </DropdownMenuPortal>
       )}
     </AnimatePresence>
   );

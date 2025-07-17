@@ -16,7 +16,10 @@ export default function Dashboard({
   return (
     <>
       <AutoReconnectWallet name={walletName} />
-      <div className="h-screen w-full max-w-[1280px] m-auto p-6 flex flex-col gap-10 justify-between select-none">
+      <div
+        id="dashboard"
+        className="h-screen w-full max-w-[1280px] m-auto p-6 flex flex-col gap-10 justify-between select-none"
+      >
         <Header vaultAddress={vaultAddress} />
         <Main vaultAddress={vaultAddress} multisigAddress={multisigAddress} />
       </div>

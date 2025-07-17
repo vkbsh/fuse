@@ -21,21 +21,15 @@ export default function Index() {
 
   return (
     <>
-      <AnimatePresence>
-        {!multisigStorage || !walletStorage ? (
-          <motion.div key="connect" {...fadeInProps}>
-            <Connect />
-          </motion.div>
-        ) : (
-          <motion.div key="dashboard" {...fadeInProps}>
-            <Dashboard
-              walletName={walletStorage.name}
-              multisigAddress={multisigStorage.address}
-              vaultAddress={multisigStorage.defaultVault}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {!multisigStorage || !walletStorage ? (
+        <Connect />
+      ) : (
+        <Dashboard
+          walletName={walletStorage.name}
+          multisigAddress={multisigStorage.address}
+          vaultAddress={multisigStorage.defaultVault}
+        />
+      )}
       <Toaster />
     </>
   );
