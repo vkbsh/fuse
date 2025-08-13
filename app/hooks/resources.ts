@@ -11,6 +11,7 @@ import { getAmount } from "~/lib/amount";
 import { getBalance } from "~/service/balance";
 import { FromToken } from "~/program/multisig/message";
 import { fetchTokenMeta, fetchTokenPrice, TokenMeta } from "~/service/token";
+import { useEffect } from "react";
 
 export type TokenData = TokenMeta &
   FromToken & {
@@ -70,9 +71,8 @@ export function useTransactions(
     enabled: !!multisigAddress && !!staleTransactionIndex,
     queryKey: [queryKeys.transaction, multisigAddress],
     staleTime: staleTimeByQueryKey.transaction,
-    queryFn: async () => {
-      return getTransactionsByMultisig(multisigAddress, staleTransactionIndex);
-    },
+    queryFn: async () =>
+      getTransactionsByMultisig(multisigAddress, staleTransactionIndex),
   });
 }
 
@@ -91,11 +91,7 @@ export function useTokenPrice(mint: Address) {
     enabled: !!mint,
     queryKey: [queryKeys.tokenPrice, mint],
     staleTime: staleTimeByQueryKey.tokenPrice,
-    queryFn: async () => {
-      const tokenPrice = await fetchTokenPrice(mint);
-
-      return tokenPrice;
-    },
+    queryFn: async () => await fetchTokenPrice(mint),
   });
 }
 
@@ -207,4 +203,17 @@ export function refetchBalance(vaultAddress: Address) {
       }),
     ]);
   };
+}
+
+export function useQueryReset() {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    queryClient.removeQueries({
+      type: "all",
+      predicate: (query) => {
+        return query.queryKey[0] !== queryKeys.tokenMeta;
+      },
+    });
+  }, []);
 }

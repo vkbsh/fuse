@@ -9,48 +9,43 @@ export default function Coin({ token }: { token: TokenData }) {
   const roundedUsdAmount = roundCoin("usd", Number(usdAmount)) + "";
 
   return (
-    <AnimatePresence initial={false}>
-      <motion.div
-        initial={{
-          x: -15,
-          filter: "blur(6px)",
-          opacity: 0,
-          backgroundColor: "var(--color-background)",
-        }}
-        whileInView={{
-          x: 0,
-          opacity: 1,
-          filter: "blur(0px)",
-        }}
-        exit={{
-          x: -15,
-          filter: "blur(6px)",
-        }}
-        viewport={{ margin: "-100px 0px 100px 0px" }}
-        transition={{ duration: 0.4 }}
-        className="flex items-center justify-between rounded-xl p-3"
-      >
-        <div className="flex flex-row items-center gap-6">
+    <AnimatePresence initial={false} mode="popLayout">
+      <div className="flex items-center justify-between rounded-2xl p-3">
+        <div className="flex flex-row items-center gap-4">
           <img
-            src={logoURI}
             alt={name}
+            src={logoURI}
             className="w-[42px] h-[42px] shrink-0 rounded-full"
           />
           <span className="flex flex-col gap-0">
-            <span className="text-left">
+            <span className="text-left font-semibold">
               {name === "Wrapped SOL" ? "Solana" : name}
             </span>
-            <span className="font-medium flex flex-row gap-1">
-              <span className="flex flex-row">{roundedAmount}</span>
-              <span>{symbol}</span>
-            </span>
+
+            <motion.span
+              key={roundedAmount}
+              transition={{ duration: 0.2 }}
+              initial={{ filter: "blur(6px)" }}
+              animate={{ filter: "blur(0px)" }}
+              exit={{ filter: "blur(6px)" }}
+              className="text-sm"
+            >
+              {`${roundedAmount} ${symbol}`}
+            </motion.span>
           </span>
         </div>
-        <div className="font-medium flex mt-auto">
-          <span>$</span>
-          <span>{roundedUsdAmount}</span>
-        </div>
-      </motion.div>
+
+        <motion.span
+          key={roundedUsdAmount}
+          transition={{ duration: 0.2 }}
+          initial={{ filter: "blur(6px)" }}
+          animate={{ filter: "blur(0px)" }}
+          exit={{ filter: "blur(6px)" }}
+          className="font-medium flex mt-auto"
+        >
+          $ {roundedUsdAmount}
+        </motion.span>
+      </div>
     </AnimatePresence>
   );
 }

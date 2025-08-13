@@ -23,27 +23,27 @@ export default function MemberKey({
   const { removewalletStorage, selectWalletName } = useWalletStore();
 
   return (
-    <div className="flex flex-col gap-2">
-      <AnimatePresence initial={false}>
+    <div className="flex flex-col">
+      <AnimatePresence initial={false} mode="wait">
         <motion.span
           key={permissionLabel}
           initial={{ opacity: 0, rotateX: 90 }}
           animate={{ opacity: 1, rotateX: 0 }}
           exit={{ opacity: 0, rotateX: -90 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.2 }}
           className="text-sm"
         >
           {permissionLabel}
         </motion.span>
       </AnimatePresence>
-      <div className="flex flex-row items-center">
-        <AnimatePresence initial={false}>
+      <motion.div className="flex flex-row items-center">
+        <AnimatePresence initial={false} mode="wait">
           <motion.span
             key={wallet.address}
             initial={{ opacity: 0, rotateX: 90 }}
             animate={{ opacity: 1, rotateX: 0 }}
             exit={{ opacity: 0, rotateX: -90 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.2 }}
             className="w-32 flex flex-row gap-2 items-center text-sm"
           >
             <img
@@ -60,7 +60,7 @@ export default function MemberKey({
               asChild
               onClick={() => removewalletStorage(wallet.name)}
             >
-              <Button variant="outline">
+              <Button variant="outline" size="icon">
                 <CloudOff size={16} />
               </Button>
             </TooltipTrigger>
@@ -68,15 +68,18 @@ export default function MemberKey({
           </Tooltip>
 
           <Tooltip>
-            <TooltipTrigger onClick={() => selectWalletName(wallet.name)}>
-              <Button variant="outline">
+            <TooltipTrigger
+              asChild
+              onClick={() => selectWalletName(wallet.name)}
+            >
+              <Button variant="outline" size="icon" disabled={isConnected}>
                 <Cloud size={16} />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Connect</TooltipContent>
           </Tooltip>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

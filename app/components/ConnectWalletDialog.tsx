@@ -1,8 +1,7 @@
 import { toast } from "sonner";
-import { motion } from "motion/react";
 import { Address, address } from "gill";
+import { motion, AnimatePresence } from "motion/react";
 import { ReactNode, useCallback, useEffect, useState } from "react";
-
 import {
   UiWallet,
   useConnect,
@@ -12,19 +11,18 @@ import {
 
 import { Dialog, DialogContent } from "~/components/ui/dialog";
 
-import { useWalletStore } from "~/state/wallet";
 import { useMultisigWallets } from "~/hooks/resources";
 import { SOLANA_SIGN_AND_SEND_TRANSACTION_FEATURE } from "~/hooks/wallet";
 
+import { useWalletStore } from "~/state/wallet";
 import { abbreviateAddress } from "~/lib/address";
+import { isKeyMember } from "~/program/multisig/utils/member";
 
 export default function ConnectWalletDialog({
   children,
 }: {
   children: ReactNode;
 }) {
-  const { walletHistory } = useWalletStore();
-
   const wallets = useWallets();
   const supportedWallets = wallets.filter((w) =>
     w.features.includes(SOLANA_SIGN_AND_SEND_TRANSACTION_FEATURE),
@@ -39,26 +37,23 @@ export default function ConnectWalletDialog({
         <div className="flex flex-col gap-6 w-60">
           <div className="flex flex-col gap-6">
             {!supportedWallets.length && (
-              // TODO: Animate
-              <div className="flex justify-center items-center py-8">
+              <motion.span
+                // TODO: Check Animation
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex justify-center items-center py-8"
+              >
                 <span>No supported wallets found</span>
-              </div>
+              </motion.span>
             )}
-            {supportedWallets
-              .filter(
-                (w) =>
-                  !walletHistory.some(
-                    (wHistory) =>
-                      wHistory.name.toLowerCase() === w.name.toLowerCase(),
-                  ),
-              )
-              .map((wallet) => (
-                <WalletOption
-                  wallet={wallet}
-                  key={wallet.name}
-                  onOpenChange={onOpenChange}
-                />
-              ))}
+            {supportedWallets.map((wallet) => (
+              <WalletOption
+                wallet={wallet}
+                key={wallet.name}
+                onOpenChange={onOpenChange}
+              />
+            ))}
           </div>
         </div>
       </DialogContent>
@@ -102,38 +97,52 @@ function WalletOption({
     } catch (e) {
       toast.error("Failed to connect to wallet");
       console.error(e);
+      setConnectionInitiated(false);
+      setAccountAddress(null);
       onOpenChange(false);
     }
   }, [accountAddress]);
 
-  if (isConnecting) {
-    return (
-      <motion.div
-        key={wallet.name}
-        className="flex flex-row items-center gap-6"
-      >
-        <span className="h-[40px]">Connecting...</span>
-      </motion.div>
-    );
-  }
-
   return (
     <button
+      tabIndex={-1}
       onClick={handleConnectClick}
       className="relative flex flex-row items-center gap-4"
     >
-      {isConnectionInitiated && accountAddress && (
-        <ConnectMultisig
-          walletIcon={wallet.icon}
-          walletName={wallet.name}
-          accountAddress={accountAddress}
-          onClose={() => onOpenChange(false)}
-        />
-      )}
-      <span className="w-[30px] h-[30px] flex items-center justify-center rounded-full overflow-hidden">
+      <span className="w-[40px] h-[40px] flex items-center justify-center rounded-xl overflow-hidden">
         <img src={wallet.icon} alt={wallet.name} />
       </span>
-      <span className="text-base">{wallet.name}</span>
+      <AnimatePresence initial={false} mode="wait">
+        {isConnecting ? (
+          <motion.span
+            key="connecting"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            Wallet connecting...
+          </motion.span>
+        ) : isConnectionInitiated && accountAddress ? (
+          <ConnectMultisig
+            walletIcon={wallet.icon}
+            walletName={wallet.name}
+            accountAddress={accountAddress}
+            onClose={() => onOpenChange(false)}
+          />
+        ) : (
+          <motion.span
+            key="connect"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="font-semibold"
+          >
+            {wallet.name}
+          </motion.span>
+        )}
+      </AnimatePresence>
     </button>
   );
 }
@@ -149,24 +158,30 @@ function ConnectMultisig({
   walletIcon: string;
   accountAddress: Address;
 }) {
+  const addMultisig = useWalletStore((state) => state.addMultisig);
+  const multisigStorage = useWalletStore((state) => state.multisigStorage);
+  const addwalletStorage = useWalletStore((state) => state.addwalletStorage);
+  const selectWalletName = useWalletStore((state) => state.selectWalletName);
+
+  const hasMultisig = !!multisigStorage;
+
   const {
     isLoading,
     isFetched,
     data: multisigWallets,
-  } = useMultisigWallets(accountAddress) || {};
+  } = useMultisigWallets(hasMultisig ? null : accountAddress) || {};
 
-  // TODO: Affect loading state
-
-  const { addwalletStorage, addMultisig, selectWalletName } = useWalletStore();
-
-  const multisig = multisigWallets?.[0];
+  const isMultisigFetched = hasMultisig || isFetched;
+  const multisig = multisigStorage || multisigWallets?.[0];
 
   useEffect(() => {
-    if (isFetched && accountAddress) {
+    if (isMultisigFetched) {
       if (!multisig) {
         toast.error(
-          "Can't find multisig wallet for " + abbreviateAddress(accountAddress),
+          "Can't find multisig for " + abbreviateAddress(accountAddress),
         );
+      } else if (!isKeyMember(multisig?.account?.members, accountAddress)) {
+        toast.error(abbreviateAddress(accountAddress) + " is not a member");
       } else {
         addwalletStorage({
           icon: walletIcon,
@@ -179,18 +194,23 @@ function ConnectMultisig({
 
       onClose();
     }
-  }, [multisig, isFetched, accountAddress, multisigWallets]);
+  }, [isMultisigFetched, accountAddress]);
 
   if (isLoading) {
+    // TODO: Add shine text for loading
     return (
-      <motion.div
-        key={walletName}
-        className="absolute flex flex-row items-center gap-6"
+      <motion.span
+        key="connect"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.4 }}
+        className="text-base"
       >
-        <span className="h-[40px]">Connecting...</span>
-      </motion.div>
+        Validating account...
+      </motion.span>
     );
   }
 
-  return null;
+  return walletName;
 }

@@ -6,9 +6,10 @@ import {
   useTransactions,
   useMultisigAccount,
 } from "~/hooks/resources";
+import { fadeInListItemProps } from "~/lib/motion";
 
-import Transaction from "./Transaction";
-import { MultisigAccount } from "~/program/multisig/codec";
+import TransactionDialog from "../TransactionDialog";
+import TransactionSkeleton from "./TransactionSkeleton";
 
 export type Status = "ready" | "executed" | "cancelled";
 
@@ -19,33 +20,29 @@ export default function Transactions({
 }) {
   const { data: multisigAccount } = useMultisigAccount(multisigAddress);
 
-  if (!multisigAccount) {
-    return null;
-  }
-
   return (
     <WithAccount
-      multisigAccount={multisigAccount}
       multisigAddress={multisigAddress}
+      rentCollectorAddress={multisigAccount?.rentCollector}
+      staleTransactionIndex={multisigAccount?.staleTransactionIndex}
     />
   );
 }
 
 function WithAccount({
-  multisigAccount,
+  rentCollectorAddress,
   multisigAddress,
+  staleTransactionIndex,
 }: {
-  multisigAccount: MultisigAccount;
   multisigAddress: Address;
+  staleTransactionIndex: bigint | null | undefined;
+  rentCollectorAddress: Address | null | undefined;
 }) {
   const {
     isLoading,
     isFetched,
     data: transactionList,
-  } = useTransactions(
-    multisigAddress,
-    Number(multisigAccount.staleTransactionIndex),
-  );
+  } = useTransactions(multisigAddress, Number(staleTransactionIndex));
 
   const tokensMeta = useTokensMeta(
     Array.from(
@@ -71,70 +68,64 @@ function WithAccount({
         ...txData?.message,
         mint: tokenMeta?.data,
         amount:
-          txData?.message?.amount / 10 ** (tokenMeta?.data?.decimals || 0),
+          Number(txData?.message?.amount) /
+          10 ** (tokenMeta?.data?.decimals || 0),
       },
     };
   });
 
-  const rentCollectorAddress = multisigAccount?.rentCollector as Address;
-
   return (
-    <div className="relative flex flex-1 flex-col gap-2 overflow-y-auto scroll-smooth scrollbar-hidden">
-      <AnimatePresence>
-        {transactions?.map((txData, i) => {
-          if (!txData) return null;
-
-          return (
+    <div className="flex flex-1 flex-col gap-2 overflow-y-auto scroll-smooth scrollbar-hidden">
+      <AnimatePresence mode="wait">
+        {isFetched &&
+          transactions?.length &&
+          transactions?.map((data, i) => (
             <motion.div
-              key={Number(txData.transactionIndex)}
-              initial={{ opacity: 0, y: -5 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -5 }}
-              transition={{ duration: 0.4, delay: i * 0.06 }}
+              key={data?.transactionIndex}
+              {...fadeInListItemProps(i)}
             >
-              <Transaction
-                status={txData.status}
-                message={txData.message}
-                rejected={txData.rejected || []}
-                approved={txData.approved || []}
-                timestamp={txData.timestamp || 0}
-                cancelled={txData.cancelled || []}
-                creator={txData.creator as Address}
+              <TransactionDialog
+                data={data}
                 rentCollectorAddress={rentCollectorAddress}
-                transactionIndex={txData.transactionIndex || 0}
               />
             </motion.div>
-          );
-        })}
-        {isLoading && !transactions?.length && (
-          <motion.div
-            key="loading"
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -5 }}
-            transition={{ duration: 0.6 }}
-            className="absolute top-0 m-auto left-0 right-0 flex w-full h-[68px] justify-center items-center rounded-[20px]"
-          >
-            TODO: Sceleton
-          </motion.div>
-        )}
-        {isFetched && !transactions?.length && (
-          <motion.div
-            key="empty"
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -5 }}
-            transition={{ duration: 0.6 }}
-            className="absolute top-0 m-auto left-0 right-0 flex flex-col justify-center items-center"
-          >
-            <img
-              alt="No transactions yet"
-              src="/empty-transaction-placeholder.svg"
-            />
-            <span className="text-lg">No transactions yet</span>
-          </motion.div>
-        )}
+          ))}
+        {isLoading && !transactions?.length && <TransactionLoadingState />}
+        {isFetched && !transactions?.length && <TransactionEmptyState />}
       </AnimatePresence>
     </div>
+  );
+}
+
+function TransactionEmptyState() {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.6 }}
+      className="flex flex-col justify-center items-center"
+    >
+      <img
+        alt="No transactions yet"
+        src="/empty-transaction-placeholder.svg"
+        className="w-[274px] h-[142px]"
+      />
+      <span className="text-lg">No transactions yet</span>
+    </motion.div>
+  );
+}
+
+function TransactionLoadingState() {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.6 }}
+      className="w-full flex gap-4 p-3"
+    >
+      <TransactionSkeleton />
+    </motion.div>
   );
 }

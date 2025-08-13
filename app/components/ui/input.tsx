@@ -4,17 +4,17 @@ import { forwardRef, Ref } from "react";
 import { cn } from "~/lib/utils";
 
 type InputProps = React.ComponentProps<typeof motion.input> & {
-  error?: boolean;
+  error?: string;
   disabled?: boolean;
   className?: string;
 };
 
 const Input = forwardRef((props: InputProps, ref: Ref<HTMLInputElement>) => {
   const { className, error, ...rest } = props;
+
   return (
     <motion.input
       ref={ref}
-      type="text"
       tabIndex={-1}
       data-slot="input"
       spellCheck="false"
@@ -22,15 +22,21 @@ const Input = forwardRef((props: InputProps, ref: Ref<HTMLInputElement>) => {
       autoCapitalize="off"
       autoComplete="off"
       autoFocus={false}
-      transition={{ duration: 0.3 }}
+      transition={{
+        duration: 0.3,
+      }}
       whileFocus={{
-        borderColor: "var(--color-foreground)",
+        borderColor: "var(--color-input-border-focus)",
       }}
       animate={{
-        borderColor: error ? "var(--color-destructive)" : "var(--color-ring)",
+        x: error ? [-3, 3, -3, 3, -3, 0] : 0,
+        color: error ? "var(--color-destructive)" : "var(--color-secondary)",
+        borderColor: error
+          ? "var(--color-destructive)"
+          : "var(--color-input-border)",
       }}
       className={cn(
-        "placeholder:text-muted-foreground flex h-9 w-full min-w-0 rounded-md px-3 py-1 border border-ring outline-none disabled:pointer-events-none text-sm",
+        "flex h-14 w-full min-w-0 rounded-2xl outline-none border-1 text-secondary text-sm indent-4",
         className,
       )}
       {...rest}

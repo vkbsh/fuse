@@ -1,5 +1,3 @@
-import { Variants } from "motion/react";
-
 export type Variant =
   | "default"
   | "blur"
@@ -14,7 +12,7 @@ export type Variant =
   | "fadeInFuseTitle"
   | "slideDownModal";
 
-export const variants: { [key in Variant]: Variants } = {
+export const variants = {
   default: {
     initial: { opacity: 0 },
     animate: { opacity: 1 },
@@ -87,20 +85,11 @@ export const variants: { [key in Variant]: Variants } = {
       opacity: 0,
     },
   },
-  slideDownModal: {
-    initial: { y: -20, opacity: 0 },
-    animate: { y: 0, opacity: 1 },
-    exit: { y: -20, opacity: 0 },
-  },
+
   collapse: {
     initial: { height: 0, opacity: 0 },
     animate: { height: "auto", opacity: 1 },
     exit: { height: 0, opacity: 0 },
-  },
-  blur: {
-    initial: { backdropFilter: "blur(0px)" },
-    animate: { backdropFilter: "blur(6px)", transition: { duration: 0.6 } },
-    exit: { backdropFilter: "blur(0px)", transition: { duration: 0.3 } },
   },
 };
 

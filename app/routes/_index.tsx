@@ -6,7 +6,6 @@ import Dashboard from "~/components/Dashboard";
 import { Toaster } from "~/components/ui/sonner";
 
 import { useWalletStore } from "~/state/wallet";
-import { useAnimationProps } from "~/hooks/animation";
 
 export const meta: MetaFunction = () => {
   return [
@@ -16,21 +15,32 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Index() {
-  const fadeInProps = useAnimationProps("fadeIn");
-  const { multisigStorage, walletStorage } = useWalletStore();
+  const multisigStorage = useWalletStore((state) => state.multisigStorage);
 
   return (
-    <>
-      {!multisigStorage || !walletStorage ? (
-        <Connect />
+    <AnimatePresence>
+      {!multisigStorage?.address ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.6 }}
+          className="h-screen flex flex-col justify-center items-center py-4 gap-18"
+        >
+          <Connect />
+        </motion.div>
       ) : (
-        <Dashboard
-          walletName={walletStorage.name}
-          multisigAddress={multisigStorage.address}
-          vaultAddress={multisigStorage.defaultVault}
-        />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 1.6 }}
+          className="h-screen w-full max-w-[1280px] m-auto p-6 flex flex-col gap-8 justify-between select-none"
+        >
+          <Dashboard />
+        </motion.div>
       )}
       <Toaster />
-    </>
+    </AnimatePresence>
   );
 }

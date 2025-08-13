@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "motion/react";
 import { SquareDot, CircleDot, CirclePlus } from "lucide-react";
 
 import { abbreviateAddress } from "~/lib/address";
-import { cn } from "~/lib/utils";
 
 export type Status =
   | "Active"
@@ -91,7 +90,13 @@ function ProgressStatus({
 }) {
   return (
     addresses?.[0] && (
-      <div className="w-[130px] flex flex-col items-center gap-5">
+      <motion.div
+        initial={{ opacity: active ? 1 : 0.8 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.6 }}
+        className="w-[130px] flex flex-col items-center gap-5"
+      >
         <span className="">{icon}</span>
         <div className="flex flex-col gap-1 items-center">
           <span className="">{label}</span>
@@ -108,7 +113,7 @@ function ProgressStatus({
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     )
   );
 }

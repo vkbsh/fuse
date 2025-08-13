@@ -3,23 +3,24 @@ import { motion } from "motion/react";
 import { cva } from "class-variance-authority";
 
 import { cn } from "~/lib/utils";
-import { ShineBorder } from "~/components/ui/animated/shine-border";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium shrink-0 outline-none relative",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap outline-none relative rounded-3xl font-semibold",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-xs",
-        destructive: "bg-destructive text-white shadow-xs",
-        outline: "border bg-background shadow-xs",
-        secondary: "bg-secondary text-secondary-foreground shadow-xs",
+        default: "bg-secondary text-secondary-foreground",
+        secondary: "bg-promary text-primary-foreground border",
+        outline: "bg-primary text-primary-foreground border",
+        borderedMax:
+          "bg-primary text-primary-foreground border-[3px] border-ring-dark font-bold",
+        borderedWithIcon:
+          "bg-primary text-primary-foreground border-[3px] border-ring text-sm font-medium",
       },
       size: {
-        default: "h-9 px-4 py-2 has-[>svg]:px-3",
-        sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
-        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
         icon: "size-9",
+        default: "h-[46px] px-6",
+        borderedWithIcon: "h-[40px] px-4",
       },
     },
     defaultVariants: {
@@ -34,10 +35,10 @@ const Button = forwardRef(
     props: {
       className?: string;
       disabled?: boolean;
-      onClick?: () => void;
       children?: React.ReactNode;
-      size?: "default" | "sm" | "lg" | "icon";
-      variant?: "default" | "destructive" | "outline" | "secondary";
+      onClick?: (any: any) => void;
+      size?: "default" | "icon" | "borderedWithIcon";
+      variant?: "default" | "outline" | "secondary" | "borderedWithIcon";
     },
     forwardedRef: React.Ref<HTMLButtonElement>,
   ) => {
@@ -48,22 +49,22 @@ const Button = forwardRef(
       <motion.button
         ref={forwardedRef}
         disabled={disabled}
-        initial={{ opacity: 0 }}
+        initial={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         whileHover={
           disabled
             ? undefined
             : {
-                opacity: 0.7,
+                opacity: 0.75,
+                scale: 1.02,
               }
         }
-        animate={{ opacity: disabled ? 0.5 : 1 }}
         transition={{ duration: 0.4 }}
+        animate={{ opacity: disabled ? 0.6 : 1 }}
         className={cn(buttonVariants({ variant, size, className }))}
         onClick={onClick}
         {...rest}
       >
-        <ShineBorder />
         {children}
       </motion.button>
     );

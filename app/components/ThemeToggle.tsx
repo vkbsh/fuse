@@ -2,15 +2,13 @@ import { Moon, Sun } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 import { useThemeStore } from "~/state/theme";
-import { Button } from "~/components/ui/button";
 
 export default function ThemeToggle() {
   const { setTheme, theme } = useThemeStore();
 
   return (
-    <Button
-      size="icon"
-      variant="outline"
+    <button
+      className="flex justify-center items-center size-[42px] rounded-full bg-accent-background"
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
     >
       <AnimatePresence initial={false} mode="wait">
@@ -24,6 +22,6 @@ export default function ThemeToggle() {
           {theme === "dark" ? <Moon size={18} /> : <Sun size={18} />}
         </motion.span>
       </AnimatePresence>
-    </Button>
+    </button>
   );
 }

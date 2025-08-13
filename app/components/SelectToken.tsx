@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Input } from "~/components/ui/input";
 import {
   DropdownMenu,
+  DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuContent,
 } from "~/components/ui/dropdown-menu";
@@ -41,7 +42,7 @@ export default function SelectToken({
       <DropdownMenuContent
         align="start"
         isOpen={isOpen}
-        className="flex flex-col gap-4 max-h-[190px] scroll-smooth overflow-y-auto scrollbar-hidden"
+        className="flex flex-col p-3 gap-4 max-h-[190px] scroll-smooth overflow-y-auto scrollbar-hidden"
       >
         <AnimatePresence initial={false}>
           {tokens.map((item) => {
@@ -54,39 +55,41 @@ export default function SelectToken({
             const name = item.name === "Wrapped SOL" ? "Solana" : item.name;
 
             return (
-              <motion.div
-                key={item.mint}
-                transition={{ duration: 0.4 }}
-                exit={{ x: -8, filter: "blur(3px)" }}
-                initial={{
-                  x: -8,
-                  filter: "blur(3px)",
-                  backgroundColor: "var(--color-background)",
-                }}
-                whileInView={{
-                  x: 0,
-                  filter: "blur(0px)",
-                }}
-                onClick={() => setToken(item)}
-                className="flex items-center rounded-md cursor-default"
-              >
-                <div className="flex flex-row gap-2 items-center justify-between w-full">
-                  <div className="flex flex-row items-center gap-2">
-                    <img
-                      alt={item.name}
-                      src={item.logoURI}
-                      className="w-7 h-7 rounded-full"
-                    />
-                    <span className="max-w-18 truncate">{name}</span>
-                  </div>
-                  <div className="flex flex-row gap-1">
-                    <div className="uppercase font-medium max-w-22 truncate">
-                      {amount}
+              <DropdownMenuItem>
+                <motion.div
+                  key={item.mint}
+                  transition={{ duration: 0.4 }}
+                  exit={{ x: -8, filter: "blur(3px)" }}
+                  initial={{
+                    x: -8,
+                    filter: "blur(3px)",
+                    backgroundColor: "var(--color-background)",
+                  }}
+                  whileInView={{
+                    x: 0,
+                    filter: "blur(0px)",
+                  }}
+                  onClick={() => setToken(item)}
+                  className="flex items-center rounded-md cursor-default"
+                >
+                  <div className="flex flex-row gap-2 items-center justify-between w-full">
+                    <div className="flex flex-row items-center gap-2.5">
+                      <img
+                        alt={item.name}
+                        src={item.logoURI}
+                        className="w-7 h-7 rounded-full"
+                      />
+                      <span className="max-w-18 truncate">{name}</span>
                     </div>
-                    <span>{item.symbol}</span>
+                    <div className="flex flex-row gap-1">
+                      <div className="uppercase font-medium max-w-22 truncate">
+                        {amount}
+                      </div>
+                      <span>{item.symbol}</span>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              </DropdownMenuItem>
             );
           })}
         </AnimatePresence>
@@ -137,7 +140,7 @@ const SelectedToken = forwardRef(
         <Input
           disabled
           tabIndex={-2}
-          className="pl-12"
+          className="indent-12"
           value={abbreviateAddress(fromAddress)}
         />
       </div>

@@ -37,7 +37,7 @@ type Message = {
 };
 
 type ParsedVaultTransactionMessage = {
-  amount: number;
+  amount: bigint;
   toAccount: Address;
   fromAccount: Address;
   mintAddress: Address;
@@ -48,154 +48,23 @@ export type ParsedVaultTransactionMessageWithCreator =
     creator: Address | null;
   };
 
-function isTokenProgram(programAddress: Address): boolean {
+function isTokenProgram(programAddress: Address) {
   return (
     programAddress === TOKEN_PROGRAM_ADDRESS ||
     programAddress === TOKEN_2022_PROGRAM_ADDRESS
   );
 }
 
-function isSystemProgram(programAddress: Address): boolean {
+function isSystemProgram(programAddress: Address) {
   return programAddress === SYSTEM_PROGRAM_ADDRESS;
 }
 
-function isAssociatedTokenProgram(programAddress: Address): boolean {
+function isAssociatedTokenProgram(programAddress: Address) {
   return programAddress === ASSOCIATED_TOKEN_PROGRAM_ADDRESS;
 }
 
-export async function parseVaultTransactionMessage(
-  message: Message,
-): Promise<ParsedVaultTransactionMessage | null> {
-  const { accountKeys = [], instructions = [] } = message || {};
-
-  if (instructions.length === 0) {
-    return null;
-  }
-
-  let result: ParsedVaultTransactionMessage | null = null;
-
-  // Transfer (SOL/Token) Instruction
-  if (instructions.length === 1) {
-    const ixLegacy = instructions[0];
-    const programAddress = accountKeys[ixLegacy.programIdIndex] as
-      | typeof TOKEN_PROGRAM_ADDRESS
-      | typeof SYSTEM_PROGRAM_ADDRESS
-      | typeof TOKEN_2022_PROGRAM_ADDRESS;
-
-    const ix = {
-      data: new Uint8Array(ixLegacy.data),
-      accounts: ixLegacy.accountIndexes.map((index) => ({
-        role: 1,
-        address: accountKeys[index],
-      })),
-      programAddress,
-    };
-
-    let parsedTx:
-      | ParsedTransferInstruction<Address>
-      | ParsedTransferSolInstruction<string>
-      | null = null;
-
-    if (isSystemProgram(programAddress)) {
-      try {
-        parsedTx = parseTransferSolInstruction(ix);
-      } catch (error) {
-        console.error("Failed to parse Transfer SOL Instruction: ", error);
-        return null;
-      }
-    }
-
-    if (isTokenProgram(programAddress)) {
-      try {
-        parsedTx = parseTransferInstruction(ix);
-      } catch (error) {
-        console.error("Failed to parse Transfer Token Instruction: ", error);
-        return null;
-      }
-    }
-
-    if (!parsedTx) {
-      return null;
-    }
-
-    const { accounts, data } = parsedTx;
-
-    result = {
-      amount: Number(data.amount),
-      mintAddress: SOL_MINT_ADDRESS,
-      fromAccount: accounts.source.address,
-      toAccount: accounts.destination.address,
-    };
-  }
-
-  // List of 2 instructions might contain:
-  // ['Create ATA Instruction', 'Transfer Token Instruction']
-  if (instructions.length === 2) {
-    const createATAIx = instructions[0]; // Maybe Create ATA
-    const transferTokenIx = instructions[1]; // Maybe Transfer Token
-
-    const programAddressCreateATA = accountKeys[createATAIx.programIdIndex];
-    const programAddressTransferToken =
-      accountKeys[transferTokenIx.programIdIndex];
-
-    if (
-      isAssociatedTokenProgram(programAddressCreateATA) &&
-      isTokenProgram(programAddressTransferToken)
-    ) {
-      try {
-        const decodedATI = parseCreateAssociatedTokenIdempotentInstruction({
-          data: new Uint8Array(createATAIx.data),
-          programAddress: programAddressCreateATA,
-          accounts: createATAIx.accountIndexes.map((index) => ({
-            address: accountKeys[index],
-            role: 1, // ANY role (to satisfy the type)
-          })),
-        });
-
-        if (decodedATI) {
-          const accountsATI = decodedATI?.accounts;
-
-          const toAccount = accountsATI.owner.address;
-          const mintAddress = accountsATI.mint.address;
-
-          try {
-            const { data } = parseTransferInstruction({
-              data: new Uint8Array(transferTokenIx.data),
-              programAddress: programAddressTransferToken,
-              accounts: transferTokenIx.accountIndexes.map((index) => ({
-                address: accountKeys[index],
-                role: 1, // ANY role (to satisfy the type)
-              })),
-            });
-
-            result = {
-              mintAddress,
-              toAccount,
-              amount: Number(data.amount),
-              fromAccount: decodedATI.accounts.payer.address,
-            };
-          } catch (e) {
-            console.error("Failed to parse Transfer Instruction: ", e);
-            return null;
-          }
-        }
-      } catch (e) {
-        console.error("Failed to parse Create ATA Instruction: ", e);
-        return null;
-      }
-    }
-  }
-
-  if (
-    !result?.amount ||
-    !result?.toAccount ||
-    !result?.fromAccount ||
-    !result?.mintAddress
-  ) {
-    return null;
-  }
-
-  return result;
+function mapAccounts(indexes: number[], accountKeys: Address[]) {
+  return indexes.map((index) => ({ address: accountKeys[index], role: 1 }));
 }
 
 export async function getProposalAccount(
@@ -263,6 +132,128 @@ export async function getVaultTransaction({
     console.error("Decode vaultTransaction: ", transactionIndex, e);
     return null;
   }
+}
+
+export async function parseVaultTransactionMessage(
+  message: Message,
+): Promise<ParsedVaultTransactionMessage | null> {
+  const { accountKeys = [], instructions = [] } = message || {};
+
+  if (instructions.length === 0) {
+    return null;
+  }
+
+  let result: ParsedVaultTransactionMessage | null = null;
+
+  // Transfer (SOL/Token) Instruction
+  if (instructions.length === 1) {
+    const ixLegacy = instructions[0];
+    const programAddress = accountKeys[ixLegacy.programIdIndex];
+
+    const ix = {
+      programAddress,
+      data: new Uint8Array(ixLegacy.data),
+      accounts: mapAccounts(ixLegacy.accountIndexes, accountKeys), // ANY role (to satisfy the type)
+    };
+
+    if (isSystemProgram(programAddress)) {
+      try {
+        const { accounts, data } = parseTransferSolInstruction(ix);
+
+        result = {
+          amount: data.amount,
+          mintAddress: SOL_MINT_ADDRESS,
+          fromAccount: accounts.source.address,
+          toAccount: accounts.destination.address,
+        };
+      } catch (error) {
+        console.error("Failed to parse Transfer SOL Instruction: ", error);
+        return null;
+      }
+    }
+
+    if (isTokenProgram(programAddress)) {
+      try {
+        const { accounts, data } = parseTransferInstruction(ix);
+
+        result = {
+          amount: data.amount,
+          mintAddress: SOL_MINT_ADDRESS, // TODO: set correct mint address if not native transfer
+          fromAccount: accounts.source.address,
+          toAccount: accounts.destination.address,
+        };
+      } catch (error) {
+        console.error("Failed to parse Transfer Token Instruction: ", error);
+        return null;
+      }
+    }
+  }
+
+  // List of 2 instructions might contain:
+  // ['Create ATA Instruction', 'Transfer Token Instruction']
+  if (instructions.length === 2) {
+    const createATAIx = instructions[0]; // Maybe Create ATA
+    const transferTokenIx = instructions[1]; // Maybe Transfer Token
+
+    const programAddressCreateATA = accountKeys[createATAIx.programIdIndex];
+    const programAddressTransferToken =
+      accountKeys[transferTokenIx.programIdIndex];
+
+    if (
+      isAssociatedTokenProgram(programAddressCreateATA) &&
+      isTokenProgram(programAddressTransferToken)
+    ) {
+      try {
+        const decodedATI = parseCreateAssociatedTokenIdempotentInstruction({
+          data: new Uint8Array(createATAIx.data),
+          programAddress: programAddressCreateATA,
+          accounts: mapAccounts(createATAIx.accountIndexes, accountKeys), // ANY role (to satisfy the type)
+        });
+
+        if (decodedATI) {
+          const accountsATI = decodedATI?.accounts;
+
+          const toAccount = accountsATI.owner.address;
+          const mintAddress = accountsATI.mint.address;
+
+          try {
+            const { data } = parseTransferInstruction({
+              data: new Uint8Array(transferTokenIx.data),
+              programAddress: programAddressTransferToken,
+              accounts: mapAccounts(
+                transferTokenIx.accountIndexes,
+                accountKeys,
+              ), // ANY role (to satisfy the type)
+            });
+
+            result = {
+              mintAddress,
+              toAccount,
+              amount: data.amount,
+              fromAccount: decodedATI.accounts.payer.address,
+            };
+          } catch (e) {
+            console.error("Failed to parse Transfer Instruction: ", e);
+            return null;
+          }
+        }
+      } catch (e) {
+        console.error("Failed to parse Create ATA Instruction: ", e);
+        return null;
+      }
+    }
+  }
+
+  if (
+    !result?.amount ||
+    !result?.toAccount ||
+    !result?.fromAccount ||
+    !result?.mintAddress
+  ) {
+    return null;
+  }
+
+  return result;
 }
 
 export async function getParsedVaultTransactionMessage({

@@ -1,8 +1,9 @@
 import { Address } from "gill";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDebounce } from "@uidotdev/usehooks";
+import { motion, AnimatePresence } from "motion/react";
 
-import Field from "~/components/Field";
+import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 
 import { TokenData, useTokenPrice } from "~/hooks/resources";
@@ -29,11 +30,14 @@ const EnterAmount = ({
     ? Number(debounceValue) * Number(price || 0)
     : 0;
 
+  const calculatedAmountLabel = `$ ${calculatedAmount?.toFixed(2)}`;
+
   const tokenAmount = Number(token?.amount);
-  const maxAmountLabel =
+  const maxAmount =
     token?.symbol?.toLocaleLowerCase() === "sol"
       ? getRoundedSOL(tokenAmount)
       : getRoundedToken(tokenAmount);
+  const maxAmountLabel = `${maxAmount}`;
 
   const parseInput = (value: string) => {
     const regex = /^(0|[1-9]\d*)(\.\d*)?$/;
@@ -61,26 +65,47 @@ const EnterAmount = ({
 
   return (
     <>
-      <div className="flex flex-row gap-4 items-end justify-between">
-        <Field
+      <div className="flex flex-row gap-4 items-center justify-between">
+        <Input
           value={value}
           error={error}
-          label="Amount"
-          placeholder={`0.00 ${token?.symbol}`}
+          placeholder={`0.00`}
           onChange={handleChange}
-          className="w-full  outline-0"
+          className="border-0 bg-transparent font-bold text-5xl h-[44px] indent-0 rounded-none"
           onFocus={() => removeError("amount")}
         />
-        <Button variant="secondary" onClick={setMax}>
+        <Button variant="secondary" className="px-5 h-11" onClick={setMax}>
           MAX
         </Button>
       </div>
-      <div className="flex flex-row items-center justify-between text-sm cursor-default">
-        <span>${calculatedAmount?.toFixed(2)}</span>
-        <span>
-          {maxAmountLabel} {token?.symbol}
-        </span>
-      </div>
+      <motion.div className="flex flex-row items-center justify-between text-sm cursor-default">
+        <AnimatePresence initial={false} mode="wait">
+          <motion.span
+            layout
+            key={calculatedAmountLabel}
+            transition={{ duration: 0.3 }}
+            initial={{ filter: "blur(3px)" }}
+            animate={{ filter: "blur(0px)" }}
+            exit={{ filter: "blur(3px)" }}
+            className="text-placeholder"
+          >
+            {calculatedAmountLabel}
+          </motion.span>
+        </AnimatePresence>
+        <AnimatePresence initial={false} mode="wait">
+          <motion.span
+            layout
+            key={maxAmountLabel}
+            transition={{ duration: 0.3 }}
+            initial={{ filter: "blur(3px)" }}
+            animate={{ filter: "blur(0px)" }}
+            exit={{ filter: "blur(3px)" }}
+            className="text-placeholder"
+          >
+            {maxAmountLabel}
+          </motion.span>
+        </AnimatePresence>
+      </motion.div>
     </>
   );
 };

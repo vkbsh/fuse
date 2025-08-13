@@ -1,5 +1,4 @@
 import { toast } from "sonner";
-import { CircleArrowUp } from "lucide-react";
 import { UiWalletAccount } from "@wallet-standard/react";
 import { useWalletAccountTransactionSigner } from "@solana/react";
 import { address, Address, assertIsAddress, LAMPORTS_PER_SOL } from "gill";
@@ -51,9 +50,11 @@ export default function Review({
 
     if (!amount) {
       addError("amount", "Invalid amount");
-    } else if (amount <= 0) {
+    }
+    if (Number(amount) <= 0) {
       addError("amount", "Amount must be greater than 0");
-    } else if (amount > Number(token?.amount)) {
+    }
+    if (Number(amount) > Number(token?.amount)) {
       addError("amount", "Insufficient balance");
     }
 
@@ -61,9 +62,17 @@ export default function Review({
       assertIsAddress(toAddress);
     } catch (e) {
       addError("toAddress", "Invalid address");
+      return;
     }
 
-    if (!toAddress || !token || !amount || errors) {
+    if (
+      !token ||
+      !amount ||
+      !toAddress ||
+      (amount && amount <= 0) ||
+      (amount && amount > Number(token?.amount))
+    ) {
+      console.error(errors);
       return;
     }
 
@@ -112,10 +121,7 @@ export default function Review({
 
   return (
     <div className="flex flex-row gap-2 justify-center">
-      <Button variant="secondary" onClick={handleTx}>
-        <CircleArrowUp size={16} />
-        Withdraw
-      </Button>
+      <Button onClick={handleTx}>Initiate</Button>
     </div>
   );
 }

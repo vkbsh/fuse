@@ -29,7 +29,7 @@ type WalletStore = {
   removewalletStorage(name: string): void;
   addwalletStorage(wallet: LSWallet): void;
   selectWalletName(name: string): void;
-  updateHistory(wallets: (LSWallet | undefined)[]): void;
+  updateHistory(wallets: LSWallet[]): void;
   addMultisig(wallet: WalletWithMembers): void;
 };
 

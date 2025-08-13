@@ -1,13 +1,15 @@
-import { cn } from "~/lib/utils"
+import { motion } from "motion/react";
 
-function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
+import { cn } from "~/lib/utils";
+
+function Skeleton({
+  className,
+  ...props
+}: React.ComponentProps<typeof motion.div>) {
+  // TODO: Animate pulse
   return (
-    <div
-      data-slot="skeleton"
-      className={cn("bg-accent animate-pulse rounded-md", className)}
-      {...props}
-    />
-  )
+    <motion.div className={cn("bg-accent rounded-md", className)} {...props} />
+  );
 }
 
-export { Skeleton }
+export { Skeleton };

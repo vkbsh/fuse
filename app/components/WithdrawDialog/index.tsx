@@ -7,8 +7,7 @@ import { useWithdrawStore } from "~/state/withdraw";
 import { useWalletByName } from "~/hooks/wallet";
 import { useMultisigAccount, useTokenInfo } from "~/hooks/resources";
 
-import Field from "~/components/Field";
-
+import { Input } from "~/components/ui/input";
 import SelectToken from "~/components/SelectToken";
 import { Dialog, DialogContent } from "~/components/ui/dialog";
 
@@ -28,7 +27,7 @@ export default function WithdrawDialog({ children }: { children: ReactNode }) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       {children}
-      <DialogContent title="Withdraw" isOpen={isOpen}>
+      <DialogContent title="Withdraw" isOpen={isOpen} className="w-[465px]">
         {transactionIndex && walletStorage && (
           <WithdrawForm
             onOpenChange={onOpenChange}
@@ -73,15 +72,15 @@ function WithdrawForm({
   useEffect(() => reset, []);
 
   return (
-    <div className="flex flex-col gap-6 w-[390px]">
+    <div className="flex flex-col gap-4">
       <SelectToken
         token={token}
         tokens={tokensInfo}
         vaultAddress={vaultAddress}
         setToken={(token) => set("token", token)}
       />
-      <Field
-        label="To address"
+      <Input
+        maxLength={44}
         value={toAddress}
         error={errors?.toAddress}
         placeholder="Enter wallet address"
@@ -90,8 +89,8 @@ function WithdrawForm({
       />
       <EnterAmount
         token={token}
-        error={errors?.amount}
         amount={amount}
+        error={errors?.amount}
         removeError={() => removeError("amount")}
         setAmount={(amount) => set("amount", amount)}
       />

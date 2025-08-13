@@ -57,7 +57,7 @@ export default function TransactionFooter({
 
   const cancelHandler = async () => {
     try {
-      const signature = await sendAndConfirmProposalCancelMessage({
+      await sendAndConfirmProposalCancelMessage({
         feePayer,
         memberAddress: address(walletAddress),
         multisigAddress: address(multisigAddress),
@@ -65,7 +65,6 @@ export default function TransactionFooter({
       });
 
       await refetchTransactions();
-      console.log("CancelProposal signature: ", signature);
     } catch (e) {
       console.error("Error [Cancel Proposal]: ", e);
       toast.error("Failed to Cancel Proposal");
@@ -74,7 +73,7 @@ export default function TransactionFooter({
 
   const approveHandler = async () => {
     try {
-      const signature = await sendAndConfirmProposalApproveMessage({
+      await sendAndConfirmProposalApproveMessage({
         memo: "Approved by a Member",
         feePayer,
         memberAddress: address(walletAddress),
@@ -82,7 +81,6 @@ export default function TransactionFooter({
         transactionIndex: BigInt(transactionIndex),
       });
 
-      console.log("ApproveProposal signature: ", signature);
       await refetchTransactions();
     } catch (e) {
       console.error("Error [Approve Proposal]: ", e);
@@ -92,7 +90,7 @@ export default function TransactionFooter({
 
   const executeHandler = async () => {
     try {
-      const signature = await sendAndConfirmExecuteAndCloseAccountsMessage({
+      await sendAndConfirmExecuteAndCloseAccountsMessage({
         feePayer,
         rentCollectorAddress,
         memberAddress: address(walletAddress),
@@ -100,7 +98,6 @@ export default function TransactionFooter({
         transactionIndex: BigInt(transactionIndex),
       });
 
-      console.log("ExecuteAndCloseAccounts signature: ", signature);
       await refetchTransactions();
     } catch (e) {
       console.error("Error [Execute, Close Accounts]: ", e);
@@ -110,14 +107,13 @@ export default function TransactionFooter({
 
   const rejectHandler = async () => {
     try {
-      const signature = await sendAndConfirmProposalRejectMessage({
+      await sendAndConfirmProposalRejectMessage({
         feePayer,
         memberAddress: address(walletAddress),
         multisigAddress: address(multisigAddress),
         transactionIndex: BigInt(transactionIndex),
       });
 
-      console.log("RejectProposal signature: ", signature);
       await refetchTransactions();
     } catch (e) {
       console.error("Error [Reject Proposal]: ", e);
@@ -127,14 +123,13 @@ export default function TransactionFooter({
 
   const closeAccounts = async () => {
     try {
-      const signature = await sendAndConfirmAccountsCloseMessage({
+      await sendAndConfirmAccountsCloseMessage({
         feePayer,
         rentCollectorAddress,
         multisigAddress: address(multisigAddress),
         transactionIndex: BigInt(transactionIndex),
       });
 
-      console.log("CloseAccounts signature: ", signature);
       await refetchTransactions();
     } catch (e) {
       console.error("Error [Close Accounts]: ", e);
@@ -146,9 +141,7 @@ export default function TransactionFooter({
     <>
       {["Cancelled", "Rejected"].includes(status) && (
         <div className="flex flex-row justify-center gap-4">
-          <Button variant="secondary" onClick={closeAccounts}>
-            Reclaim rent
-          </Button>
+          <Button onClick={closeAccounts}>Reclaim rent</Button>
         </div>
       )}
       {status === "Active" && (
@@ -160,11 +153,7 @@ export default function TransactionFooter({
           >
             Reject
           </Button>
-          <Button
-            variant="secondary"
-            onClick={approveHandler}
-            disabled={isApproveDisabled}
-          >
+          <Button onClick={approveHandler} disabled={isApproveDisabled}>
             Approve
           </Button>
         </div>
@@ -178,11 +167,7 @@ export default function TransactionFooter({
           >
             Cancel
           </Button>
-          <Button
-            variant="secondary"
-            onClick={executeHandler}
-            disabled={isExecuteDisabled}
-          >
+          <Button onClick={executeHandler} disabled={isExecuteDisabled}>
             Execute
           </Button>
         </div>

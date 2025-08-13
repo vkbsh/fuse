@@ -84,7 +84,7 @@ export async function createMultisig({
 
     await connection.confirmTransaction(signature);
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 }
 

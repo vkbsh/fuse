@@ -78,12 +78,9 @@ export async function getMultisigAccount(multisigAddress: Address) {
 }
 
 export async function getTransactionsByMultisig(
-  multisigAddress: Address | null,
-  staleTransactionIndex: number | null,
+  multisigAddress: Address,
+  staleTransactionIndex: number,
 ) {
-  if (!multisigAddress)
-    throw new Error("Missing multisigAddress in getTransactionsByMultisig()");
-
   try {
     const transactions = await getTransactionsByMultisigAndIndex(
       multisigAddress,
@@ -98,7 +95,7 @@ export async function getTransactionsByMultisig(
 
     return result;
   } catch (e) {
-    console.log("Can't give a transaction list", e);
+    console.error("Can't give a transaction list", e);
   }
 }
 
@@ -207,6 +204,7 @@ async function getTransactionsByMultisigAndIndex(
       const { data } = parseBase64RpcAccount(tx.pubkey, tx.account);
       const { status, rejected, approved, cancelled, transactionIndex } =
         getProposalAccountCodec().decode(data);
+
       const isStale = Number(transactionIndex) <= (staleTransactionIndex || 0);
       const isDraft = status.__kind === "Draft";
 

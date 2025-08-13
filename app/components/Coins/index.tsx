@@ -1,112 +1,81 @@
-import {
-  motion,
-  useScroll,
-  useTransform,
-  AnimatePresence,
-  useMotionValueEvent,
-} from "motion/react";
 import { Address } from "gill";
-import { useRef, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 
 import { useWalletStore } from "~/state/wallet";
+import { fadeInListItemProps } from "~/lib/motion";
 import { useWithdrawStore } from "~/state/withdraw";
-import { useTokenInfo } from "~/hooks/resources";
+import { TokenData, useTokenInfo } from "~/hooks/resources";
 import { hasCloudPermission } from "~/program/multisig/utils/member";
 
-import Coin from "./Coin";
-import WithdrawDialog from "~/components/WithdrawDialog";
+import Coin from "~/components/Coins/Coin";
 import { DialogTrigger } from "~/components/ui/dialog";
+import WithdrawDialog from "~/components/WithdrawDialog";
+import CoinSkeleton from "~/components/Coins/CoinSkeleton";
 
 export default function Coins({ vaultAddress }: { vaultAddress: Address }) {
-  const container = useRef(null);
-  const { set } = useWithdrawStore();
   const { data, isFetched } = useTokenInfo(vaultAddress);
-  const [hasScrolled, setHasScrolled] = useState(false);
-  const { walletStorage, multisigStorage } = useWalletStore();
-
-  const { scrollYProgress } = useScroll({
-    container,
-  });
-
-  useMotionValueEvent(scrollYProgress, "change", (latest) => {
-    // @ts-ignore
-    if (scrollYProgress.prev === 0) {
-      return setHasScrolled(false);
-    }
-
-    if (latest > 1) {
-      setHasScrolled(false);
-    } else {
-      setHasScrolled(true);
-    }
-  });
-
-  const topGradientOpacity = useTransform(scrollYProgress, [0, 0.1], [0, 0.8]);
-  const bottomGradientOpacity = useTransform(
-    scrollYProgress,
-    [0.9, 1],
-    [0.8, 0],
-  );
-
-  const hasAllPermissions = hasCloudPermission(
-    multisigStorage?.account?.members || [],
-    walletStorage?.address,
-  );
+  const hasData = isFetched && data?.length;
 
   return (
-    <div className="relative flex flex-1 flex-col gap-2 overflow-y-scroll scroll-smooth scrollbar-hidden">
-      <div
-        ref={container}
-        className="flex w-full h-full flex-1 flex-col gap-2 overflow-y-scroll scroll-smooth scrollbar-hidden"
-      >
-        <motion.div
-          transition={{
-            duration: 0.4,
-          }}
-          initial={{ opacity: 0 }}
-          exit={{ opacity: 0 }}
-          style={{ opacity: hasScrolled ? topGradientOpacity : 0 }}
-          className="h-18 absolute top-0 left-0 right-0 w-full bg-gradient-to-b from-background to-transparent z-10"
-        />
-        <motion.div
-          transition={{
-            duration: 0.4,
-          }}
-          initial={{ opacity: 0 }}
-          exit={{ opacity: 0 }}
-          style={{ opacity: hasScrolled ? bottomGradientOpacity : 0 }}
-          className="h-18 absolute bottom-0 right-0 left-0 w-full bg-gradient-to-t from-background to-transparent z-10"
-        />
-        <AnimatePresence>
-          {isFetched &&
-            data.map((token, i) => {
-              return (
-                <motion.div
-                  key={token.address}
-                  initial={{ opacity: 0, y: -5 }}
-                  exit={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: i * 0.06 }}
-                >
-                  {hasAllPermissions ? (
-                    <WithdrawDialog>
-                      <DialogTrigger asChild>
-                        <button
-                          className="w-full"
-                          onClick={() => set("token", token)}
-                        >
-                          <Coin token={token} />
-                        </button>
-                      </DialogTrigger>
-                    </WithdrawDialog>
-                  ) : (
-                    <Coin token={token} />
-                  )}
-                </motion.div>
-              );
-            })}
-        </AnimatePresence>
-      </div>
+    <div className="flex flex-1 flex-col gap-2 overflow-y-scroll p-4 scroll-smooth scrollbar-hidden -mx-7 -mt-4">
+      <AnimatePresence mode="popLayout">
+        {!hasData ? (
+          <motion.div
+            key="loading"
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            transition={{ duration: 0.6 }}
+            className="w-full flex gap-4 p-3"
+          >
+            <CoinSkeleton />
+          </motion.div>
+        ) : (
+          <CoinList data={data} />
+        )}
+      </AnimatePresence>
     </div>
   );
+}
+
+function CoinList({ data }: { data: TokenData[] }) {
+  const { set } = useWithdrawStore();
+  const walletStorage = useWalletStore((state) => state.walletStorage);
+  const multisigStorage = useWalletStore((state) => state.multisigStorage);
+
+  const walletAddress = walletStorage?.address;
+  const members = multisigStorage?.account?.members || [];
+  const hasAllPermissions = hasCloudPermission(members, walletAddress);
+
+  return data.map((token, i) => {
+    return (
+      <motion.div
+        layout
+        key={token.address}
+        className="w-full"
+        {...fadeInListItemProps(i)}
+      >
+        <WithdrawDialog>
+          <DialogTrigger asChild disabled={!hasAllPermissions}>
+            <motion.button
+              transition={{ duration: 0.3, type: "spring" }}
+              whileHover={
+                hasAllPermissions
+                  ? {
+                      opacity: 1,
+                      scale: 1.03,
+                      backgroundColor: "var(--color-background-hover)",
+                    }
+                  : undefined
+              }
+              className="w-full rounded-2xl bg-background"
+              onClick={() => hasAllPermissions && set("token", token)}
+            >
+              <Coin token={token} />
+            </motion.button>
+          </DialogTrigger>
+        </WithdrawDialog>
+      </motion.div>
+    );
+  });
 }

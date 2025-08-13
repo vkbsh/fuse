@@ -14,18 +14,18 @@ export default function TotalBalance({
 
   return (
     <section className="w-auto flex flex-col">
-      <span className="font-medium text-sm">Balance</span>
+      <span className="font-medium text-sm">Total Balance</span>
       <div className="flex flex-row text-[45px] font-bold">
         <span>$</span>
-        <AnimatePresence>
-          {totalAmount ? (
-            <motion.div>
-              <span>{roundedAmount}</span>
-            </motion.div>
-          ) : (
-            <motion.div>--.--</motion.div>
-          )}
-        </AnimatePresence>
+        <motion.span
+          key={roundedAmount}
+          transition={{ duration: 0.3 }}
+          initial={{ filter: "blur(6px)" }}
+          animate={{ filter: "blur(0px)" }}
+          exit={{ filter: "blur(6px)" }}
+        >
+          {roundedAmount}
+        </motion.span>
       </div>
     </section>
   );

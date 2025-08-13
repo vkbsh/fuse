@@ -12,83 +12,78 @@ import { DialogTrigger } from "~/components/ui/dialog";
 import ConnectWalletDialog from "~/components/ConnectWalletDialog";
 
 import { useWalletStore } from "~/state/wallet";
-
-import {
-  CLOUD_KEY_LABEL,
-  RECOVERY_KEY_LABEL,
-  getPermissionLabel,
-} from "~/program/multisig/utils/member";
+import { getPermissionLabel } from "~/program/multisig/utils/member";
 
 import MemberKey from "./MemberKey";
 import SelectedMemberKey from "./SelectedMemberKey";
 
 export default function MemberKeysDropdown() {
   const [isOpen, onOpenChange] = useState(false);
-  const { walletHistory, walletStorage, multisigStorage } = useWalletStore();
-
-  const memberKeys = [
-    ...(walletHistory || [])
-      .map((wallet) => {
-        const members = multisigStorage?.account?.members || [];
-        const permissionLabel = getPermissionLabel(members, wallet.address);
-
-        return {
-          ...wallet,
-          permissionLabel,
-          name: wallet.name,
-        };
-      })
-      .sort((a, b) => {
-        const order: { [key: string]: number } = {
-          [CLOUD_KEY_LABEL]: 0,
-          [RECOVERY_KEY_LABEL]: 1,
-        };
-
-        return order[a.permissionLabel] - order[b.permissionLabel];
-      })
-      .sort((a, b) => a.name.localeCompare(b.name)),
-  ];
 
   return (
-    <DropdownMenu open={isOpen} onOpenChange={onOpenChange} modal={false}>
+    <DropdownMenu open={isOpen} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
-        <SelectedMemberKey wallet={walletStorage} />
+        <SelectedMemberKey />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" isOpen={isOpen}>
-        <div className="flex flex-col gap-4">
-          <AnimatePresence initial={false}>
-            {memberKeys.map((wallet) => {
-              const active =
-                wallet.address === walletStorage?.address &&
-                wallet.name === walletStorage?.name;
-
-              return (
-                <motion.div
-                  key={wallet.address + wallet.name}
-                  transition={{ duration: 0.3 }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  <MemberKey
-                    wallet={wallet}
-                    isConnected={active}
-                    permissionLabel={wallet.permissionLabel}
-                  />
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
+        <motion.div className="flex flex-col p-6">
+          <MemberKeysList />
           <ConnectWalletDialog>
             <DialogTrigger asChild>
-              <Button variant="secondary">
+              <Button className="h-[40px] border font-medium">
                 <CloudIcon size={16} />
-                <span>Connect a key</span>
+                <span>Connect Key</span>
               </Button>
             </DialogTrigger>
           </ConnectWalletDialog>
-        </div>
+        </motion.div>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+function MemberKeysList() {
+  const walletHistory = useWalletStore((state) => state.walletHistory);
+  const walletStorage = useWalletStore((state) => state.walletStorage);
+  const multisigStorage = useWalletStore((state) => state.multisigStorage);
+
+  const memberKeys = [
+    ...(walletHistory || []).map((wallet) => {
+      const members = multisigStorage?.account?.members || [];
+      const permissionLabel = getPermissionLabel(members, wallet.address);
+
+      return {
+        ...wallet,
+        permissionLabel,
+        name: wallet.name,
+      };
+    }),
+  ];
+
+  return (
+    <AnimatePresence initial={false}>
+      {memberKeys.map((wallet) => {
+        const active =
+          wallet.address === walletStorage?.address &&
+          wallet.name === walletStorage?.name;
+
+        return (
+          <motion.div
+            layout
+            key={wallet.name}
+            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 70 }}
+            exit={{ opacity: 0, height: 0 }}
+          >
+            <MemberKey
+              wallet={wallet}
+              isConnected={active}
+              permissionLabel={wallet.permissionLabel}
+            />
+          </motion.div>
+        );
+      })}
+    </AnimatePresence>
   );
 }
