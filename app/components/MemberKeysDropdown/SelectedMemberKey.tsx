@@ -14,7 +14,7 @@ const SelectedMemberKey = forwardRef((props, ref: Ref<HTMLButtonElement>) => {
   return (
     <button ref={ref} {...props}>
       <motion.span
-        key={wallet.address}
+        key={wallet.address + wallet.name}
         initial={{ opacity: 0, filter: "blur(5px)" }}
         animate={{ opacity: 1, filter: "blur(0px)" }}
         exit={{ opacity: 0, filter: "blur(5px)" }}

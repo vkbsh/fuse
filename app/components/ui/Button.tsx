@@ -55,7 +55,7 @@ const Button = forwardRef(
           disabled
             ? undefined
             : {
-                opacity: 0.75,
+                opacity: 0.85,
                 scale: 1.02,
               }
         }

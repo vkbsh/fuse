@@ -19,7 +19,7 @@ export default function TotalBalance({
         <span>$</span>
         <motion.span
           key={roundedAmount}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.6 }}
           initial={{ filter: "blur(6px)" }}
           animate={{ filter: "blur(0px)" }}
           exit={{ filter: "blur(6px)" }}

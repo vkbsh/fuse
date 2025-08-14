@@ -42,7 +42,7 @@ export default function TransactionDialog({
         <button className="w-full">{tx}</button>
       </DialogTrigger>
       <DialogContent isOpen={isOpen} className="min-w-[516px]">
-        <div className="flex flex-col gap-4 text-primary-foreground rounded-2xl">
+        <div className="flex flex-col gap-10 text-primary-foreground rounded-2xl">
           {tx}
           <Progress
             status={status}

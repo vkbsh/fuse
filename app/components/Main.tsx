@@ -24,18 +24,14 @@ export default function Main() {
         <Withdraw members={multisigStorage?.account?.members || []} />
       </div>
       <div className="flex flex-1 w-full min-h-0 justify-between items-stretch">
-        <div className="flex flex-1 min-w-0 flex-col gap-5">
+        <div className="flex flex-1 min-w-0 flex-col gap-4">
           <h3 className="text-xl">Coins</h3>
-          <GradientList>
-            <Coins vaultAddress={vaultAddress} />
-          </GradientList>
+          <Coins vaultAddress={vaultAddress} />
         </div>
         <div className="flex mx-10 w-px self-stretch" />
-        <div className="basis-1/6 flex flex-1 min-w-0 flex-col gap-5">
+        <div className="basis-1/7 flex flex-1 min-w-0 flex-col gap-4">
           <h3 className="text-xl">Transactions</h3>
-          <GradientList>
-            <Transactions multisigAddress={multisigAddress} />
-          </GradientList>
+          <Transactions multisigAddress={multisigAddress} />
         </div>
       </div>
     </main>
@@ -61,15 +57,5 @@ function Withdraw({ members }: { members: Member[] }) {
         </Button>
       </DialogTrigger>
     </WithdrawDialog>
-  );
-}
-
-function GradientList({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="relative flex flex-1 min-h-0 overflow-hidden py-4">
-      <div className="absolute top-0 left-0 right-0 h-14 bg-gradient-to-b from-background to-transparent z-10 pointer-events-none" />
-      {children}
-      <div className="absolute bottom-0 left-0 right-0 h-14 bg-gradient-to-b from-transparent to-background z-10 pointer-events-none" />
-    </div>
   );
 }

@@ -79,32 +79,28 @@ const EnterAmount = ({
         </Button>
       </div>
       <motion.div className="flex flex-row items-center justify-between text-sm cursor-default">
-        <AnimatePresence initial={false} mode="wait">
-          <motion.span
-            layout
-            key={calculatedAmountLabel}
-            transition={{ duration: 0.3 }}
-            initial={{ filter: "blur(3px)" }}
-            animate={{ filter: "blur(0px)" }}
-            exit={{ filter: "blur(3px)" }}
-            className="text-placeholder"
-          >
-            {calculatedAmountLabel}
-          </motion.span>
-        </AnimatePresence>
-        <AnimatePresence initial={false} mode="wait">
-          <motion.span
-            layout
-            key={maxAmountLabel}
-            transition={{ duration: 0.3 }}
-            initial={{ filter: "blur(3px)" }}
-            animate={{ filter: "blur(0px)" }}
-            exit={{ filter: "blur(3px)" }}
-            className="text-placeholder"
-          >
-            {maxAmountLabel}
-          </motion.span>
-        </AnimatePresence>
+        <motion.span
+          layout
+          key={calculatedAmountLabel}
+          transition={{ duration: 0.6 }}
+          initial={{ filter: "blur(6px)" }}
+          animate={{ filter: "blur(0px)" }}
+          exit={{ filter: "blur(6px)" }}
+          className="text-placeholder"
+        >
+          {calculatedAmountLabel}
+        </motion.span>
+        <motion.span
+          layout
+          key={maxAmountLabel}
+          transition={{ duration: 0.6 }}
+          initial={{ filter: "blur(6px)" }}
+          animate={{ filter: "blur(0px)" }}
+          exit={{ filter: "blur(6px)" }}
+          className="text-placeholder"
+        >
+          {maxAmountLabel}
+        </motion.span>
       </motion.div>
     </>
   );

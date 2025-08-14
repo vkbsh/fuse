@@ -17,16 +17,14 @@ export default function Coins({ vaultAddress }: { vaultAddress: Address }) {
   const hasData = isFetched && data?.length;
 
   return (
-    <div className="flex flex-1 flex-col gap-2 overflow-y-scroll p-4 scroll-smooth scrollbar-hidden -mx-7 -mt-4">
+    <div className="flex flex-1 flex-col overflow-y-scroll scroll-smooth scrollbar-hidden -mx-5">
       <AnimatePresence mode="popLayout">
         {!hasData ? (
           <motion.div
-            key="loading"
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
             transition={{ duration: 0.6 }}
-            className="w-full flex gap-4 p-3"
           >
             <CoinSkeleton />
           </motion.div>
@@ -39,7 +37,7 @@ export default function Coins({ vaultAddress }: { vaultAddress: Address }) {
 }
 
 function CoinList({ data }: { data: TokenData[] }) {
-  const { set } = useWithdrawStore();
+  const set = useWithdrawStore((state) => state.set);
   const walletStorage = useWalletStore((state) => state.walletStorage);
   const multisigStorage = useWalletStore((state) => state.multisigStorage);
 
@@ -50,31 +48,28 @@ function CoinList({ data }: { data: TokenData[] }) {
   return data.map((token, i) => {
     return (
       <motion.div
-        layout
         key={token.address}
-        className="w-full"
         {...fadeInListItemProps(i)}
+        className="px-2"
       >
-        <WithdrawDialog>
-          <DialogTrigger asChild disabled={!hasAllPermissions}>
-            <motion.button
-              transition={{ duration: 0.3, type: "spring" }}
-              whileHover={
-                hasAllPermissions
-                  ? {
-                      opacity: 1,
-                      scale: 1.03,
-                      backgroundColor: "var(--color-background-hover)",
-                    }
-                  : undefined
-              }
-              className="w-full rounded-2xl bg-background"
-              onClick={() => hasAllPermissions && set("token", token)}
-            >
-              <Coin token={token} />
-            </motion.button>
-          </DialogTrigger>
-        </WithdrawDialog>
+        <motion.div
+          whileHover={{
+            scale: 1.03,
+          }}
+          transition={{ duration: 0.3 }}
+          className="rounded-2xl p-3"
+        >
+          <WithdrawDialog>
+            <DialogTrigger asChild disabled={!hasAllPermissions}>
+              <button
+                className="w-full"
+                onClick={() => hasAllPermissions && set("token", token)}
+              >
+                <Coin token={token} />
+              </button>
+            </DialogTrigger>
+          </WithdrawDialog>
+        </motion.div>
       </motion.div>
     );
   });

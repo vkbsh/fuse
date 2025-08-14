@@ -90,17 +90,19 @@ function ProgressStatus({
 }) {
   return (
     addresses?.[0] && (
-      <motion.div
-        initial={{ opacity: active ? 1 : 0.8 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.6 }}
-        className="w-[130px] flex flex-col items-center gap-5"
-      >
-        <span className="">{icon}</span>
+      <motion.div className="w-[130px] flex flex-col items-center gap-5">
+        <motion.span
+          animate={{
+            color: active
+              ? "var(--color-secondary)"
+              : "var(--color-placeholder)",
+          }}
+        >
+          {icon}
+        </motion.span>
         <div className="flex flex-col gap-1 items-center">
           <span className="">{label}</span>
-          <div className="flex flex-row gap-1">
+          <div className="flex flex-row gap-1 text-placeholder">
             <div className="flex flex-col">
               <span>With</span>
             </div>

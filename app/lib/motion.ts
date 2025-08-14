@@ -71,11 +71,9 @@ const motionProps = {
   blurOverlay: {
     initial: {
       backdropFilter: "blur(0px)",
-      backgroundColor: "rgba(0, 0, 0, 0)",
     },
     animate: {
       backdropFilter: "blur(6px)",
-      backgroundColor: "rgba(0, 0, 0, 0.05)",
       transition: { duration: 0.6, type: "easeIn" },
     },
     exit: {

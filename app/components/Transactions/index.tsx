@@ -30,8 +30,8 @@ export default function Transactions({
 }
 
 function WithAccount({
-  rentCollectorAddress,
   multisigAddress,
+  rentCollectorAddress,
   staleTransactionIndex,
 }: {
   multisigAddress: Address;
@@ -75,19 +75,28 @@ function WithAccount({
   });
 
   return (
-    <div className="flex flex-1 flex-col gap-2 overflow-y-auto scroll-smooth scrollbar-hidden">
-      <AnimatePresence mode="wait">
+    <div className="flex flex-1 flex-col overflow-y-auto scroll-smooth scrollbar-hidden -mx-5">
+      <AnimatePresence mode="popLayout">
         {isFetched &&
           transactions?.length &&
           transactions?.map((data, i) => (
             <motion.div
               key={data?.transactionIndex}
               {...fadeInListItemProps(i)}
+              className="px-2"
             >
-              <TransactionDialog
-                data={data}
-                rentCollectorAddress={rentCollectorAddress}
-              />
+              <motion.div
+                whileHover={{
+                  scale: 1.03,
+                }}
+                transition={{ duration: 0.3 }}
+                className="rounded-2xl p-3"
+              >
+                <TransactionDialog
+                  data={data}
+                  rentCollectorAddress={rentCollectorAddress}
+                />
+              </motion.div>
             </motion.div>
           ))}
         {isLoading && !transactions?.length && <TransactionLoadingState />}
