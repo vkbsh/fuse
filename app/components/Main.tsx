@@ -36,7 +36,10 @@ export default function Main() {
         <div className="flex mx-10 w-px self-stretch" />
         <div className="basis-1/7 flex flex-1 min-w-0 flex-col gap-4">
           <h3 className="text-xl">Transactions</h3>
-          <Transactions multisigAddress={multisigAddress} />
+          <Transactions
+            vaultAddress={vaultAddress}
+            multisigAddress={multisigAddress}
+          />
         </div>
       </div>
     </main>

@@ -83,11 +83,13 @@ export default function Review({
 
     let transactionMessage = null;
 
+    const fee = 5000;
+
     if (isSolTransfer) {
       transactionMessage = await createTransferSolMessage({
         toAddress: address(toAddress),
         source: vaultAddress,
-        amount: amount * LAMPORTS_PER_SOL,
+        amount: amount * LAMPORTS_PER_SOL - fee,
       });
     } else {
       transactionMessage = await createTransferTokenMessage({

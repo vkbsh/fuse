@@ -11,9 +11,11 @@ import { useWalletByName } from "~/hooks/wallet";
 
 export default function TransactionDialog({
   data,
+  vaultAddress,
   rentCollectorAddress,
 }: {
   data: any;
+  vaultAddress: Address;
   rentCollectorAddress: Address;
 }) {
   const [isOpen, onOpenChange] = useState(false);
@@ -56,6 +58,7 @@ export default function TransactionDialog({
             approved={approved}
             rejected={rejected}
             cancelled={cancelled}
+            vaultAddress={vaultAddress}
             walletAccount={walletAccount}
             transactionIndex={transactionIndex}
             rentCollectorAddress={rentCollectorAddress}

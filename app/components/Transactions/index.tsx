@@ -14,14 +14,17 @@ import TransactionSkeleton from "./TransactionSkeleton";
 export type Status = "ready" | "executed" | "cancelled";
 
 export default function Transactions({
+  vaultAddress,
   multisigAddress,
 }: {
+  vaultAddress: Address;
   multisigAddress: Address;
 }) {
   const { data: multisigAccount } = useMultisigAccount(multisigAddress);
 
   return (
     <WithAccount
+      vaultAddress={vaultAddress}
       multisigAddress={multisigAddress}
       rentCollectorAddress={multisigAccount?.rentCollector}
       staleTransactionIndex={multisigAccount?.staleTransactionIndex}
@@ -30,10 +33,12 @@ export default function Transactions({
 }
 
 function WithAccount({
+  vaultAddress,
   multisigAddress,
   rentCollectorAddress,
   staleTransactionIndex,
 }: {
+  vaultAddress: Address;
   multisigAddress: Address;
   staleTransactionIndex: bigint | null | undefined;
   rentCollectorAddress: Address | null | undefined;
@@ -94,6 +99,7 @@ function WithAccount({
               >
                 <TransactionDialog
                   data={data}
+                  vaultAddress={vaultAddress}
                   rentCollectorAddress={rentCollectorAddress}
                 />
               </motion.div>

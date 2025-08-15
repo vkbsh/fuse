@@ -4,7 +4,7 @@ import { UiWalletAccount } from "@wallet-standard/react";
 import { useWalletAccountTransactionSigner } from "@solana/react";
 
 import { Button } from "~/components/ui/button";
-import { useRefetchTransactions } from "~/hooks/resources";
+import { useRefetchTransactions, refetchBalance } from "~/hooks/resources";
 
 import {
   sendAndConfirmAccountsCloseMessage,
@@ -23,6 +23,7 @@ export default function TransactionFooter({
   approved,
   rejected,
   cancelled,
+  vaultAddress,
   walletAccount,
   transactionIndex,
   rentCollectorAddress,
@@ -31,6 +32,7 @@ export default function TransactionFooter({
   approved: Address[];
   rejected: Address[];
   cancelled: Address[];
+  vaultAddress: Address;
   transactionIndex: number;
   rentCollectorAddress: Address;
   walletAccount: UiWalletAccount;
@@ -99,6 +101,7 @@ export default function TransactionFooter({
       });
 
       await refetchTransactions();
+      await refetchBalance(vaultAddress);
     } catch (e) {
       console.error("Error [Execute, Close Accounts]: ", e);
       toast.error("Failed to Execute Vault Transaction");
