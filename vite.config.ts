@@ -7,9 +7,12 @@ import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 export default defineConfig({
   resolve: {
-    alias: {
-      "~": path.resolve(__dirname, "app"),
-    },
+    alias: [
+      {
+        find: "~",
+        replacement: "app",
+      },
+    ],
   },
   plugins: [
     nodePolyfills({
