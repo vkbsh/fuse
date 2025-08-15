@@ -7,7 +7,7 @@ import { nodePolyfills } from "vite-plugin-node-polyfills";
 export default defineConfig({
   resolve: {
     alias: {
-      "~": "/app",
+      "~": "./app",
     },
   },
   plugins: [
