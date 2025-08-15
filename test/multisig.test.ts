@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeAll } from "vitest";
 
-import { LAMPORTS_PER_SOL } from "gill";
+import { LAMPORTS_PER_SOL, getMinimumBalanceForRentExemption } from "gill";
 import { getAddMemoInstruction } from "gill/programs";
 
 import {
@@ -43,7 +43,7 @@ import {
   getTestAccountsWithBalances,
 } from "./_setup";
 
-const amount = 0.07357;
+const amount = 1;
 let transactionIndex = 0n;
 
 describe("Interacting with Multisig Program", async () => {
@@ -66,14 +66,13 @@ describe("Interacting with Multisig Program", async () => {
     test("Should verify account state before transaction execution", async () => {
       const vaultBalance = await getBalance(vaultAddress);
 
-      expect(vaultBalance).equal(BigInt(LAMPORTS_PER_SOL));
+      expect(vaultBalance).equal(BigInt(LAMPORTS_PER_SOL * 2));
     });
 
     test("Create VaultTransaction with: [TransferSOL, ProposalCreate, ProposalApprove]", async () => {
       const transactionMessage = await createTransferSolMessage({
         source: vaultAddress,
         toAddress: recipientSolAddress,
-        feePayerAddress: creator.address,
         amount: amount * LAMPORTS_PER_SOL,
       });
 
@@ -100,7 +99,7 @@ describe("Interacting with Multisig Program", async () => {
       );
 
       expect(parsedMessage).not.null;
-      expect(parsedMessage?.amount).equal(amount * LAMPORTS_PER_SOL);
+      expect(Number(parsedMessage?.amount)).equal(amount * LAMPORTS_PER_SOL);
       expect(parsedMessage?.toAccount).equal(recipientSolAddress);
       expect(parsedMessage?.fromAccount).equal(vaultAddress);
       expect(parsedMessage?.mintAddress).equal(SOL_MINT_ADDRESS);
@@ -151,7 +150,7 @@ describe("Interacting with Multisig Program", async () => {
       const vaultBalance = await getBalance(vaultAddress);
 
       expect(vaultBalance).equal(
-        BigInt(LAMPORTS_PER_SOL) - BigInt(amount * LAMPORTS_PER_SOL),
+        BigInt(LAMPORTS_PER_SOL * 2) - BigInt(amount * LAMPORTS_PER_SOL),
       );
       expect(recipientBalance).equal(BigInt(amount * LAMPORTS_PER_SOL));
     });
@@ -186,7 +185,6 @@ describe("Interacting with Multisig Program", async () => {
         signer: vaultAddress,
         authorityAddress: vaultAddress,
         toAddress: recipientTokenAddress,
-        feePayerAddress: creator.address,
         amount: Math.round(amount * 10 ** fromToken.decimals),
       });
 
@@ -217,7 +215,7 @@ describe("Interacting with Multisig Program", async () => {
       );
 
       expect(parsedMessage).not.null;
-      expect(parsedMessage?.amount).equal(
+      expect(Number(parsedMessage?.amount)).equal(
         Math.round(amount * 10 ** fromToken.decimals),
       );
       expect(parsedMessage?.toAccount).equal(recipientTokenAddress);
@@ -350,7 +348,7 @@ describe("Interacting with Multisig Program", async () => {
       );
 
       expect(parsedMessage).not.null;
-      expect(parsedMessage?.amount).equal(
+      expect(Number(parsedMessage?.amount)).equal(
         Math.round(amount * 10 ** fromToken.decimals),
       );
       expect(parsedMessage?.toAccount).equal(recipientTokenAddress);

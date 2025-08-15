@@ -85,17 +85,15 @@ export default function Review({
 
     if (isSolTransfer) {
       transactionMessage = await createTransferSolMessage({
-        feePayerAddress: address(walletAccount.address),
-        toAddress: address(toAddress),
         source: vaultAddress,
+        toAddress: address(toAddress),
         amount: amount * LAMPORTS_PER_SOL,
       });
     } else {
       transactionMessage = await createTransferTokenMessage({
-        feePayerAddress: address(walletAccount.address),
-        toAddress: address(toAddress),
         fromToken: token,
         signer: vaultAddress,
+        toAddress: address(toAddress),
         authorityAddress: vaultAddress,
         amount: amount * 10 ** token.decimals,
       });

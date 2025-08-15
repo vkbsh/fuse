@@ -130,7 +130,7 @@ export async function getBalance(address: Address) {
 
 export const airdrop = async (
   recipientAddress: Address,
-  putativeLamports: bigint = lamports(BigInt(LAMPORTS_PER_SOL)),
+  putativeLamports: bigint = lamports(BigInt(LAMPORTS_PER_SOL * 2)),
 ) => {
   await airdropFactory(client)({
     recipientAddress,
