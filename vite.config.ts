@@ -5,6 +5,11 @@ import { vitePlugin as remix } from "@remix-run/dev";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      "~": "/app",
+    },
+  },
   plugins: [
     nodePolyfills({
       include: ["process", "buffer"],
