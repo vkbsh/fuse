@@ -83,10 +83,12 @@ export async function createTransferSolMessage({
   source,
   amount,
   toAddress,
+  feePayerAddress,
 }: {
   amount: number;
   source: Address;
   toAddress: Address;
+  feePayerAddress: Address;
 }) {
   const transferSolIx = createTransferSolInstruction({
     source,
@@ -94,7 +96,8 @@ export async function createTransferSolMessage({
     amount: lamports(BigInt(Math.round(amount))),
   });
 
-  return createLegacyTransactionMessage(source, [transferSolIx]);
+  return createLegacyTransactionMessage(feePayerAddress, [transferSolIx]);
+  // return createLegacyTransactionMessage(source, [transferSolIx]);
 }
 
 export async function createTransferTokenMessage({
@@ -102,8 +105,10 @@ export async function createTransferTokenMessage({
   signer,
   toAddress,
   fromToken,
+  feePayerAddress,
   authorityAddress,
 }: {
+  feePayerAddress: Address;
   amount: number;
   signer: Address;
   toAddress: Address;
@@ -118,7 +123,8 @@ export async function createTransferTokenMessage({
     amount: Math.round(amount),
   });
 
-  return createLegacyTransactionMessage(signer, transferTokenIxs);
+  return createLegacyTransactionMessage(feePayerAddress, transferTokenIxs);
+  // return createLegacyTransactionMessage(signer, transferTokenIxs);
 }
 
 export async function sendAndConfirmTransferWithProposalApproveMessage({

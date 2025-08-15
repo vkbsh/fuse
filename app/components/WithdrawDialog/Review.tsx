@@ -80,23 +80,24 @@ export default function Review({
     const memberAddress = address(walletAccount.address);
     const creatorAddress = address(walletAccount.address);
     const isSolTransfer = token.mint === SOL_MINT_ADDRESS;
-    const fee = 150000;
 
     let transactionMessage = null;
 
     if (isSolTransfer) {
       transactionMessage = await createTransferSolMessage({
+        feePayerAddress: address(walletAccount.address),
         toAddress: address(toAddress),
         source: vaultAddress,
-        amount: amount * LAMPORTS_PER_SOL - fee,
+        amount: amount * LAMPORTS_PER_SOL,
       });
     } else {
       transactionMessage = await createTransferTokenMessage({
+        feePayerAddress: address(walletAccount.address),
         toAddress: address(toAddress),
         fromToken: token,
         signer: vaultAddress,
         authorityAddress: vaultAddress,
-        amount: amount * 10 ** token.decimals - fee,
+        amount: amount * 10 ** token.decimals,
       });
     }
 

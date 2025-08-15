@@ -73,6 +73,7 @@ describe("Interacting with Multisig Program", async () => {
       const transactionMessage = await createTransferSolMessage({
         source: vaultAddress,
         toAddress: recipientSolAddress,
+        feePayerAddress: creator.address,
         amount: amount * LAMPORTS_PER_SOL,
       });
 
@@ -185,6 +186,7 @@ describe("Interacting with Multisig Program", async () => {
         signer: vaultAddress,
         authorityAddress: vaultAddress,
         toAddress: recipientTokenAddress,
+        feePayerAddress: creator.address,
         amount: Math.round(amount * 10 ** fromToken.decimals),
       });
 

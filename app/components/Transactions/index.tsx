@@ -100,7 +100,7 @@ function WithAccount({
                 <TransactionDialog
                   data={data}
                   vaultAddress={vaultAddress}
-                  rentCollectorAddress={rentCollectorAddress}
+                  rentCollectorAddress={rentCollectorAddress as Address}
                 />
               </motion.div>
             </motion.div>
