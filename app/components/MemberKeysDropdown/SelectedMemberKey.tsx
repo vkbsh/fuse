@@ -18,7 +18,7 @@ const SelectedMemberKey = forwardRef((props, ref: Ref<HTMLButtonElement>) => {
         initial={{ opacity: 0, filter: "blur(5px)" }}
         animate={{ opacity: 1, filter: "blur(0px)" }}
         exit={{ opacity: 0, filter: "blur(5px)" }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.3 }}
         className="flex items-center justify-between text-foreground h-[34px] w-42 rounded-2xl bg-accent-background px-3.5"
       >
         <img

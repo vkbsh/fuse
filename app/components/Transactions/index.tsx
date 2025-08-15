@@ -76,7 +76,7 @@ function WithAccount({
 
   return (
     <div className="flex flex-1 flex-col overflow-y-auto scroll-smooth scrollbar-hidden -mx-5">
-      <AnimatePresence mode="popLayout">
+      <AnimatePresence>
         {isFetched &&
           transactions?.length &&
           transactions?.map((data, i) => (
@@ -99,7 +99,11 @@ function WithAccount({
               </motion.div>
             </motion.div>
           ))}
+      </AnimatePresence>
+      <AnimatePresence>
         {isLoading && !transactions?.length && <TransactionLoadingState />}
+      </AnimatePresence>
+      <AnimatePresence>
         {isFetched && !transactions?.length && <TransactionEmptyState />}
       </AnimatePresence>
     </div>
@@ -112,7 +116,7 @@ function TransactionEmptyState() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.6 }}
+      transition={{ duration: 0.3 }}
       className="flex flex-col justify-center items-center"
     >
       <img
@@ -128,10 +132,10 @@ function TransactionEmptyState() {
 function TransactionLoadingState() {
   return (
     <motion.div
+      exit={{ opacity: 0 }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.6 }}
+      transition={{ duration: 0.3 }}
       className="w-full flex gap-4 p-3"
     >
       <TransactionSkeleton />

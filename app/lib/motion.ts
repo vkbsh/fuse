@@ -15,10 +15,10 @@ export const fadeInListItemProps = (index: number): MotionProps => ({
   initial: { opacity: 0, y: -5 },
   exit: { opacity: 0, y: -5 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.4, delay: index * 0.06 },
+  transition: { duration: 0.3, delay: index * 0.06 },
 });
 
-const defaultTransition = { duration: 0.4 };
+const defaultTransition = { duration: 0.3 };
 
 const motionProps = {
   fadeIn: {
@@ -47,12 +47,12 @@ const motionProps = {
     animate: {
       y: 0,
       opacity: 1,
-      transition: { duration: 0.6, type: "easeIn" },
+      transition: { duration: 0.3, type: "easeIn" },
     },
     exit: {
       y: -20,
       opacity: 0,
-      transition: { duration: 0.4, type: "easeOut" },
+      transition: { duration: 0.3, type: "easeOut" },
     },
   },
   slideDownDropdown: {
@@ -60,12 +60,12 @@ const motionProps = {
     animate: {
       y: 0,
       opacity: 1,
-      transition: { duration: 0.6, type: "easeIn" },
+      transition: { duration: 0.3, type: "easeIn" },
     },
     exit: {
       y: -5,
       opacity: 0,
-      transition: { duration: 0.4, type: "easeOut" },
+      transition: { duration: 0.3, type: "easeOut" },
     },
   },
   blurOverlay: {
@@ -74,12 +74,12 @@ const motionProps = {
     },
     animate: {
       backdropFilter: "blur(6px)",
-      transition: { duration: 0.6, type: "easeIn" },
+      transition: { duration: 0.3, type: "easeIn" },
     },
     exit: {
       backdropFilter: "blur(0px)",
       backgroundColor: "rgba(0, 0, 0, 0)",
-      transition: { duration: 0.4, type: "easeOut" },
+      transition: { duration: 0.3, type: "easeOut" },
     },
   },
 };

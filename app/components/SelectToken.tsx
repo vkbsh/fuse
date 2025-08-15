@@ -58,7 +58,7 @@ export default function SelectToken({
               <DropdownMenuItem>
                 <motion.div
                   key={item.mint}
-                  transition={{ duration: 0.4 }}
+                  transition={{ duration: 0.3 }}
                   exit={{ x: -8, filter: "blur(3px)" }}
                   initial={{
                     x: -8,

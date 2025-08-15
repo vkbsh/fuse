@@ -59,7 +59,7 @@ const Button = forwardRef(
                 scale: 1.02,
               }
         }
-        transition={{ duration: 0.4 }}
+        transition={{ duration: 0.3 }}
         animate={{ opacity: disabled ? 0.6 : 1 }}
         className={cn(buttonVariants({ variant, size, className }))}
         onClick={onClick}

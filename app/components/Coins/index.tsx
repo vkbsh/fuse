@@ -24,7 +24,7 @@ export default function Coins({ vaultAddress }: { vaultAddress: Address }) {
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.3 }}
           >
             <CoinSkeleton />
           </motion.div>

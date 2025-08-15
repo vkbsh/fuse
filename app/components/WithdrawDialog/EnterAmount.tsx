@@ -82,7 +82,7 @@ const EnterAmount = ({
         <motion.span
           layout
           key={calculatedAmountLabel}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.3 }}
           initial={{ filter: "blur(6px)" }}
           animate={{ filter: "blur(0px)" }}
           exit={{ filter: "blur(6px)" }}
@@ -93,7 +93,7 @@ const EnterAmount = ({
         <motion.span
           layout
           key={maxAmountLabel}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.3 }}
           initial={{ filter: "blur(6px)" }}
           animate={{ filter: "blur(0px)" }}
           exit={{ filter: "blur(6px)" }}

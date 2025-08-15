@@ -67,7 +67,7 @@ export default function Connect() {
 }
 
 function LogoMask() {
-  return Array.from({ length: 25 }).map((_, i) => (
+  return Array.from({ length: 35 }).map((_, i) => (
     <div key={i} className="flex flex-row gap-1">
       {Array.from({ length: 5 }).map((_, i) => (
         <span

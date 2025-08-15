@@ -25,7 +25,7 @@ export default function Coin({ token }: { token: TokenData }) {
 
           <motion.span
             key={roundedAmount}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.3 }}
             initial={{ filter: "blur(6px)" }}
             animate={{ filter: "blur(0px)" }}
             exit={{ filter: "blur(6px)" }}
@@ -38,7 +38,7 @@ export default function Coin({ token }: { token: TokenData }) {
 
       <motion.span
         key={roundedUsdAmount}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.3 }}
         initial={{ filter: "blur(6px)" }}
         animate={{ filter: "blur(0px)" }}
         exit={{ filter: "blur(6px)" }}

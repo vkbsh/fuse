@@ -119,7 +119,7 @@ function WalletOption({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
+            transition={{ duration: 0.3 }}
           >
             Wallet connecting...
           </motion.span>
@@ -136,7 +136,7 @@ function WalletOption({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
+            transition={{ duration: 0.3 }}
             className="font-semibold"
           >
             {wallet.name}
@@ -204,7 +204,7 @@ function ConnectMultisig({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.4 }}
+        transition={{ duration: 0.3 }}
         className="text-base"
       >
         Validating account...

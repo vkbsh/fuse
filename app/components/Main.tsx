@@ -1,6 +1,11 @@
 import { Address } from "gill";
 import { CircleArrowUp } from "lucide-react";
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 import Coins from "~/components/Coins";
 import { Button } from "~/components/ui/button";
 import TotalBalance from "~/components/TotalBalance";
@@ -42,14 +47,32 @@ function Withdraw({ members }: { members: Member[] }) {
   const walletStorage = useWalletStore((state) => state.walletStorage);
   const hasAllPermissions = hasCloudPermission(members, walletStorage?.address);
 
+  if (!hasAllPermissions) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="borderedWithIcon"
+            size="borderedWithIcon"
+            disabled={!hasAllPermissions}
+          >
+            <span className="rounded-full w-[16px] h-[16px] flex items-center justify-center">
+              <CircleArrowUp />
+            </span>
+            <span>Withdraw</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="right">
+          Only Cloud Key allowed to withdraw funds
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
   return (
     <WithdrawDialog>
       <DialogTrigger asChild>
-        <Button
-          variant="borderedWithIcon"
-          size="borderedWithIcon"
-          disabled={!hasAllPermissions}
-        >
+        <Button variant="borderedWithIcon" size="borderedWithIcon">
           <span className="rounded-full w-[16px] h-[16px] flex items-center justify-center">
             <CircleArrowUp />
           </span>
