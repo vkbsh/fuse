@@ -1,3 +1,4 @@
+import path from "path";
 import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
@@ -7,7 +8,7 @@ import { nodePolyfills } from "vite-plugin-node-polyfills";
 export default defineConfig({
   resolve: {
     alias: {
-      "~": "./app",
+      "~": path.resolve(__dirname, "app"),
     },
   },
   plugins: [
