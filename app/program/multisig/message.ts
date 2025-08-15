@@ -94,8 +94,7 @@ export async function createTransferSolMessage({
     amount: lamports(BigInt(Math.round(amount))),
   });
 
-  return createLegacyTransactionMessage(toAddress, [transferSolIx]); // sing by Cloude Key
-  // return createLegacyTransactionMessage(source, [transferSolIx]);
+  return createLegacyTransactionMessage(source, [transferSolIx]);
 }
 
 export async function createTransferTokenMessage({

@@ -80,10 +80,9 @@ export default function Review({
     const memberAddress = address(walletAccount.address);
     const creatorAddress = address(walletAccount.address);
     const isSolTransfer = token.mint === SOL_MINT_ADDRESS;
+    const fee = 150000;
 
     let transactionMessage = null;
-
-    const fee = 5000;
 
     if (isSolTransfer) {
       transactionMessage = await createTransferSolMessage({
@@ -97,7 +96,7 @@ export default function Review({
         fromToken: token,
         signer: vaultAddress,
         authorityAddress: vaultAddress,
-        amount: amount * 10 ** token.decimals,
+        amount: amount * 10 ** token.decimals - fee,
       });
     }
 
