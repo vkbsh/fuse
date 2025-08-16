@@ -68,14 +68,20 @@ export default function Connect() {
 
 function LogoMask() {
   return Array.from({ length: 35 }).map((_, i) => (
-    <div key={i} className="flex flex-row gap-1">
+    <div key={i} className="flex flex-row gap-1 justify-center">
       {Array.from({ length: 5 }).map((_, i) => (
-        <span
+        <motion.span
+          animate={{ x: ["100%", "-100%"] }}
+          transition={{
+            duration: 20,
+            ease: "linear",
+            repeat: Infinity,
+          }}
           key={i + i}
           className="uppercase whitespace-nowrap text-xs sm:text-sm font-light"
         >
           Security is in our DNA
-        </span>
+        </motion.span>
       ))}
     </div>
   ));
