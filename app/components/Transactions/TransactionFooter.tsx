@@ -23,6 +23,7 @@ export default function TransactionFooter({
   approved,
   rejected,
   cancelled,
+  closeDialog,
   vaultAddress,
   walletAccount,
   transactionIndex,
@@ -33,6 +34,7 @@ export default function TransactionFooter({
   rejected: Address[];
   cancelled: Address[];
   vaultAddress: Address;
+  closeDialog: () => void;
   transactionIndex: number;
   rentCollectorAddress: Address;
   walletAccount: UiWalletAccount;
@@ -70,6 +72,8 @@ export default function TransactionFooter({
     } catch (e) {
       console.error("Error [Cancel Proposal]: ", e);
       toast.error("Failed to Cancel Proposal");
+    } finally {
+      closeDialog();
     }
   };
 
@@ -87,6 +91,8 @@ export default function TransactionFooter({
     } catch (e) {
       console.error("Error [Approve Proposal]: ", e);
       toast.error("Failed to Approve Proposal");
+    } finally {
+      closeDialog();
     }
   };
 
@@ -105,6 +111,8 @@ export default function TransactionFooter({
     } catch (e) {
       console.error("Error [Execute, Close Accounts]: ", e);
       toast.error("Failed to Execute Vault Transaction");
+    } finally {
+      closeDialog();
     }
   };
 
@@ -121,6 +129,8 @@ export default function TransactionFooter({
     } catch (e) {
       console.error("Error [Reject Proposal]: ", e);
       toast.error("Failed to Reject Proposal");
+    } finally {
+      closeDialog();
     }
   };
 
@@ -137,6 +147,8 @@ export default function TransactionFooter({
     } catch (e) {
       console.error("Error [Close Accounts]: ", e);
       toast.error("Failed to Close Accounts");
+    } finally {
+      closeDialog();
     }
   };
 

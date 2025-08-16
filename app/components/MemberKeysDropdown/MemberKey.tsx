@@ -14,11 +14,13 @@ import { LSWallet, useWalletStore } from "~/state/wallet";
 export default function MemberKey({
   wallet,
   isConnected,
+  closeDropdown,
   permissionLabel,
 }: {
   wallet: LSWallet;
   isConnected: boolean;
   permissionLabel: string;
+  closeDropdown: () => void;
 }) {
   const { removewalletStorage, selectWalletName } = useWalletStore();
 
@@ -34,6 +36,7 @@ export default function MemberKey({
           className="text-sm"
         >
           {permissionLabel}
+          HDWA
         </motion.span>
       </AnimatePresence>
       <motion.div className="flex flex-row items-center">
@@ -56,23 +59,29 @@ export default function MemberKey({
         </AnimatePresence>
         <div className="flex flex-row gap-1">
           <Tooltip>
-            <TooltipTrigger
-              asChild
-              onClick={() => removewalletStorage(wallet.name)}
-            >
-              <Button variant="outline" size="icon">
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={async () => {
+                  closeDropdown();
+                  await new Promise((resolve) => setTimeout(resolve, 300));
+                  removewalletStorage(wallet.name);
+                }}
+              >
                 <CloudOff size={16} />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Disconnect</TooltipContent>
           </Tooltip>
-
           <Tooltip>
-            <TooltipTrigger
-              asChild
-              onClick={() => selectWalletName(wallet.name)}
-            >
-              <Button variant="outline" size="icon" disabled={isConnected}>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="outline"
+                disabled={isConnected}
+                onClick={() => selectWalletName(wallet.name)}
+              >
                 <Cloud size={16} />
               </Button>
             </TooltipTrigger>

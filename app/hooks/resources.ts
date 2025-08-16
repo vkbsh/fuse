@@ -1,4 +1,10 @@
-import { address, Address } from "gill";
+import { useEffect } from "react";
+import {
+  address,
+  Address,
+  LAMPORTS_PER_SOL,
+  getMinimumBalanceForRentExemption,
+} from "gill";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -11,7 +17,7 @@ import { getAmount } from "~/lib/amount";
 import { getBalance } from "~/service/balance";
 import { FromToken } from "~/program/multisig/message";
 import { fetchTokenMeta, fetchTokenPrice, TokenMeta } from "~/service/token";
-import { useEffect } from "react";
+import { SOL_MINT_ADDRESS } from "~/program/multisig/address";
 
 export type TokenData = TokenMeta &
   FromToken & {
@@ -126,10 +132,16 @@ export const useTokenInfo = (vaultAddress: Address) => {
     .map((token) => {
       return {
         ata: token?.address,
-        amount: token?.amount,
+        amount:
+          token?.mint === SOL_MINT_ADDRESS
+            ? token?.amount -
+              Number(getMinimumBalanceForRentExemption(0)) / LAMPORTS_PER_SOL
+            : token?.amount,
         mint: address(token?.mint as string),
       };
     });
+
+  console.log({ tokens });
 
   const meta = useTokensMeta(tokens.map((t) => t.mint));
   const price = useTokensPrice(tokens.map((t) => t.mint));
@@ -150,13 +162,13 @@ export const useTokenInfo = (vaultAddress: Address) => {
         ata: tokens[i].ata,
         mint: tokens[i].mint,
         amount: getAmount({
-          decimals: Number(m.data?.decimals),
           amount: tokens[i].amount,
+          decimals: Number(m.data?.decimals),
         }),
         usdAmount: getAmount({
           price: price[i].data,
-          decimals: Number(m.data?.decimals),
           amount: tokens[i].amount,
+          decimals: Number(m.data?.decimals),
         }),
         programIdAddress: balanceData?.spl?.[tokens[i].mint]?.programIdAddress,
       };

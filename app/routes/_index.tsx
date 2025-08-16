@@ -15,32 +15,38 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Index() {
-  const multisigStorage = useWalletStore((state) => state.multisigStorage);
+  const multisigAddress = useWalletStore(
+    (state) => state.multisigStorage?.address,
+  );
 
   return (
-    <AnimatePresence>
-      {!multisigStorage?.address ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-          className="h-screen flex flex-col justify-center items-center py-4 gap-18"
-        >
-          <Connect />
-        </motion.div>
-      ) : (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 1.6 }}
-          className="h-screen w-full max-w-[1280px] m-auto p-6 flex flex-col gap-8 justify-between select-none"
-        >
-          <Dashboard />
-        </motion.div>
-      )}
+    <>
+      <AnimatePresence mode="popLayout">
+        {!multisigAddress ? (
+          <motion.div
+            key="connect"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="h-screen flex flex-col justify-center items-center py-4 gap-18"
+          >
+            <Connect />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="dashboard"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="h-screen w-full max-w-[1280px] m-auto p-6 flex flex-col gap-8 justify-between select-none"
+          >
+            <Dashboard />
+          </motion.div>
+        )}
+      </AnimatePresence>
       <Toaster />
-    </AnimatePresence>
+    </>
   );
 }

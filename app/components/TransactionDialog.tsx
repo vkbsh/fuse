@@ -54,6 +54,7 @@ export default function TransactionDialog({
             cancelled={cancelled}
           />
           <Footer
+            closeDialog={() => onOpenChange(false)}
             status={status}
             approved={approved}
             rejected={rejected}

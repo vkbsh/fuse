@@ -14,7 +14,7 @@ export default function Connect() {
     <>
       <motion.div
         key="logo"
-        transition={{ duration: 0.8, delay: 0.4 }}
+        transition={{ duration: 0.6, delay: 0.4 }}
         initial={{ opacity: 0, y: -25, scale: 2 }}
         animate={{ opacity: 1, y: 1, rotateZ: -45, rotateX: 50, scale: 1.3 }}
         exit={{ opacity: 0, y: -25 }}
@@ -26,7 +26,7 @@ export default function Connect() {
         <div className="flex flex-col gap-1 items-center">
           <motion.h2
             key="subtitle"
-            transition={{ duration: 0.6, delay: 1 }}
+            transition={{ duration: 0.4, delay: 1 }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -47,7 +47,7 @@ export default function Connect() {
         </div>
         <motion.div
           key="button"
-          transition={{ duration: 0.6, delay: 0.8 }}
+          transition={{ duration: 0.4, delay: 0.8 }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

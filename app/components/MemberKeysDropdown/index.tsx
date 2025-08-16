@@ -26,8 +26,8 @@ export default function MemberKeysDropdown() {
         <SelectedMemberKey />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" isOpen={isOpen}>
-        <motion.div className="flex flex-col p-6">
-          <MemberKeysList />
+        <motion.div layout className="flex flex-col p-6">
+          <MemberKeysList closeDropdown={() => onOpenChange(false)} />
           <ConnectWalletDialog>
             <DialogTrigger asChild>
               <Button className="h-[40px] border font-medium">
@@ -42,7 +42,7 @@ export default function MemberKeysDropdown() {
   );
 }
 
-function MemberKeysList() {
+function MemberKeysList({ closeDropdown }: { closeDropdown: () => void }) {
   const walletHistory = useWalletStore((state) => state.walletHistory);
   const walletStorage = useWalletStore((state) => state.walletStorage);
   const multisigStorage = useWalletStore((state) => state.multisigStorage);
@@ -79,6 +79,7 @@ function MemberKeysList() {
             <MemberKey
               wallet={wallet}
               isConnected={active}
+              closeDropdown={closeDropdown}
               permissionLabel={wallet.permissionLabel}
             />
           </motion.div>
