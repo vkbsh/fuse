@@ -22,7 +22,7 @@ export default function Connect() {
       >
         <LogoMask />
       </motion.div>
-      <div className="flex flex-col gap-6 items-center select-none">
+      <div className="flex flex-col gap-6 items-center">
         <div className="flex flex-col gap-1 items-center">
           <motion.h2
             key="subtitle"

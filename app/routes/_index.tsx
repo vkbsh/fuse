@@ -29,7 +29,7 @@ export default function Index() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="h-screen flex flex-col justify-center items-center py-4 gap-18"
+            className="h-screen flex flex-col justify-center items-center py-4 gap-18 select-none"
           >
             <Connect />
           </motion.div>
