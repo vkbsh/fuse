@@ -1,0 +1,89 @@
+@import "tailwindcss";
+@import "./fonts.css";
+
+@theme inline {
+  --font-*: initial;
+  --font-default: "SFProDisplay";
+
+  --radius-2xl: 1.05rem;
+  --radius-3xl: 1.25rem;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-background-hover: var(--background-hover);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent-background: var(--accent-background);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-border: var(--border);
+  --color-placeholder: var(--placeholder);
+  --color-input-border: var(--input-border);
+  --color-input-border-focus: var(--input-border-focus);
+
+  --color-default: var(--default);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-destructive: var(--destructive);
+}
+
+:root {
+  --background: #f3f3f3;
+  --foreground: #1f1e1e;
+  --accent-background: #ebebeb;
+
+  --primary: #141313;
+  --primary-foreground: #fafafa;
+
+  --secondary: #fff;
+  --secondary-foreground: #171717;
+
+  --popover: #000;
+  --popover-foreground: #fff;
+
+  --border: #9c9b9a;
+  --placeholder: #7f7f7f;
+  --input-border: #535353;
+  --input-border-focus: #777;
+
+  --default: #2685e1;
+  --success: #41be6b;
+  --warning: #e0a100;
+  --destructive: #ff4a4a;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+    color: var(--color-foreground);
+    font-family: var(--font-default);
+    background-color: var(--color-background);
+  }
+}
+
+.logo-mask {
+  mask-size: contain;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-image: url(/fuse.svg);
+  -webkit-mask-image: url(/fuse.svg);
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
