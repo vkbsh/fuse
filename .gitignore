@@ -1,0 +1,8 @@
+.env
+.cache
+**/.DS_Store
+
+dist
+node_modules
+test-ledger
+.vercel

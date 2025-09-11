@@ -1,0 +1,25 @@
+export function roundToken(amount: number): number {
+  return Math.round(amount * 100000) / 100000;
+}
+
+export function getAmount({
+  amount,
+  decimals,
+  price = 1,
+}: {
+  amount: number;
+  price?: number;
+  decimals: number;
+}) {
+  if (!decimals || !amount) return 0;
+
+  return (amount / 10 ** decimals) * price;
+}
+
+export function formatUSD(amount: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
