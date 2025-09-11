@@ -32,7 +32,7 @@ export default function InputAmount({
         variant="secondary"
         onClick={onSetMax}
         disabled={disabled}
-        className="px-5 h-11"
+        className="px-6 h-11 min-w-0 bg-white/20"
       >
         MAX
       </Button>

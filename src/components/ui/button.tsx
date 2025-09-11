@@ -5,13 +5,13 @@ import { cn } from "~/lib/utils";
 
 const variants = {
   default: "bg-secondary text-secondary-foreground",
-  secondary: "bg-white/15 text-primary-foreground",
+  secondary: "bg-white/10 text-primary-foreground",
   outline: "bg-primary text-primary-foreground",
 };
 
 const sizes = {
   icon: "size-9",
-  default: "h-[46px] px-12",
+  default: "h-[46px] px-8 min-w-[120px]",
 };
 
 export default function Button({
@@ -33,7 +33,7 @@ export default function Button({
     <motion.button
       onClick={onClick}
       className={cn(
-        "inline-flex font-bold items-center justify-center gap-2 whitespace-nowrap outline-transparent rounded-4xl border border-white/10 hover:scale-105 duration-300 transition-all",
+        "inline-flex font-semibold items-center justify-center gap-2 whitespace-nowrap outline-transparent rounded-4xl border border-white/10 hover:scale-105 duration-300 transition-all",
         disabled && "opacity-50",
         variants[variant],
         sizes[size],
