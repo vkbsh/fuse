@@ -172,16 +172,22 @@ describe("Browser", () => {
         ],
       },
     });
-  });
-
-  test("Render <App />", async () => {
-    await page.viewport(1280, 720);
 
     useWalletStore.getState().addWalletStorage({
       name: walletNameTest1,
       address: creator.address,
       icon: "",
     });
+
+    useWalletStore.getState().addWalletStorage({
+      name: walletNameTest2,
+      address: secondMember.address,
+      icon: "",
+    });
+  });
+
+  test("Transfer SOL", async () => {
+    await page.viewport(1280, 720);
 
     useWalletStore.getState().selectWalletName(walletNameTest1);
 
@@ -201,11 +207,13 @@ describe("Browser", () => {
 
     await firstCoin.click();
 
-    const withdrawDialogTitle = screen.getByRole("heading", {
-      name: "Withdraw",
-    });
+    await vi.waitFor(async () => {
+      const withdrawDialogTitle = screen.getByRole("heading", {
+        name: "Withdraw",
+      });
 
-    expect(withdrawDialogTitle).toBeVisible();
+      expect(withdrawDialogTitle).toBeVisible();
+    });
 
     await page.screenshot({
       path: "withdraw-dialog.png",
@@ -223,23 +231,67 @@ describe("Browser", () => {
       animations: "disabled",
     });
 
-    const initiateButton = screen.getByRole("button", { name: "Initiate" });
+    await vi.waitFor(async () => {
+      const initiateButton = screen.getByRole("button", { name: "Initiate" });
 
-    await initiateButton.click();
+      await initiateButton.click();
+    });
 
     await page.screenshot({
       path: "withdraw-dialog-initiate.png",
       animations: "disabled",
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    await vi.waitFor(async () => {
+      const transaction = screen.getByText("Send");
+      screen.debug(transaction);
+      expect(transaction).toBeVisible();
+      await transaction.click();
+    });
 
-    const transaction = screen.getByText("Send");
+    await page.screenshot({
+      path: "transaction-dialog.png",
+      animations: "disabled",
+    });
 
-    screen.debug(transaction);
+    await vi.waitFor(async () => {
+      useWalletStore.getState().selectWalletName(walletNameTest2);
+      const approve = screen.getByRole("button", { name: "Approve" });
+      screen.debug(approve);
+      expect(approve).toBeVisible();
+      await approve.click();
+    });
 
-    // await transaction.click();
+    await page.screenshot({
+      path: "transaction-dialog-approve.png",
+      animations: "disabled",
+    });
 
-    expect(transaction).toBeVisible();
+    await vi.waitFor(async () => {
+      const transaction = screen.getByText("Send");
+      screen.debug(transaction);
+      expect(transaction).toBeVisible();
+      await transaction.click();
+    });
+
+    await page.screenshot({
+      path: "transaction-dialog-execute.png",
+      animations: "disabled",
+    });
+
+    await vi.waitFor(async () => {
+      useWalletStore.getState().selectWalletName(walletNameTest1);
+      const executeButton = screen.getByRole("button", { name: "Execute" });
+
+      screen.debug(executeButton);
+      expect(executeButton).toBeVisible();
+
+      await executeButton.click();
+    });
+
+    await page.screenshot({
+      path: "transaction-dialog-executed.png",
+      animations: "disabled",
+    });
   });
 });

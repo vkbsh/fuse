@@ -127,7 +127,7 @@ function InitiateButtonWithAccount({
 
     try {
       setIsSubmitting(true);
-      await sendAndConfirmTransferWithProposalApproveMessage({
+      const signature = await sendAndConfirmTransferWithProposalApproveMessage({
         memo: "auto approve",
         memberAddress,
         creatorAddress,
@@ -137,10 +137,11 @@ function InitiateButtonWithAccount({
         transactionIndex: nextTxIndex,
       });
 
+      console.log("Signature [Initiate, Proposal, Approve]: ", signature);
       toast.success("Transfer initiated");
 
-      setIsSubmitting(false);
       await refetchTransactions();
+      setIsSubmitting(false);
       onCloseDialog();
     } catch (e: any) {
       toast.error("Failed to initiate transfer");
@@ -154,7 +155,7 @@ function InitiateButtonWithAccount({
         {isSubmitting ? (
           <TextShimmer>Initiating</TextShimmer>
         ) : (
-          <motion.span {...motionProps.global.fadeIn}>Initiating</motion.span>
+          <motion.span {...motionProps.global.fadeIn}>Initiate</motion.span>
         )}
       </AnimatePresence>
     </Button>

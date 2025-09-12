@@ -72,13 +72,14 @@ export default function TransactionFooter({
 
   const cancelHandler = async () => {
     try {
-      await sendAndConfirmProposalCancelMessage({
+      const signature = await sendAndConfirmProposalCancelMessage({
         feePayer,
         memberAddress: address(walletAddress),
         multisigAddress: address(multisigAddress),
         transactionIndex: BigInt(transactionIndex),
       });
 
+      console.log("Signature [Cancel Proposal]: ", signature);
       await refetchTransactions();
     } catch (e) {
       console.error("Error [Cancel Proposal]: ", e);
@@ -90,7 +91,7 @@ export default function TransactionFooter({
 
   const approveHandler = async () => {
     try {
-      await sendAndConfirmProposalApproveMessage({
+      const signature = await sendAndConfirmProposalApproveMessage({
         memo: "Approved by a Member",
         feePayer,
         memberAddress: address(walletAddress),
@@ -98,6 +99,7 @@ export default function TransactionFooter({
         transactionIndex: BigInt(transactionIndex),
       });
 
+      console.log("Signature [Approve Proposal]: ", signature);
       await refetchTransactions();
     } catch (e) {
       console.error("Error [Approve Proposal]: ", e);
@@ -109,7 +111,7 @@ export default function TransactionFooter({
 
   const executeHandler = async () => {
     try {
-      await sendAndConfirmExecuteAndCloseAccountsMessage({
+      const signature = await sendAndConfirmExecuteAndCloseAccountsMessage({
         feePayer,
         rentCollectorAddress,
         memberAddress: address(walletAddress),
@@ -117,6 +119,7 @@ export default function TransactionFooter({
         transactionIndex: BigInt(transactionIndex),
       });
 
+      console.log("Signature [Execute, Close Accounts]: ", signature);
       await refetchTransactions();
       await refetchBalance();
     } catch (e) {
@@ -129,13 +132,14 @@ export default function TransactionFooter({
 
   const rejectHandler = async () => {
     try {
-      await sendAndConfirmProposalRejectMessage({
+      const signature = await sendAndConfirmProposalRejectMessage({
         feePayer,
         memberAddress: address(walletAddress),
         multisigAddress: address(multisigAddress),
         transactionIndex: BigInt(transactionIndex),
       });
 
+      console.log("Signature [Reject Proposal]: ", signature);
       await refetchTransactions();
     } catch (e) {
       console.error("Error [Reject Proposal]: ", e);
@@ -147,13 +151,14 @@ export default function TransactionFooter({
 
   const closeAccounts = async () => {
     try {
-      await sendAndConfirmAccountsCloseMessage({
+      const signature = await sendAndConfirmAccountsCloseMessage({
         feePayer,
         rentCollectorAddress,
         multisigAddress: address(multisigAddress),
         transactionIndex: BigInt(transactionIndex),
       });
 
+      console.log("Signature [Close Accounts]: ", signature);
       await refetchTransactions();
     } catch (e) {
       console.error("Error [Close Accounts]: ", e);
