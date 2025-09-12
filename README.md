@@ -86,11 +86,9 @@ npm run dev
 
 ## Deployment
 
-### Cloud Providers
+### Cloud Provider
 
-Try deploying to the following providers:
-
-[Vercel](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvkbsh%2Ffuse%2Ftree%2Fmain)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvkbsh%2Ffuse%2Ftree%2Fmain)
 
 ### Docker
 
