@@ -120,18 +120,16 @@ To run the tests, you need to have a local validator running. You can install th
 
 Once you have the Solana CLI installed, you can start a local validator by running the following command:
 
-> **_NOTE:_** You will also have to clone the program config account from mainnet.
-
 ```bash
-solana-test-validator --url m --clone-upgradeable-program SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf -c BSTq9w3kZwNwpBXJEvTZz2G9ZTNyKBvoSeXMvwb4cNZr -c Fy3YMJCvwbAXUgUM5b91ucUVA3jYzwWLHL3MwBqKsh8n
+npm run validator
 ```
 
 ### Run tests
 
 ```bash
-npm test:program
+npm run test:program
 ```
 
 ```bash
-npm test:browser
+npm run test:browser
 ```

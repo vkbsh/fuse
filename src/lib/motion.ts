@@ -57,9 +57,9 @@ export default {
     },
     skeleton: {
       initial: { opacity: 0 },
-      animate: { opacity: [0, 1] },
+      animate: { opacity: [0.5, 1] },
       exit: { opacity: 0 },
-      transition: { duration: 0.8, repeat: Infinity, repeatType: "reverse" },
+      transition: { duration: 1, repeat: Infinity, repeatType: "reverse" },
     },
     selectTokenDropdown: {
       initial: { rotateY: -90, filter: "blur(4px)" },
@@ -76,7 +76,7 @@ export default {
         backdropFilter: "blur(0px)",
       },
       animate: {
-        backdropFilter: "blur(6px)",
+        backdropFilter: "blur(8px)",
       },
       exit: {
         backdropFilter: "blur(0px)",
@@ -84,25 +84,25 @@ export default {
     },
     content: {
       transition: { duration, type: "spring" },
-      initial: { scale: 0.7, opacity: 0 },
+      initial: { scale: 0.95, opacity: 0 },
       animate: {
         scale: 1,
         opacity: 1,
       },
       exit: {
-        scale: 0.7,
+        scale: 0.95,
         opacity: 0,
       },
     },
     close: {
       transition: { duration, type: "spring" },
-      initial: { scale: 0.7, opacity: 0 },
+      initial: { scale: 0.95, opacity: 0 },
       animate: {
         scale: 1,
         opacity: 1,
       },
       exit: {
-        scale: 0.7,
+        scale: 0.95,
         opacity: 0,
       },
     },
@@ -158,4 +158,4 @@ export default {
       transition: { duration: 0.2 },
     },
   },
-} as { [key: string]: { [key: string]: MotionProps } };
+} satisfies { [key: string]: { [key: string]: MotionProps } };

@@ -9,7 +9,7 @@ export default function Skeleton({
 }: React.ComponentProps<typeof motion.div>) {
   return (
     <motion.div
-      className={cn("bg-placeholder/50", className)}
+      className={cn("bg-placeholder/20", className)}
       {...motionProps.global.skeleton}
       {...props}
     />

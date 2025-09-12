@@ -11,11 +11,11 @@ export default function CoinSkeleton() {
     >
       <Skeleton className="w-[42px] h-[42px] rounded-full flex shrink-0" />
       <div className="flex flex-col gap-2.5 justify-center w-full">
-        <Skeleton className="h-3 w-12" />
+        <Skeleton className="h-3 w-12 rounded-md" />
         <div className="flex flex-row gap-1">
-          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-3 w-20 rounded-md" />
           <div className="flex flex-row gap-10 ml-auto">
-            <Skeleton className="h-3 w-12" />
+            <Skeleton className="h-3 w-12 rounded-md" />
           </div>
         </div>
       </div>
