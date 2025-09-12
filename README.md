@@ -90,15 +90,7 @@ npm run dev
 
 Try deploying to the following providers:
 
-[Vercel](https://vercel.com/new/clone?repository-url=github.com/vkbsh/fuse/tree/main)
-
-[Azure](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fvkbsh%2Ffuse%2Fmain%2Fazure.json)
-
-[Netlify](https://app.netlify.com/start/deploy?repository=https://github.com/vkbsh/fuse/tree/main)
-
-[Cloudflare](https://deploy.workers.cloudflare.com/?url=<https://github.com/vkbsh/fuse/tree>/main)
-
-[DigitalOcean](https://cloud.digitalocean.com/apps/new?repo=https://github.com/vkbsh/fuse/tree/main)
+[Vercel](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvkbsh%2Ffuse%2Ftree%2Fmain)
 
 ### Docker
 
