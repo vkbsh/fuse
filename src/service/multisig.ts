@@ -124,8 +124,8 @@ async function getWalletByKeyAndIndex(
 ): Promise<Wallet[]> {
   const offset = BigInt(132 + (32 + 1) * index);
 
-  const accounts: ProgramAccountInfo[] = await rpc
-    .getProgramAccounts(SQUADS_PROGRAM_ID, {
+  const response = await rpc
+    .getProgramAccountsV2(SQUADS_PROGRAM_ID, {
       filters: [
         {
           memcmp: {
@@ -145,6 +145,8 @@ async function getWalletByKeyAndIndex(
       encoding: "base64",
     })
     .send();
+
+  const accounts: ProgramAccountInfo[] = response.accounts || [];
 
   return await Promise.all(
     accounts.map(async (wallet) => {
@@ -172,8 +174,8 @@ async function getTransactionsByMultisigAndIndex(
   let accounts: ProgramAccountInfo[];
 
   try {
-    accounts = await rpc
-      .getProgramAccounts(SQUADS_PROGRAM_ID, {
+    const response = await rpc
+      .getProgramAccountsV2(SQUADS_PROGRAM_ID, {
         filters: [
           {
             memcmp: {
@@ -194,9 +196,11 @@ async function getTransactionsByMultisigAndIndex(
         encoding: "base64",
       })
       .send();
+
+    accounts = response.accounts || [];
   } catch (e) {
     accounts = [];
-    console.error("Failed to getProgramAccounts for Proposals: ", e);
+    console.error("Failed to getProgramAccountsV2 for Proposals: ", e);
   }
 
   return await Promise.all(
