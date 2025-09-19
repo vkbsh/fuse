@@ -2,15 +2,35 @@ import "./global.css";
 import { useWalletStore } from "~/state/wallet";
 import { motion, AnimatePresence } from "motion/react";
 
-import motionProps from "~/lib/motion";
 import Connect from "~/routes/connect";
 import Dashboard from "~/routes/dashboard";
 import AppDialog from "~/components/dialogs";
 import Toaster from "~/components/ui/sonner";
 
+import motionProps from "~/lib/motion";
+import { useRpcStore } from "~/state/rpc";
+import Input from "./components/ui/input";
+
 export default function App() {
-  const multisigAddress = useWalletStore((s) => s.multisigStorage?.address);
   const walletAddress = useWalletStore((s) => s.walletStorage?.address);
+  const multisigAddress = useWalletStore((s) => s.multisigStorage?.address);
+
+  const { rpc } = useRpcStore();
+
+  if (!rpc) {
+    // TODO: make dialog with persistent input
+    return (
+      <motion.div
+        className="h-screen flex flex-col justify-center items-center py-4 gap-18"
+        {...motionProps.global.fadeIn}
+      >
+        <div className="flex flex-col items-center gap-4 w-sm">
+          Provide RPC_URL_MAINNET in .env
+          <Input />
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <>

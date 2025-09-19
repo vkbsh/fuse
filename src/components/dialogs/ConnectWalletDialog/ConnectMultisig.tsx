@@ -30,6 +30,7 @@ export default function ConnectMultisig({
   const selectWalletName = useWalletStore((s) => s.selectWalletName);
 
   const {
+    isError,
     isLoading,
     isFetched,
     data: multisigWallets,
@@ -39,6 +40,12 @@ export default function ConnectMultisig({
 
   useEffect(() => {
     if (!isFetched && !multisigStorage) return;
+
+    if (isError) {
+      toast.error("Failed to fetch multisig wallets");
+      onDone();
+      return;
+    }
 
     if (!multisig) {
       toast.error(

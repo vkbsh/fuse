@@ -1,11 +1,11 @@
 import {
   type Address,
   type AccountInfoBase,
-  type Base64EncodedBytes,
-  type Base58EncodedBytes,
   type AccountInfoWithPubkey,
   type AccountInfoWithBase64EncodedData,
   parseBase64RpcAccount,
+  type Base64EncodedBytes,
+  type Base58EncodedBytes,
 } from "gill";
 
 import {
@@ -123,45 +123,60 @@ async function getWalletByKeyAndIndex(
   index: number,
 ): Promise<Wallet[]> {
   const offset = BigInt(132 + (32 + 1) * index);
+  let accounts: ProgramAccountInfo[] = [];
+  let paginationKey: Base58EncodedBytes | null = null;
 
-  const response = await rpc
-    .getProgramAccountsV2(SQUADS_PROGRAM_ID, {
-      filters: [
-        {
-          memcmp: {
-            offset: 0n,
-            encoding: "base64",
-            bytes: MULTISIG_ACCOUNT_DISCRIMINATOR_BASE64 as Base64EncodedBytes,
-          },
-        },
-        {
-          memcmp: {
-            offset,
-            encoding: "base58",
-            bytes: keyAddress as unknown as Base58EncodedBytes,
-          },
-        },
-      ],
-      encoding: "base64",
-    })
-    .send();
+  try {
+    do {
+      const res = await rpc
+        .getProgramAccountsV2(SQUADS_PROGRAM_ID, {
+          filters: [
+            {
+              memcmp: {
+                offset: 0n,
+                encoding: "base64",
+                bytes: MULTISIG_ACCOUNT_DISCRIMINATOR_BASE64,
+              },
+            },
+            {
+              memcmp: {
+                offset,
+                encoding: "base58",
+                bytes: keyAddress,
+              },
+            },
+          ],
+          ...(paginationKey ? { paginationKey } : {}),
+          limit: 1000, // usually much lower than 10k to avoid timeouts
+          encoding: "base64",
+        })
+        .send();
 
-  const accounts: ProgramAccountInfo[] = response.accounts || [];
+      if (res.accounts) {
+        accounts.push(...res.accounts);
+      }
+
+      paginationKey = res.paginationKey || null;
+    } while (paginationKey);
+  } catch (e) {
+    console.error("Failed to getProgramAccountsV2 for Multisig: ", e);
+    return [];
+  }
 
   return await Promise.all(
-    accounts.map(async (wallet) => {
+    accounts.map(async (multisig: ProgramAccountInfo) => {
       const defaultVault = await getVaultPda({
         vaultIndex: 0,
-        multisigAddress: wallet.pubkey,
+        multisigAddress: multisig.pubkey,
       });
       const account = getMultisigAccountCodec().decode(
-        parseBase64RpcAccount(wallet.pubkey, wallet.account).data,
+        parseBase64RpcAccount(multisig.pubkey, multisig.account).data,
       );
 
       return {
         account,
         defaultVault,
-        address: wallet.pubkey,
+        address: multisig.pubkey,
       };
     }),
   );
@@ -171,33 +186,38 @@ async function getTransactionsByMultisigAndIndex(
   multisigAddress: Address,
   staleTransactionIndex: number | null,
 ): Promise<(VaultTransaction | null)[] | null> {
-  let accounts: ProgramAccountInfo[];
+  let accounts: ProgramAccountInfo[] = [];
+  let paginationKey: Base58EncodedBytes | null = null;
 
   try {
-    const response = await rpc
-      .getProgramAccountsV2(SQUADS_PROGRAM_ID, {
-        filters: [
-          {
-            memcmp: {
-              offset: 0n, // Discriminator
-              encoding: "base64",
-              bytes:
-                PROPOSAL_ACCOUNT_DISCRIMINATOR_BASE64 as Base64EncodedBytes,
+    do {
+      const res = await rpc
+        .getProgramAccountsV2(SQUADS_PROGRAM_ID, {
+          filters: [
+            {
+              memcmp: {
+                offset: 0n, // Discriminator
+                encoding: "base64",
+                bytes: PROPOSAL_ACCOUNT_DISCRIMINATOR_BASE64,
+              },
             },
-          },
-          {
-            memcmp: {
-              offset: 8n, // Multisig Address
-              encoding: "base58",
-              bytes: multisigAddress as unknown as Base58EncodedBytes,
+            {
+              memcmp: {
+                offset: 8n, // Multisig Address
+                encoding: "base58",
+                bytes: multisigAddress,
+              },
             },
-          },
-        ],
-        encoding: "base64",
-      })
-      .send();
+          ],
+          ...(paginationKey ? { paginationKey } : {}),
+          limit: 10000,
+          encoding: "base64",
+        })
+        .send();
 
-    accounts = response.accounts || [];
+      accounts = res.accounts || [];
+      paginationKey = res.paginationKey || null;
+    } while (paginationKey);
   } catch (e) {
     accounts = [];
     console.error("Failed to getProgramAccountsV2 for Proposals: ", e);
