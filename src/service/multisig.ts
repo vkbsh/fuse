@@ -1,11 +1,10 @@
 import {
   type Address,
   type AccountInfoBase,
+  type Base58EncodedBytes,
   type AccountInfoWithPubkey,
   type AccountInfoWithBase64EncodedData,
   parseBase64RpcAccount,
-  type Base64EncodedBytes,
-  type Base58EncodedBytes,
 } from "gill";
 
 import {
@@ -128,7 +127,11 @@ async function getWalletByKeyAndIndex(
 
   try {
     do {
-      const res = await rpc
+      const res: {
+        accounts: ProgramAccountInfo[];
+        paginationKey: Base58EncodedBytes | null;
+      } = await rpc
+        // @ts-ignore
         .getProgramAccountsV2(SQUADS_PROGRAM_ID, {
           filters: [
             {
@@ -147,7 +150,7 @@ async function getWalletByKeyAndIndex(
             },
           ],
           ...(paginationKey ? { paginationKey } : {}),
-          limit: 1000, // usually much lower than 10k to avoid timeouts
+          limit: 10000,
           encoding: "base64",
         })
         .send();
@@ -191,7 +194,11 @@ async function getTransactionsByMultisigAndIndex(
 
   try {
     do {
-      const res = await rpc
+      const res: {
+        accounts: ProgramAccountInfo[];
+        paginationKey: Base58EncodedBytes | null;
+      } = await rpc
+        // @ts-ignore
         .getProgramAccountsV2(SQUADS_PROGRAM_ID, {
           filters: [
             {
@@ -215,7 +222,10 @@ async function getTransactionsByMultisigAndIndex(
         })
         .send();
 
-      accounts = res.accounts || [];
+      if (res.accounts) {
+        accounts.push(...res.accounts);
+      }
+
       paginationKey = res.paginationKey || null;
     } while (paginationKey);
   } catch (e) {
