@@ -1,7 +1,6 @@
 import {
   type Address,
   type AccountInfoBase,
-  type Base58EncodedBytes,
   type AccountInfoWithPubkey,
   type AccountInfoWithBase64EncodedData,
   parseBase64RpcAccount,
@@ -123,46 +122,35 @@ async function getWalletByKeyAndIndex(
 ): Promise<Wallet[]> {
   const offset = BigInt(132 + (32 + 1) * index);
   let accounts: ProgramAccountInfo[] = [];
-  let paginationKey: Base58EncodedBytes | null = null;
 
   try {
-    do {
-      const res: {
-        accounts: ProgramAccountInfo[];
-        paginationKey: Base58EncodedBytes | null;
-      } = await rpc
-        // @ts-ignore
-        .getProgramAccountsV2(SQUADS_PROGRAM_ID, {
-          filters: [
-            {
-              memcmp: {
-                offset: 0n,
-                encoding: "base64",
-                bytes: MULTISIG_ACCOUNT_DISCRIMINATOR_BASE64,
-              },
+    const res = await rpc
+      .getProgramAccounts(SQUADS_PROGRAM_ID, {
+        filters: [
+          {
+            memcmp: {
+              offset: 0n,
+              encoding: "base64",
+              bytes: MULTISIG_ACCOUNT_DISCRIMINATOR_BASE64 as any,
             },
-            {
-              memcmp: {
-                offset,
-                encoding: "base58",
-                bytes: keyAddress,
-              },
+          },
+          {
+            memcmp: {
+              offset,
+              encoding: "base58",
+              bytes: keyAddress as any,
             },
-          ],
-          ...(paginationKey ? { paginationKey } : {}),
-          limit: 10000,
-          encoding: "base64",
-        })
-        .send();
+          },
+        ],
+        encoding: "base64",
+      })
+      .send();
 
-      if (res.accounts) {
-        accounts.push(...res.accounts);
-      }
-
-      paginationKey = res.paginationKey || null;
-    } while (paginationKey);
+    if (res.length) {
+      accounts = res;
+    }
   } catch (e) {
-    console.error("Failed to getProgramAccountsV2 for Multisig: ", e);
+    console.error("Failed to getProgramAccounts for Multisig: ", e);
     return [];
   }
 
@@ -190,47 +178,36 @@ async function getTransactionsByMultisigAndIndex(
   staleTransactionIndex: number | null,
 ): Promise<(VaultTransaction | null)[] | null> {
   let accounts: ProgramAccountInfo[] = [];
-  let paginationKey: Base58EncodedBytes | null = null;
 
   try {
-    do {
-      const res: {
-        accounts: ProgramAccountInfo[];
-        paginationKey: Base58EncodedBytes | null;
-      } = await rpc
-        // @ts-ignore
-        .getProgramAccountsV2(SQUADS_PROGRAM_ID, {
-          filters: [
-            {
-              memcmp: {
-                offset: 0n, // Discriminator
-                encoding: "base64",
-                bytes: PROPOSAL_ACCOUNT_DISCRIMINATOR_BASE64,
-              },
+    const res = await rpc
+      .getProgramAccounts(SQUADS_PROGRAM_ID, {
+        filters: [
+          {
+            memcmp: {
+              offset: 0n, // Discriminator
+              encoding: "base64",
+              bytes: PROPOSAL_ACCOUNT_DISCRIMINATOR_BASE64 as any,
             },
-            {
-              memcmp: {
-                offset: 8n, // Multisig Address
-                encoding: "base58",
-                bytes: multisigAddress,
-              },
+          },
+          {
+            memcmp: {
+              offset: 8n, // Multisig Address
+              encoding: "base58",
+              bytes: multisigAddress as any,
             },
-          ],
-          ...(paginationKey ? { paginationKey } : {}),
-          limit: 10000,
-          encoding: "base64",
-        })
-        .send();
+          },
+        ],
+        encoding: "base64",
+      })
+      .send();
 
-      if (res.accounts) {
-        accounts.push(...res.accounts);
-      }
-
-      paginationKey = res.paginationKey || null;
-    } while (paginationKey);
+    if (res.length) {
+      accounts = res;
+    }
   } catch (e) {
     accounts = [];
-    console.error("Failed to getProgramAccountsV2 for Proposals: ", e);
+    console.error("Failed to getProgramAccounts for Proposals: ", e);
   }
 
   return await Promise.all(
