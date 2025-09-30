@@ -39,7 +39,7 @@ export default function ConnectMultisig({
   const multisig = multisigStorage ?? multisigWallets?.[0] ?? null;
 
   useEffect(() => {
-    if (!isFetched && !multisigStorage) return;
+    if (isLoading || (!isFetched && !multisigStorage)) return;
 
     console.log("isError: ", isError);
 
