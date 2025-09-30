@@ -150,8 +150,8 @@ export const useTokenInfo = (vaultAddress: Address) => {
       };
     });
 
-  const meta = useTokensMeta(tokens.map((t) => t.mint));
-  const price = useTokensPrice(tokens.map((t) => t.mint));
+  const meta = useTokensMeta(tokens.map((t) => t.mint)).filter((m) => m.data);
+  const price = useTokensPrice(tokens.map((t) => t.mint)).filter((p) => p.data);
 
   const isLoading =
     meta.some((m) => m.isLoading) || price.some((p) => p.isLoading);
