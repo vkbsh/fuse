@@ -6,7 +6,6 @@ import {
   type AccountInfoWithPubkey,
   type AccountInfoWithBase64EncodedData,
   parseBase64RpcAccount,
-  createSolanaClient,
 } from "gill";
 
 import {
@@ -26,7 +25,7 @@ import {
   type ParsedVaultTransactionMessageWithCreator,
 } from "~/program/multisig/utils/parseTransferTransaction";
 
-import { useRpcStore } from "~/state/rpc";
+import { getRpcClient } from "~/lib/rpc";
 
 type Member = {
   key: Address;
@@ -63,8 +62,7 @@ type ProgramAccountInfo = AccountInfoWithPubkey<
 >;
 
 export async function getMultisigAccount(multisigAddress: Address) {
-  const { RPC_URL } = useRpcStore.getState();
-  const { rpc } = createSolanaClient({ urlOrMoniker: RPC_URL });
+  const { rpc } = getRpcClient();
   const multisigAccountInfo = await rpc
     .getAccountInfo(multisigAddress, { encoding: "base64" })
     .send();
@@ -129,8 +127,7 @@ async function getWalletByKeyAndIndex(
   keyAddress: Address,
   index: number,
 ): Promise<Wallet[]> {
-  const { RPC_URL } = useRpcStore.getState();
-  const { rpc } = createSolanaClient({ urlOrMoniker: RPC_URL });
+  const { rpc } = getRpcClient();
   const offset = BigInt(132 + (32 + 1) * index);
   let accounts: ProgramAccountInfo[] = [];
 
@@ -185,8 +182,7 @@ async function getTransactionsByMultisigAndIndex(
   multisigAddress: Address,
   staleTransactionIndex: number | null,
 ): Promise<(VaultTransaction | null)[] | null> {
-  const { RPC_URL } = useRpcStore.getState();
-  const { rpc } = createSolanaClient({ urlOrMoniker: RPC_URL });
+  const { rpc } = getRpcClient();
   let accounts: ProgramAccountInfo[] = [];
 
   try {

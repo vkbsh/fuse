@@ -16,7 +16,6 @@ import {
   lamports,
   airdropFactory,
   LAMPORTS_PER_SOL,
-  createSolanaClient,
   generateKeyPairSigner,
   createKeyPairFromBytes,
   createSignerFromKeyPair,
@@ -32,7 +31,7 @@ import {
   generateLegacyKeyPair,
 } from "~/program/multisig/legacy";
 
-import { useRpcStore } from "~/state/rpc";
+import { getRpcClient } from "~/lib/rpc";
 
 export async function getTestAccountsWithBalances() {
   const creatorKeyPair = generateLegacyKeyPair();
@@ -122,10 +121,7 @@ export async function getTestAccountsWithBalances() {
 }
 
 export async function getBalance(address: Address) {
-  const { RPC_URL } = useRpcStore.getState();
-  const { rpc } = createSolanaClient({
-    urlOrMoniker: RPC_URL,
-  });
+  const { rpc } = getRpcClient();
   const { value: balance } = await rpc.getBalance(address).send();
 
   return balance;
@@ -135,10 +131,7 @@ export const airdrop = async (
   recipientAddress: Address,
   putativeLamports: bigint = lamports(BigInt(LAMPORTS_PER_SOL * 2)),
 ) => {
-  const { RPC_URL } = useRpcStore.getState();
-  const client = createSolanaClient({
-    urlOrMoniker: RPC_URL,
-  });
+  const client = getRpcClient();
   await airdropFactory(client)({
     recipientAddress,
     commitment: "confirmed",
@@ -153,10 +146,7 @@ export async function getTokenAccountBalance(
     | typeof TOKEN_PROGRAM_ADDRESS
     | typeof TOKEN_2022_PROGRAM_ADDRESS,
 ) {
-  const { RPC_URL } = useRpcStore.getState();
-  const { rpc } = createSolanaClient({
-    urlOrMoniker: RPC_URL,
-  });
+  const { rpc } = getRpcClient();
   const ata = await getAssociatedTokenAccountAddress(
     mint,
     recipientTokenAddress,

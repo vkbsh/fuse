@@ -6,7 +6,6 @@ import {
   type TransactionSigner,
   type ReadonlyUint8Array,
   AccountRole,
-  createSolanaClient,
   parseBase64RpcAccount,
 } from "gill";
 
@@ -37,7 +36,7 @@ import {
   getTransactionPda,
 } from "~/program/multisig/pda";
 
-import { useRpcStore } from "~/state/rpc";
+import { getRpcClient } from "~/lib/rpc";
 import { accountsForTransactionExecute } from "./utils/accountsForTransactionExecute";
 
 const discriminator = {
@@ -212,8 +211,7 @@ export async function createVaultTransactionExecuteInstruction({
     multisigAddress,
   });
 
-  const { RPC_URL } = useRpcStore.getState();
-  const { rpc } = createSolanaClient({ urlOrMoniker: RPC_URL });
+  const { rpc } = getRpcClient();
 
   const transactionPdaInfo = await rpc
     .getAccountInfo(transactionPda, { encoding: "base64" })

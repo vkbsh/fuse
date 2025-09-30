@@ -2,11 +2,11 @@ import {
   TOKEN_PROGRAM_ADDRESS,
   TOKEN_2022_PROGRAM_ADDRESS,
 } from "gill/programs/token";
-import { address, createSolanaClient, type Address } from "gill";
+import { address, type Address } from "gill";
 
 import { SOL_MINT_ADDRESS } from "~/program/multisig/address";
 
-import { useRpcStore } from "~/state/rpc";
+import { getRpcClient } from "~/lib/rpc";
 
 type SplTokenBalance = {
   mint: Address;
@@ -25,10 +25,7 @@ type Balance = {
 };
 
 export async function getBalance(vault: Address): Promise<Balance> {
-  const { RPC_URL } = useRpcStore.getState();
-  const { rpc } = createSolanaClient({
-    urlOrMoniker: RPC_URL,
-  });
+  const { rpc } = getRpcClient();
   const [lamports, tokenAccounts, tokenAccounts2022] = await Promise.all([
     rpc
       .getBalance(vault)

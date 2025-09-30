@@ -7,7 +7,6 @@ import {
   getSignatureFromTransaction,
   assertIsFullySignedTransaction,
   signTransactionMessageWithSigners,
-  createSolanaClient,
 } from "gill";
 
 import {
@@ -32,7 +31,7 @@ import {
   createLegacyTransactionMessage,
 } from "~/program/multisig/legacy";
 
-import { useRpcStore } from "~/state/rpc";
+import { getRpcClient } from "~/lib/rpc";
 
 export type FromToken = {
   decimals: number;
@@ -50,10 +49,7 @@ export async function createAndConfirmMessage({
   feePayer: TransactionSigner;
   instructions: Instruction[];
 }) {
-  const { RPC_URL } = useRpcStore.getState();
-  const { rpc, sendAndConfirmTransaction } = createSolanaClient({
-    urlOrMoniker: RPC_URL,
-  });
+  const { rpc, sendAndConfirmTransaction } = getRpcClient();
   const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
 
   const tx = createTransaction({

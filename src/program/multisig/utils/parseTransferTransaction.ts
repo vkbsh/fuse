@@ -1,4 +1,4 @@
-import { createSolanaClient, parseBase64RpcAccount } from "gill";
+import { parseBase64RpcAccount } from "gill";
 import { type Address, type EncodedAccount } from "gill";
 
 import {
@@ -22,7 +22,7 @@ import {
 import { SOL_MINT_ADDRESS } from "~/program/multisig/address";
 import { getProposalPda, getTransactionPda } from "~/program/multisig/pda";
 
-import { useRpcStore } from "~/state/rpc";
+import { getRpcClient } from "~/lib/rpc";
 
 type Message = {
   accountKeys: Address[];
@@ -68,10 +68,7 @@ export async function getProposalAccount(
   multisigAddress: Address,
   transactionIndex: number,
 ) {
-  const { RPC_URL } = useRpcStore.getState();
-  const { rpc } = createSolanaClient({
-    urlOrMoniker: RPC_URL,
-  });
+  const { rpc } = getRpcClient();
   const proposalPda = await getProposalPda({
     multisigAddress,
     transactionIndex: BigInt(transactionIndex),
@@ -102,10 +99,7 @@ export async function getVaultTransaction({
   multisigAddress: Address;
   transactionIndex: bigint;
 }) {
-  const { RPC_URL } = useRpcStore.getState();
-  const { rpc } = createSolanaClient({
-    urlOrMoniker: RPC_URL,
-  });
+  const { rpc } = getRpcClient();
   const transactionPda = await getTransactionPda({
     multisigAddress,
     transactionIndex,
