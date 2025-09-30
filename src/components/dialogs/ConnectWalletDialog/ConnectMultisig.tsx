@@ -41,8 +41,6 @@ export default function ConnectMultisig({
   useEffect(() => {
     if (isLoading || (!isFetched && !multisigStorage)) return;
 
-    console.log("isError: ", isError);
-
     if (isError) {
       toast.error("Failed to fetch multisig wallets");
       onDone();
