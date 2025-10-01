@@ -20,8 +20,8 @@ export default function SelectedToken({
         <AnimatePresence initial={false} mode="wait">
           <motion.img
             alt={token?.name}
-            key={token?.logoURI}
-            src={token?.logoURI}
+            key={token?.icon}
+            src={token?.icon}
             className="w-7 h-7 rounded-full"
             {...motionProps.global.selectTokenDropdown}
           />
