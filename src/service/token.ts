@@ -3,31 +3,32 @@ import { type Address } from "gill";
 export type TokenMeta = {
   name: string;
   symbol: string;
-  logoURI: string;
+  icon: string;
   decimals: number;
-  address: Address;
+  id: Address;
 };
 
 const tokenBaseUrl = "https://lite-api.jup.ag";
-const tokenMetaUrl = `${tokenBaseUrl}/tokens/v1/token`;
-const tokenPriceUrl = `${tokenBaseUrl}/price/v2`;
+const tokenMetaUrl = `${tokenBaseUrl}/tokens/v2/search`;
+const tokenPriceUrl = `${tokenBaseUrl}/price/v3`;
 
 export const fetchTokenMeta = async (
   mint: string,
 ): Promise<TokenMeta | null> => {
-  const res = await fetch(`${tokenMetaUrl}/${mint}`);
+  const res = await fetch(`${tokenMetaUrl}?query=${mint}`);
   const json = await res.json();
+  const token = json[0];
 
-  if (!json?.address) {
+  if (!token?.name) {
     return null;
   }
 
-  return json;
+  return token;
 };
 
 export const fetchTokenPrice = async (mint: string): Promise<number> => {
   const res = await fetch(`${tokenPriceUrl}?ids=${mint}`);
   const json = await res.json();
 
-  return json?.data?.[mint]?.price || null;
+  return json?.[mint]?.usdPrice || null;
 };

@@ -38,7 +38,7 @@ function CoinList({ data }: { data: TokenData[] }) {
     return (
       <ListItem
         index={i}
-        key={token.address}
+        key={token.id}
         onClick={() => {
           if (!hasAllPermissions) {
             toast.error("Only Cloud Key allowed to withdraw funds");

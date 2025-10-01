@@ -6,7 +6,7 @@ import { type TokenData } from "~/hooks/resources";
 import { formatUSD } from "~/lib/amount";
 
 export default function Coin({ token }: { token: TokenData }) {
-  const { name, symbol, logoURI, amount, usdAmount } = token;
+  const { name, symbol, icon, amount, usdAmount } = token;
   const roundedAmount = roundToken(amount);
 
   return (
@@ -15,7 +15,7 @@ export default function Coin({ token }: { token: TokenData }) {
         <span className="flex rounded-full">
           <img
             alt={name}
-            src={logoURI}
+            src={icon}
             className="w-[42px] h-[42px] shrink-0 rounded-full"
           />
         </span>

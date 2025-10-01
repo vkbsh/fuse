@@ -44,9 +44,9 @@ export default function SelectTokenDropdown({
             const name = item.name === "Wrapped SOL" ? "Solana" : item.name;
 
             return (
-              <DropdownMenuItem key={item.address}>
+              <DropdownMenuItem key={item.id}>
                 <div
-                  key={item.address}
+                  key={item.id}
                   onClick={() => setToken(item)}
                   className="relative flex flex-row gap-2 items-center p-2 rounded-2xl border border-white/0 hover:bg-white/15 hover:text-white/30 hover:border-white/15 duration-300 transition-colors"
                 >
@@ -54,7 +54,7 @@ export default function SelectTokenDropdown({
                     <div className="flex flex-row items-center gap-2.5">
                       <img
                         alt={item.name}
-                        src={item.logoURI}
+                        src={item.icon}
                         className="w-7 h-7 rounded-full"
                       />
                       <span className="max-w-18 truncate">{name}</span>
