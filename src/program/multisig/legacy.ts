@@ -26,6 +26,7 @@ import {
 } from "gill";
 
 import { useRpcStore } from "~/state/rpc";
+import { getRpcClient } from "~/lib/rpc";
 
 export type AccountMeta = {
   pubkey: Address;
@@ -56,6 +57,7 @@ export async function createMultisig({
 }) {
   const programConfigPda = getProgramConfigPda({})[0];
   const { RPC_URL } = useRpcStore.getState();
+  console.log("RPC_URL:", RPC_URL);
   const connection = new Connection(RPC_URL, "confirmed");
 
   const programConfig = await accounts.ProgramConfig.fromAccountAddress(
@@ -135,6 +137,8 @@ export async function createLegacyTransactionMessage(
   signer: TransactionSigner,
   instructions: Instruction[],
 ): Promise<LegacyTransactionMessage> {
+  const { rpc } = getRpcClient();
+
   const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
 
   return new LegacyTransactionMessage({

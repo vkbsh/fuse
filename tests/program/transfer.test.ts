@@ -69,7 +69,7 @@ describe("Interacting with Multisig Program", async () => {
 
     test("Create VaultTransaction with: [TransferSOL, ProposalCreate, ProposalApprove]", async () => {
       const transactionMessage = await createTransferSolMessage({
-        // @ts-expect-error
+        // @ts-expect-error (expect signer)
         source: vaultAddress,
         toAddress: recipientSolAddress,
         amount: amount * LAMPORTS_PER_SOL,
@@ -180,7 +180,7 @@ describe("Interacting with Multisig Program", async () => {
     test("Create VaultTransaction with: [TransferToken, ProposalCreate, ProposalApprove]", async () => {
       const transactionMessage = await createTransferTokenMessage({
         fromToken,
-        // @ts-expect-error
+        // @ts-expect-error (expect signer) (expect signer)
         signer: vaultAddress,
         authorityAddress: vaultAddress,
         toAddress: recipientTokenAddress,
@@ -314,7 +314,7 @@ describe("Interacting with Multisig Program", async () => {
     test("Create VaultTransaction with: [TransferToken, ProposalCreate, ProposalApprove]", async () => {
       const transactionMessage = await createTransferTokenMessage({
         fromToken,
-        // @ts-expect-error
+        // @ts-expect-error (expect signer)
         signer: vaultAddress,
         authorityAddress: vaultAddress,
         toAddress: recipientTokenAddress,
@@ -429,7 +429,7 @@ describe("Interacting with Multisig Program", async () => {
 
     test("Create VaultTransaction with: [SendMemo, ProposalCreate, ProposalReject]", async () => {
       const transactionMessage = await createLegacyTransactionMessage(
-        // @ts-expect-error
+        // @ts-expect-error (expect signer)
         creator.address,
         [
           getAddMemoInstruction({
@@ -501,7 +501,7 @@ describe("Interacting with Multisig Program", async () => {
 
     test("Create VaultTransaction with: [SendMemo, ProposalCreate, ProposalCancel]", async () => {
       const transactionMessage = await createLegacyTransactionMessage(
-        // @ts-expect-error
+        // @ts-expect-error (expect signer)
         creator.address,
         [
           getAddMemoInstruction({
