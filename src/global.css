@@ -1,0 +1,93 @@
+@import "tailwindcss";
+@import "./fonts.css";
+
+@theme inline {
+  --font-*: initial;
+  --font-default: "SFProDisplay";
+
+  --radius-2xl: 1.05rem;
+  --radius-3xl: 1.25rem;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-background-hover: var(--background-hover);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent-background: var(--accent-background);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-hover: var(--hover);
+  --color-border: var(--border);
+  --color-placeholder: var(--placeholder);
+  --color-input-border: var(--input-border);
+  --color-input-border-focus: var(--input-border-focus);
+
+  --color-default: var(--default);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-destructive: var(--destructive);
+}
+
+:root {
+  --background: oklch(96.416% 0.00011 271.152);
+  --foreground: oklch(23.613% 0.00152 16.294);
+  --accent-background: oklch(94.007% 0.00011 271.152);
+
+  --primary: oklch(18.791% 0.00162 16.574);
+  --primary-foreground: oklch(98.511% 0.00011 271.152);
+
+  --secondary: oklch(100% 0.00011 271.152);
+  --secondary-foreground: oklch(20.463% 0.00002 271.152);
+
+  --popover: oklch(0% 0 0);
+  --popover-foreground: oklch(100% 0.00011 271.152);
+
+  --hover: oklch(76.676% 0.00009 271.152);
+  --border: oklch(72.838% 0.00008 271.152);
+  --placeholder: oklch(59.649% 0.00007 271.152);
+  --input-border: oklch(44.226% 0.00005 271.152);
+  --input-border-focus: oklch(56.926% 0.00006 271.152);
+
+  --default: oklch(61.019% 0.16343 252.072);
+  --success: oklch(71.278% 0.16252 150.949);
+  --warning: oklch(74.963% 0.15502 80.421);
+  --destructive: oklch(66.969% 0.21751 25.253);
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+    user-select: none;
+    color: var(--color-foreground);
+    font-family: var(--font-default);
+    background-color: var(--color-background);
+    pointer-events: auto !important;
+  }
+}
+
+.logo-mask {
+  mask-size: contain;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-image: url(/fuse.svg);
+  -webkit-mask-image: url(/fuse.svg);
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
