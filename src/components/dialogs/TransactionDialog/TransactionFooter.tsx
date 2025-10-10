@@ -210,7 +210,7 @@ export default function TransactionFooter({
   return (
     <>
       {["Cancelled", "Rejected"].includes(status) && (
-        <div className="flex flex-row justify-center gap-2">
+        <div className="relative flex flex-row justify-center gap-2">
           <LoadingButton
             onClick={closeAccounts}
             isSubmitting={isSubmitting.closeAccounts}
@@ -220,7 +220,13 @@ export default function TransactionFooter({
         </div>
       )}
       {status === "Active" && (
-        <div className="flex flex-row justify-center gap-2">
+        <div className="relative flex flex-row justify-center gap-2">
+          {isRejectDisabled ||
+            (isApproveDisabled && (
+              <span className="absolute -top-8 text-sm text-warning">
+                Please connect another Member Key
+              </span>
+            ))}
           <LoadingButton
             variant="secondary"
             onClick={
@@ -233,7 +239,6 @@ export default function TransactionFooter({
           >
             Reject
           </LoadingButton>
-
           <LoadingButton
             isSubmitting={isSubmitting.approve}
             onClick={
@@ -248,7 +253,12 @@ export default function TransactionFooter({
         </div>
       )}
       {status === "Approved" && (
-        <div className="flex flex-row justify-center gap-2">
+        <div className="relative flex flex-row justify-center gap-2">
+          {isCancelDisabled && (
+            <span className="absolute -top-8 text-sm text-warning">
+              Please connect another Member Key
+            </span>
+          )}
           <LoadingButton
             variant="secondary"
             onClick={
@@ -261,12 +271,16 @@ export default function TransactionFooter({
           >
             Cancel
           </LoadingButton>
+          {isExecuteDisabled && (
+            <span className="absolute -top-8 text-sm text-warning">
+              Please connect your Cloud Key to execute transaction
+            </span>
+          )}
           <LoadingButton
             isSubmitting={isSubmitting.execute}
             onClick={
               isExecuteDisabled
-                ? () =>
-                    toast.error("Connect Recovery Key to execute transaction")
+                ? () => toast.error("Connect Cloud Key to execute transaction")
                 : executeHandler
             }
             disabled={isExecuteDisabled}
