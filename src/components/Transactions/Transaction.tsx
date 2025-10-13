@@ -56,7 +56,9 @@ export default function Transaction({
             <div className="flex flex-row gap-6 w-full">
               <div className="flex flex-row gap-0 text-sm justify-between font-medium w-full">
                 <div className="flex flex-row gap-1">
-                  <span>{roundToken(Number(amount))}</span>
+                  <span className="truncate max-w-[60px]">
+                    {roundToken(Number(amount))}
+                  </span>
                   <span className="uppercase text-placeholder">
                     {symbol?.toLowerCase()}
                   </span>

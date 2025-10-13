@@ -33,7 +33,6 @@ export default function ContentTransactionDialog({
       <Transaction status={status} message={message} timestamp={timestamp} />
       <Progress
         status={status}
-        executed={creator}
         approved={approved}
         rejected={rejected}
         initiated={creator}

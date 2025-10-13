@@ -26,7 +26,7 @@ export default function AppDialog() {
     ? "w-[307px] px-4"
     : withdraw.isOpen
       ? "w-[485px]"
-      : "w-[516px]";
+      : "w-[540px]";
 
   const title = connect.isOpen
     ? "Select wallet"

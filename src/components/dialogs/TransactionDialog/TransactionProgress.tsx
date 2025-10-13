@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "motion/react";
 import { CircleXIcon } from "~/components/ui/icons/CircleX";
 import { SquareXIcon } from "~/components/ui/icons/SquareX";
 import { SquareDotIcon } from "~/components/ui/icons/SquareDot";
-import { CircleDotIcon } from "~/components/ui/icons/CircleDot";
 import { CirclePlusIcon } from "~/components/ui/icons/CirclePlus";
 
 import { abbreviateAddress } from "~/lib/address";
@@ -19,14 +18,12 @@ export type Status =
 
 export default function TransactionProgress({
   status,
-  executed,
   approved,
   rejected,
   cancelled,
   initiated,
 }: {
   status: Status;
-  executed: Address;
   initiated: Address;
   approved: Address[];
   rejected: Address[];
