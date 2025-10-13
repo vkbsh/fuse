@@ -14,7 +14,6 @@ import {
 } from "~/program/multisig/message";
 import { hasCloudPermission } from "~/program/multisig/utils/member";
 
-import { cn } from "~/lib/utils";
 import { useWalletStore } from "~/state/wallet";
 import {
   useMemberBalance,
@@ -310,12 +309,11 @@ function LoadingButton({
     <AnimatePresence>
       {isSubmitting ? (
         <Button
-          disabled
           variant={variant}
           onClick={onClick}
           className="pointer-events-none"
         >
-          <TextShimmer>{children}</TextShimmer>
+          <TextShimmer spread={3}>{children}</TextShimmer>
         </Button>
       ) : (
         <Button variant={variant} onClick={onClick} disabled={disabled}>
