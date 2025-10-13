@@ -1,13 +1,15 @@
-export function convertSecondsToTime(seconds: number) {
+export function convertSecondsToDate(seconds: number) {
   const milliseconds = seconds * 1000;
   const dateStamp = new Date(milliseconds);
-  const date = dateStamp.toLocaleString(
-    new Intl.DateTimeFormat().resolvedOptions().locale,
-    {
-      hour: "2-digit",
-      minute: "2-digit",
-    },
-  );
 
-  return date;
+  const formatted = dateStamp.toLocaleString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+
+  return formatted.replace(",", ",");
 }

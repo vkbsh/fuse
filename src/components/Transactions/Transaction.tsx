@@ -5,7 +5,7 @@ import { type Status } from "~/components/dialogs/TransactionDialog/TransactionP
 import { type ParsedVaultTransactionMessageWithCreator } from "~/program/multisig/utils/parseTransferTransaction";
 
 import { roundToken } from "~/lib/amount";
-import { convertSecondsToTime } from "~/lib/date";
+import { convertSecondsToDate } from "~/lib/date";
 import { abbreviateAddress } from "~/lib/address";
 
 export type Token = {
@@ -56,7 +56,7 @@ export default function Transaction({
             <div className="flex flex-row gap-6 w-full">
               <div className="flex flex-row gap-0 text-sm justify-between font-medium w-full">
                 <div className="flex flex-row gap-1">
-                  <span>{roundToken(amount)}</span>
+                  <span>{roundToken(Number(amount))}</span>
                   <span className="uppercase text-placeholder">
                     {symbol?.toLowerCase()}
                   </span>
@@ -67,7 +67,7 @@ export default function Transaction({
                 </div>
               </div>
               <span className="font-medium text-sm whitespace-nowrap">
-                {convertSecondsToTime(timestamp)}
+                {convertSecondsToDate(timestamp)}
               </span>
               <motion.span
                 key={status}
