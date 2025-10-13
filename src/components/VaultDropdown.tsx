@@ -27,11 +27,11 @@ export default function VaultDropdown() {
       <DropdownMenuTrigger>
         <span className="flex gap-2.5 items-center justify-center text-foreground h-[34px] rounded-2xl bg-accent-background px-3.5 font-semibold text-sm">
           {abbreviateAddress(vaultAddress)}
-          {multisigList?.length && multisigList.length > 1 && (
+          {multisigList?.length && multisigList.length > 1 ? (
             <span className="text-placeholder">
               {isOpen ? <ChevronUp /> : <ChevronDown />}
             </span>
-          )}
+          ) : null}
         </span>
       </DropdownMenuTrigger>
       {multisigList?.length && multisigList.length > 1 && (
