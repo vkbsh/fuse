@@ -37,7 +37,7 @@ export default function TransactionProgress({
   const isAllApproved = status === "Approved" || approved.length === 2;
 
   return (
-    <div className="flex flex-row justify-between text-sm px-2">
+    <div className="flex flex-row justify-center gap-4 text-sm px-2">
       <AnimatePresence initial={false}>
         <ProgressStatus
           key="Initiated"
@@ -76,18 +76,6 @@ export default function TransactionProgress({
           icon={<CircleXIcon size={25} />}
           addresses={rejected}
         />
-        {!isCancelled && (
-          <>
-            {executed && <Line key="line-executed" active={false} />}
-            <ProgressStatus
-              key="Executed"
-              label="Executed"
-              active={false}
-              icon={<CircleDotIcon size={25} />}
-              addresses={[executed]}
-            />
-          </>
-        )}
       </AnimatePresence>
     </div>
   );
@@ -142,8 +130,8 @@ function Line({ active }: { active: boolean }) {
         <line
           x2="100%"
           strokeWidth="4"
-          strokeDasharray="4"
           stroke="currentColor"
+          strokeDasharray={active ? "none" : "4"}
         />
       </svg>
     </motion.span>
