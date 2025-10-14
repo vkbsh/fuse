@@ -5,6 +5,8 @@ import { cn } from "~/lib/utils";
 import { abbreviateAddress } from "~/lib/address";
 import { type LSWallet, useWalletStore } from "~/state/wallet";
 
+import { HotspotSlash } from "~/components/ui/icons/HotspotSlash";
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default function MemberKey({
@@ -51,11 +53,17 @@ export default function MemberKey({
         onClick={() => disconnect()}
         onMouseEnter={() => setIsHoveringDisconnect(true)}
         onMouseLeave={() => setIsHoveringDisconnect(false)}
-        className="absolute w-6 h-6 right-0.5 flex items-center justify-center"
+        className="absolute w-6 h-6 right-4 flex gap-1 items-center justify-center"
       >
+        <HotspotSlash
+          className={cn(
+            "flex shrink-0 duration-300 transition-colors",
+            isHoveringDisconnect ? "text-destructive" : "text-white",
+          )}
+        />
         <span
           className={cn(
-            "w-2.5 h-2.5 rounded-full duration-300 transition-colors bg-placeholder",
+            "flex shrink-0 w-2.5 h-2.5 rounded-full duration-300 transition-colors bg-placeholder",
             isConnected && !isHoveringDisconnect && "bg-success",
             isHoveringDisconnect && "bg-destructive",
           )}

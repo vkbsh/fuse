@@ -2,7 +2,7 @@ import {
   TOKEN_PROGRAM_ADDRESS,
   TOKEN_2022_PROGRAM_ADDRESS,
 } from "gill/programs/token";
-import { address, type Address } from "gill";
+import { address, type Address, lamports } from "gill";
 
 import { SOL_MINT_ADDRESS } from "~/program/multisig/address";
 
@@ -31,8 +31,9 @@ export async function checkMinBalance(account: Address) {
   const minimumBalanceForRentExemption = await rpc
     .getMinimumBalanceForRentExemption(0n)
     .send();
+  const minTxFee = lamports(5000n);
 
-  return value >= minimumBalanceForRentExemption;
+  return value >= minimumBalanceForRentExemption + minTxFee;
 }
 
 export async function getBalance(vault: Address): Promise<Balance> {

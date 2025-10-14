@@ -62,6 +62,7 @@ function WithAccount({
                 onClick={() =>
                   onOpenChange(true, {
                     ...data,
+                    threshold: multisigAccount?.threshold,
                     rentCollector: multisigAccount?.rentCollector,
                   })
                 }

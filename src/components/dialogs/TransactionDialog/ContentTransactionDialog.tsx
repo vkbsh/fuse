@@ -24,6 +24,7 @@ export default function ContentTransactionDialog({
     approved,
     timestamp,
     cancelled,
+    threshold,
     rentCollector,
     transactionIndex,
   } = data || {};
@@ -42,6 +43,7 @@ export default function ContentTransactionDialog({
         status={status}
         approved={approved}
         rejected={rejected}
+        threshold={threshold}
         cancelled={cancelled}
         onCloseDialog={onCloseDialog}
         transactionIndex={transactionIndex}

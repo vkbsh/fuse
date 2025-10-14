@@ -30,6 +30,7 @@ export default function TransactionFooter({
   approved,
   rejected,
   cancelled,
+  threshold,
   onCloseDialog,
   vaultAddress,
   walletAccount,
@@ -37,6 +38,7 @@ export default function TransactionFooter({
   rentCollectorAddress,
 }: {
   status: Status;
+  threshold: number;
   approved: Address[];
   rejected: Address[];
   cancelled: Address[];
@@ -206,6 +208,8 @@ export default function TransactionFooter({
     );
   }
 
+  const connectMemberKeyLabel = isCloudKey ? "Recovery Key" : "Cloud Key";
+
   return (
     <>
       {["Cancelled", "Rejected"].includes(status) && (
@@ -220,72 +224,68 @@ export default function TransactionFooter({
       )}
       {status === "Active" && (
         <div className="relative flex flex-row justify-center gap-2">
-          {isRejectDisabled ||
-            (isApproveDisabled && (
-              <span className="absolute -top-8 text-sm text-warning">
-                Please connect another Member Key
-              </span>
-            ))}
-          <LoadingButton
-            variant="secondary"
-            onClick={
-              isRejectDisabled
-                ? () => toast.error("Connect another Member Key")
-                : rejectHandler
-            }
-            disabled={isRejectDisabled}
-            isSubmitting={isSubmitting.reject}
-          >
-            Reject
-          </LoadingButton>
-          <LoadingButton
-            isSubmitting={isSubmitting.approve}
-            onClick={
-              isApproveDisabled
-                ? () => toast.error("Connect another Member Key")
-                : approveHandler
-            }
-            disabled={isApproveDisabled}
-          >
-            Approve
-          </LoadingButton>
+          {isRejectDisabled && rejected.length < threshold ? (
+            <span className="absolute -top-8 text-sm text-warning">
+              Please connect {connectMemberKeyLabel} to Reject or
+            </span>
+          ) : null}
+          {isApproveDisabled && approved.length < threshold ? (
+            <span className="absolute -top-8 text-sm text-warning">
+              Please connect {connectMemberKeyLabel} to Approve or
+            </span>
+          ) : null}
+          {!isRejectDisabled ? (
+            <LoadingButton
+              variant="secondary"
+              onClick={rejectHandler}
+              disabled={isRejectDisabled}
+              isSubmitting={isSubmitting.reject}
+            >
+              Reject
+            </LoadingButton>
+          ) : null}
+          {!isApproveDisabled ? (
+            <LoadingButton
+              isSubmitting={isSubmitting.approve}
+              onClick={approveHandler}
+              disabled={isApproveDisabled}
+            >
+              Approve
+            </LoadingButton>
+          ) : null}
         </div>
       )}
       {status === "Approved" && (
         <div className="relative flex flex-row justify-center gap-2">
-          {isCancelDisabled && (
+          {isCancelDisabled && cancelled.length < threshold ? (
             <span className="absolute -top-8 text-sm text-warning">
-              Please connect another Member Key
+              Please connect {connectMemberKeyLabel} to Cancel or
             </span>
-          )}
-          <LoadingButton
-            variant="secondary"
-            onClick={
-              isCancelDisabled
-                ? () => toast.error("Connect another Member Key")
-                : cancelHandler
-            }
-            disabled={isCancelDisabled}
-            isSubmitting={isSubmitting.cancel}
-          >
-            Cancel
-          </LoadingButton>
+          ) : null}
+          {!isCancelDisabled ? (
+            <LoadingButton
+              variant="secondary"
+              onClick={cancelHandler}
+              disabled={isCancelDisabled}
+              isSubmitting={isSubmitting.cancel}
+            >
+              Cancel
+            </LoadingButton>
+          ) : null}
           {isExecuteDisabled && (
             <span className="absolute -top-8 text-sm text-warning">
-              Please connect your Cloud Key to execute transaction
+              Please connect your Cloud Key to Execute transaction or
             </span>
           )}
-          <LoadingButton
-            isSubmitting={isSubmitting.execute}
-            onClick={
-              isExecuteDisabled
-                ? () => toast.error("Connect Cloud Key to execute transaction")
-                : executeHandler
-            }
-            disabled={isExecuteDisabled}
-          >
-            Execute
-          </LoadingButton>
+          {!isExecuteDisabled ? (
+            <LoadingButton
+              isSubmitting={isSubmitting.execute}
+              onClick={executeHandler}
+              disabled={isExecuteDisabled}
+            >
+              Execute
+            </LoadingButton>
+          ) : null}
         </div>
       )}
     </>
