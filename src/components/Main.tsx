@@ -1,8 +1,8 @@
 import { toast } from "sonner";
 import { type Address } from "gill";
 
-import Coins from "~/components/Coins";
 import Button from "~/components/ui/button";
+import CoinsEarnTabs from "./ConinsEarnTabs";
 import TotalBalance from "~/components/TotalBalance";
 import Transactions from "~/components/Transactions";
 import { CircleArrowUpIcon } from "~/components/ui/icons/CircleArrowUp";
@@ -46,10 +46,7 @@ export default function Main() {
         </Button>
       </div>
       <div className="flex flex-1 w-full min-h-0 justify-between items-stretch">
-        <div className="flex flex-1 flex-col gap-3">
-          <h3 className="text-xl font-semibold">Coins</h3>
-          <Coins vaultAddress={vaultAddress} />
-        </div>
+        <CoinsEarnTabs vaultAddress={vaultAddress} />
         <div className="flex mx-10 w-px self-stretch" />
         <div className="basis-1/7 flex flex-1 flex-col gap-3">
           <h3 className="text-xl font-semibold">Transactions</h3>
