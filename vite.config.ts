@@ -3,8 +3,13 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
+import topLevelAwait from "vite-plugin-top-level-await";
+import wasm from "vite-plugin-wasm";
 
 export default defineConfig({
+  optimizeDeps: {
+    exclude: ["@orca-so/whirlpools-core"],
+  },
   plugins: [
     react(),
     nodePolyfills({
@@ -13,5 +18,7 @@ export default defineConfig({
     }),
     tsconfigPaths(),
     tailwindcss(),
+    topLevelAwait(),
+    wasm(),
   ],
 });

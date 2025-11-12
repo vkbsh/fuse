@@ -1,12 +1,14 @@
 import { toast } from "sonner";
 import { useState } from "react";
+import { address, type Address } from "gill";
 import { AnimatePresence, motion } from "motion/react";
-import { address, LAMPORTS_PER_SOL, type Address } from "gill";
 import { type UiWalletAccount } from "@wallet-standard/react";
 import { useWalletAccountTransactionSigner } from "@solana/react";
+import { DRIFT_PROGRAM_ID } from "@drift-labs/sdk";
+import { KVAULT_PROGRAM_ID_MAINNET as KAMINO_PROGRAM_ID } from "~/program/kamino/address";
 
 import {
-  type TokenData,
+  type EarnCoin,
   useMemberBalance,
   useRefetchTransactions,
 } from "~/hooks/resources";
@@ -16,17 +18,13 @@ import motionProps from "~/lib/motion";
 import Button from "~/components/ui/button";
 import TextShimmer from "~/components/ui/text-shimmer";
 
-import {
-  createTransferSolMessage,
-  createTransferTokenMessage,
-  sendAndConfirmTransferWithProposalApproveMessage,
-} from "~/program/multisig/message";
-import { SOL_MINT_ADDRESS } from "~/program/multisig/address";
+import { createDriftWithdrawLegacyMessage } from "~/program/drift/instruction";
+import { createKaminoWithdrawLegacyMessage } from "~/program/kamino/instruction";
+import { sendAndConfirmTransferWithProposalApproveMessage } from "~/program/multisig/message";
+import { type LegacyTransactionMessage } from "~/program/multisig/legacy";
 
-export default function InitiateButton({
+export default function InitiateWithdrawEarnButton({
   data,
-  validate,
-  hasError,
   vaultAddress,
   walletAccount,
   onCloseDialog,
@@ -36,11 +34,9 @@ export default function InitiateButton({
   data: {
     amount: number;
     toAddress: string;
-    token: TokenData | null;
+    token: EarnCoin | null;
   };
-  hasError: boolean;
   vaultAddress: Address;
-  validate: () => boolean;
   onCloseDialog: () => void;
   transactionIndex: number;
   multisigAddress: Address;
@@ -58,8 +54,6 @@ export default function InitiateButton({
       ) : (
         <InitiateButtonWithAccount
           data={data}
-          validate={validate}
-          hasError={hasError}
           vaultAddress={vaultAddress}
           walletAccount={walletAccount}
           onCloseDialog={onCloseDialog}
@@ -73,8 +67,6 @@ export default function InitiateButton({
 
 function InitiateButtonWithAccount({
   data,
-  validate,
-  hasError,
   vaultAddress,
   walletAccount,
   onCloseDialog,
@@ -84,11 +76,9 @@ function InitiateButtonWithAccount({
   data: {
     amount: number;
     toAddress: string;
-    token: TokenData | null;
+    token: EarnCoin | null;
   };
-  hasError: boolean;
   vaultAddress: Address;
-  validate: () => boolean;
   onCloseDialog: () => void;
   transactionIndex: number;
   multisigAddress: Address;
@@ -104,34 +94,40 @@ function InitiateButtonWithAccount({
     "solana:mainnet",
   );
 
-  const onInitiate = async () => {
-    const hasError = validate();
+  const disabled =
+    !walletAccount || isSubmitting || (isFetched && !isMinRentBalance);
 
-    if (hasError || !walletAccount || !data.token) return;
+  const onInitiate = async () => {
+    if (disabled || !data.token) return;
 
     const nextTxIndex = BigInt(transactionIndex + 1);
     const memberAddress = address(walletAccount.address);
     const creatorAddress = address(walletAccount.address);
-    const isSolTransfer = data.token.mint === SOL_MINT_ADDRESS;
 
-    let transactionMessage = null;
+    let transactionMessage: LegacyTransactionMessage | null = null;
 
-    if (isSolTransfer) {
-      transactionMessage = await createTransferSolMessage({
-        // @ts-expect-error (expect signer)
-        source: vaultAddress,
-        toAddress: address(data.toAddress),
-        amount: data.amount * LAMPORTS_PER_SOL,
+    if (data.token.programId === DRIFT_PROGRAM_ID) {
+      transactionMessage = await createDriftWithdrawLegacyMessage({
+        vaultAddress,
+        symbol: data.token.symbol || "",
+        mintAddress: data.token.id || "",
+      });
+    } else if (data.token.programId === KAMINO_PROGRAM_ID) {
+      if (!data.token.kaminoVaultUSDCAddress) {
+        const errorMessage = "Kamino vault USDC address not found";
+
+        toast.error(errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      transactionMessage = await createKaminoWithdrawLegacyMessage({
+        vaultAddress,
+        amount: data.amount,
+        vaultUSDCAddress: data.token.kaminoVaultUSDCAddress,
       });
     } else {
-      transactionMessage = await createTransferTokenMessage({
-        // @ts-expect-error (expect signer)
-        signer: vaultAddress,
-        fromToken: data.token,
-        authorityAddress: vaultAddress,
-        toAddress: address(data.toAddress),
-        amount: data.amount * 10 ** data.token.decimals,
-      });
+      toast.error("Failed to initiate withdraw");
+      throw new Error("Invalid program ID to create Yield Instruction");
     }
 
     try {
@@ -159,8 +155,6 @@ function InitiateButtonWithAccount({
     }
   };
 
-  const disabled = isSubmitting || hasError || (isFetched && !isMinRentBalance);
-
   return (
     <>
       <Button
@@ -171,7 +165,7 @@ function InitiateButtonWithAccount({
         <AnimatePresence>
           {isSubmitting ? (
             <TextShimmer>Initiating</TextShimmer>
-          ) : !isMinRentBalance ? (
+          ) : isFetched && !isMinRentBalance ? (
             <motion.span
               className="text-destructive"
               {...motionProps.global.fadeIn}

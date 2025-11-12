@@ -1,5 +1,5 @@
 export function roundToken(amount: number): number {
-  return Math.round(amount * 1000000000) / 1000000000;
+  return Math.round(amount * 100000) / 100000;
 }
 
 export function getAmount({
@@ -22,6 +22,16 @@ export function formatUSD(amount: number | null | undefined) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
+export function formatDecimal(amount: number | null | undefined) {
+  if (amount == null) return "-";
+
+  return new Intl.NumberFormat("en-US", {
+    style: "decimal",
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount);
 }

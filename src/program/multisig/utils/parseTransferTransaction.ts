@@ -1,11 +1,15 @@
-import { parseBase64RpcAccount } from "gill";
-import { type Address, type EncodedAccount } from "gill";
-
+import {
+  type Address,
+  type Instruction,
+  type EncodedAccount,
+  parseBase64RpcAccount,
+} from "gill";
+import { DRIFT_PROGRAM_ID } from "@drift-labs/sdk";
+import { KVAULT_PROGRAM_ID_MAINNET as KAMINO_PROGRAM_ID } from "~/program/kamino/address";
 import {
   SYSTEM_PROGRAM_ADDRESS,
   parseTransferSolInstruction,
 } from "gill/programs";
-
 import {
   TOKEN_PROGRAM_ADDRESS,
   TOKEN_2022_PROGRAM_ADDRESS,
@@ -21,8 +25,10 @@ import {
 
 import { SOL_MINT_ADDRESS } from "~/program/multisig/address";
 import { getProposalPda, getTransactionPda } from "~/program/multisig/pda";
+import { parseDriftWithdrawInstruction } from "~/program/drift/parseDriftWithdraw";
 
 import { getRpcClient } from "~/lib/rpc";
+import { parseKaminoWithdrawInstruction } from "~/program/kamino/parseKaminoWithdraw";
 
 type Message = {
   accountKeys: Address[];
@@ -34,7 +40,7 @@ type Message = {
 };
 
 type ParsedVaultTransactionMessage = {
-  amount: bigint;
+  amount: bigint | number;
   toAccount: Address;
   fromAccount: Address;
   mintAddress: Address;
@@ -50,6 +56,14 @@ function isTokenProgram(programAddress: Address) {
     programAddress === TOKEN_PROGRAM_ADDRESS ||
     programAddress === TOKEN_2022_PROGRAM_ADDRESS
   );
+}
+
+function isDriftProgram(programAddress: Address) {
+  return programAddress === DRIFT_PROGRAM_ID;
+}
+
+function isKaminoProgram(programAddress: Address) {
+  return programAddress === KAMINO_PROGRAM_ID;
 }
 
 function isSystemProgram(programAddress: Address) {
@@ -138,121 +152,156 @@ export async function parseVaultTransactionMessage(
 ): Promise<ParsedVaultTransactionMessage | null> {
   const { accountKeys = [], instructions = [] } = message || {};
 
-  if (instructions.length === 0) {
+  if (!instructions.length) {
+    console.log("No instructions found");
+
     return null;
   }
 
-  let result: ParsedVaultTransactionMessage | null = null;
+  const instructionsFromLegacyInstructions = instructions.map((ix) => {
+    const programAddress = accountKeys[ix.programIdIndex];
 
-  // Transfer (SOL/Token) Instruction
-  if (instructions.length === 1) {
-    const ixLegacy = instructions[0];
-    const programAddress = accountKeys[ixLegacy.programIdIndex];
-
-    const ix = {
+    return {
       programAddress,
-      data: new Uint8Array(ixLegacy.data),
-      accounts: mapAccounts(ixLegacy.accountIndexes, accountKeys), // ANY role (to satisfy the type)
-    };
+      data: new Uint8Array(ix.data),
+      accounts: mapAccounts(ix.accountIndexes, accountKeys), // ANY role (to satisfy the type)
+    } satisfies Instruction;
+  });
 
-    if (isSystemProgram(programAddress)) {
-      try {
-        const { accounts, data } = parseTransferSolInstruction(ix);
+  const isSolanaWithdrawIx = instructionsFromLegacyInstructions.some((ix) =>
+    isSystemProgram(ix.programAddress),
+  );
 
-        result = {
-          amount: data.amount,
-          mintAddress: SOL_MINT_ADDRESS,
-          fromAccount: accounts.source.address,
-          toAccount: accounts.destination.address,
-        };
-      } catch (error) {
-        console.error("Failed to parse Transfer SOL Instruction: ", error);
-        return null;
-      }
-    }
+  const isTokenWithdrawIx = instructionsFromLegacyInstructions.some((ix) =>
+    isTokenProgram(ix.programAddress),
+  );
 
-    if (isTokenProgram(programAddress)) {
-      try {
-        const { accounts, data } = parseTransferInstruction(ix);
+  const isDriftWithdrawIx = instructionsFromLegacyInstructions.some((ix) =>
+    isDriftProgram(ix.programAddress),
+  );
 
-        result = {
-          amount: data.amount,
-          mintAddress: SOL_MINT_ADDRESS,
-          fromAccount: accounts.source.address,
-          toAccount: accounts.destination.address,
-        };
-      } catch (error) {
-        console.error("Failed to parse Transfer Token Instruction: ", error);
-        return null;
-      }
-    }
-  }
-
-  // List of 2 instructions might contain:
-  // ['Create ATA Instruction', 'Transfer Token Instruction']
-  if (instructions.length === 2) {
-    const createATAIx = instructions[0]; // Create ATA
-    const transferTokenIx = instructions[1]; // Transfer Token
-
-    const programAddressCreateATA = accountKeys[createATAIx.programIdIndex];
-    const programAddressTransferToken =
-      accountKeys[transferTokenIx.programIdIndex];
-
-    if (
-      isAssociatedTokenProgram(programAddressCreateATA) &&
-      isTokenProgram(programAddressTransferToken)
-    ) {
-      try {
-        const decodedATI = parseCreateAssociatedTokenIdempotentInstruction({
-          data: new Uint8Array(createATAIx.data),
-          programAddress: programAddressCreateATA,
-          accounts: mapAccounts(createATAIx.accountIndexes, accountKeys), // ANY role (to satisfy the type)
-        });
-
-        if (decodedATI) {
-          const accountsATI = decodedATI?.accounts;
-
-          const toAccount = accountsATI.owner.address;
-          const mintAddress = accountsATI.mint.address;
-
-          try {
-            const { data } = parseTransferInstruction({
-              data: new Uint8Array(transferTokenIx.data),
-              programAddress: programAddressTransferToken,
-              accounts: mapAccounts(
-                transferTokenIx.accountIndexes,
-                accountKeys,
-              ), // ANY role (to satisfy the type)
-            });
-
-            result = {
-              mintAddress,
-              toAccount,
-              amount: data.amount,
-              fromAccount: decodedATI.accounts.payer.address,
-            };
-          } catch (e) {
-            console.error("Failed to parse Transfer Instruction: ", e);
-            return null;
-          }
-        }
-      } catch (e) {
-        console.error("Failed to parse Create ATA Instruction: ", e);
-        return null;
-      }
-    }
-  }
+  const isKaminoWithdrawIx = instructionsFromLegacyInstructions.some((ix) =>
+    isKaminoProgram(ix.programAddress),
+  );
 
   if (
-    !result?.amount ||
-    !result?.toAccount ||
-    !result?.fromAccount ||
-    !result?.mintAddress
+    !isSolanaWithdrawIx &&
+    !isTokenWithdrawIx &&
+    !isDriftWithdrawIx &&
+    !isKaminoWithdrawIx
   ) {
+    console.error("Invalid instruction");
+
     return null;
   }
 
-  return result;
+  if (isSolanaWithdrawIx) {
+    const { accounts, data } = parseTransferSolInstruction(
+      instructionsFromLegacyInstructions[0],
+    );
+
+    return {
+      amount: data.amount,
+      mintAddress: SOL_MINT_ADDRESS,
+      fromAccount: accounts.source.address,
+      toAccount: accounts.destination.address,
+    };
+  }
+
+  if (isTokenWithdrawIx) {
+    const tokenWithdrawIx = instructionsFromLegacyInstructions.find((ix) =>
+      isTokenProgram(ix.programAddress),
+    );
+
+    const createATAIx = instructionsFromLegacyInstructions.find((ix) =>
+      isAssociatedTokenProgram(ix.programAddress),
+    );
+
+    const { accounts } = createATAIx
+      ? parseCreateAssociatedTokenIdempotentInstruction({
+          accounts: createATAIx.accounts,
+          data: new Uint8Array(createATAIx.data),
+          programAddress: createATAIx.programAddress,
+        })
+      : {};
+
+    const { data } = tokenWithdrawIx
+      ? parseTransferInstruction(tokenWithdrawIx)
+      : {};
+
+    const toAccount = accounts?.owner?.address;
+    const mintAddress = accounts?.mint?.address;
+    const fromAccount = accounts?.payer?.address;
+
+    if (!data?.amount || !toAccount || !mintAddress || !fromAccount) {
+      console.error("Invalid TokenWithdraw instruction");
+
+      return null;
+    }
+
+    return {
+      toAccount,
+      fromAccount,
+      mintAddress,
+      amount: data.amount,
+    };
+  }
+
+  if (isDriftWithdrawIx) {
+    const driftWithdrawIx = instructionsFromLegacyInstructions.find((ix) =>
+      isDriftProgram(ix.programAddress),
+    );
+
+    const { data, accounts } = driftWithdrawIx
+      ? parseDriftWithdrawInstruction(driftWithdrawIx)
+      : {};
+
+    console.log("Drift parsed accounts: ", accounts);
+
+    const toAccount = accounts?.authority?.address;
+    const fromAccount = accounts?.authority?.address;
+
+    if (!data || !toAccount || !fromAccount) {
+      console.error("Invalid DriftWithdraw instruction");
+      return null;
+    } else {
+      return {
+        toAccount,
+        fromAccount,
+        amount: data.amount,
+        mintAddress: data.mint,
+      };
+    }
+  }
+
+  if (isKaminoWithdrawIx) {
+    const kaminoWithdrawIx = instructionsFromLegacyInstructions.find((ix) =>
+      isKaminoProgram(ix.programAddress),
+    );
+
+    const { data, accounts } = kaminoWithdrawIx
+      ? parseKaminoWithdrawInstruction(kaminoWithdrawIx)
+      : {};
+
+    console.log("Kamino parsed accounts: ", accounts);
+
+    const toAccount = accounts?.user?.address;
+    const fromAccount = accounts?.user?.address;
+
+    if (!data || !toAccount || !fromAccount) {
+      console.error("Invalid KaminoWithdraw instruction");
+      return null;
+    } else {
+      return {
+        toAccount,
+        fromAccount,
+        amount: data.amount,
+        mintAddress: data.mint,
+      };
+    }
+  }
+
+  return null;
 }
 
 export async function getParsedVaultTransactionMessage({

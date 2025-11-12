@@ -209,6 +209,21 @@ export default function TransactionFooter({
   }
 
   const connectMemberKeyLabel = isCloudKey ? "Recovery Key" : "Cloud Key";
+  let warningMessage: string | null = null;
+
+  if (status === "Approved") {
+    if (isExecuteDisabled && !isCloudKey) {
+      warningMessage = "Please connect your Cloud Key to Execute transaction";
+    } else if (isCancelDisabled && cancelled.length < threshold) {
+      warningMessage = `Please connect ${connectMemberKeyLabel} to Cancel`;
+    }
+  } else if (status === "Active") {
+    if (isApproveDisabled && approved.length < threshold) {
+      warningMessage = `Please connect ${connectMemberKeyLabel} to Approve`;
+    } else if (isRejectDisabled && rejected.length < threshold) {
+      warningMessage = `Please connect ${connectMemberKeyLabel} to Reject`;
+    }
+  }
 
   return (
     <>
@@ -222,70 +237,64 @@ export default function TransactionFooter({
           </LoadingButton>
         </div>
       )}
-      {status === "Active" && (
+
+      {(status === "Active" || status === "Approved") && (
         <div className="relative flex flex-row justify-center gap-2">
-          {isRejectDisabled && rejected.length < threshold ? (
+          {warningMessage && (
             <span className="absolute -top-8 text-sm text-warning">
-              Please connect {connectMemberKeyLabel} to Reject or
-            </span>
-          ) : null}
-          {isApproveDisabled && approved.length < threshold ? (
-            <span className="absolute -top-8 text-sm text-warning">
-              Please connect {connectMemberKeyLabel} to Approve or
-            </span>
-          ) : null}
-          {!isRejectDisabled ? (
-            <LoadingButton
-              variant="secondary"
-              onClick={rejectHandler}
-              disabled={isRejectDisabled}
-              isSubmitting={isSubmitting.reject}
-            >
-              Reject
-            </LoadingButton>
-          ) : null}
-          {!isApproveDisabled ? (
-            <LoadingButton
-              isSubmitting={isSubmitting.approve}
-              onClick={approveHandler}
-              disabled={isApproveDisabled}
-            >
-              Approve
-            </LoadingButton>
-          ) : null}
-        </div>
-      )}
-      {status === "Approved" && (
-        <div className="relative flex flex-row justify-center gap-2">
-          {isCancelDisabled && cancelled.length < threshold ? (
-            <span className="absolute -top-8 text-sm text-warning">
-              Please connect {connectMemberKeyLabel} to Cancel or
-            </span>
-          ) : null}
-          {!isCancelDisabled ? (
-            <LoadingButton
-              variant="secondary"
-              onClick={cancelHandler}
-              disabled={isCancelDisabled}
-              isSubmitting={isSubmitting.cancel}
-            >
-              Cancel
-            </LoadingButton>
-          ) : null}
-          {isExecuteDisabled && (
-            <span className="absolute -top-8 text-sm text-warning">
-              Please connect your Cloud Key to Execute transaction or
+              {warningMessage}
             </span>
           )}
-          {!isExecuteDisabled ? (
-            <LoadingButton
-              isSubmitting={isSubmitting.execute}
-              onClick={executeHandler}
-              disabled={isExecuteDisabled}
-            >
-              Execute
-            </LoadingButton>
-          ) : null}
+
+          {status === "Active" && (
+            <>
+              {!isRejectDisabled && (
+                <LoadingButton
+                  variant="secondary"
+                  onClick={rejectHandler}
+                  disabled={isRejectDisabled}
+                  isSubmitting={isSubmitting.reject}
+                >
+                  Reject
+                </LoadingButton>
+              )}
+
+              {!isApproveDisabled && (
+                <LoadingButton
+                  isSubmitting={isSubmitting.approve}
+                  onClick={approveHandler}
+                  disabled={isApproveDisabled}
+                >
+                  Approve
+                </LoadingButton>
+              )}
+            </>
+          )}
+
+          {status === "Approved" && (
+            <>
+              {!isCancelDisabled && (
+                <LoadingButton
+                  variant="secondary"
+                  onClick={cancelHandler}
+                  disabled={isCancelDisabled}
+                  isSubmitting={isSubmitting.cancel}
+                >
+                  Cancel
+                </LoadingButton>
+              )}
+
+              {!isExecuteDisabled && (
+                <LoadingButton
+                  isSubmitting={isSubmitting.execute}
+                  onClick={executeHandler}
+                  disabled={isExecuteDisabled}
+                >
+                  Execute
+                </LoadingButton>
+              )}
+            </>
+          )}
         </div>
       )}
     </>

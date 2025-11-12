@@ -1,6 +1,11 @@
 import { create } from "zustand";
 
-type DialogName = "connect" | "withdraw" | "transaction" | "rpc";
+type DialogName =
+  | "rpc"
+  | "connect"
+  | "withdraw"
+  | "withdrawEarn"
+  | "transaction";
 
 type DialogState = {
   [key in DialogName]: {
@@ -23,16 +28,18 @@ export const useBaseDialogStore = create<DialogState & DialogActions>(
       meta: null,
       isOpen: false,
     },
+    withdrawEarn: {
+      meta: null,
+      isOpen: false,
+    },
     transaction: {
       meta: null,
       isOpen: false,
     },
-
     rpc: {
       meta: null,
       isOpen: false,
     },
-
     setOpen: (name, isOpen, meta) => set({ [name]: { isOpen, meta } }),
   }),
 );

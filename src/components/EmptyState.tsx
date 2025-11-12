@@ -2,7 +2,7 @@ import { motion } from "motion/react";
 
 import motionProps from "~/lib/motion";
 
-export default function TransactionEmptyState() {
+export default function EmptyState({ label }: { label: string }) {
   return (
     <motion.div
       key="transaction-empty-state"
@@ -14,7 +14,7 @@ export default function TransactionEmptyState() {
         src="/tx-placeholder.svg"
         className="w-[274px] h-[142px]"
       />
-      <span className="text-lg">No transactions yet</span>
+      <span className="text-lg">{label}</span>
     </motion.div>
   );
 }

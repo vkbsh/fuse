@@ -1,17 +1,16 @@
 import { useState } from "react";
 
+import { roundToken } from "~/lib/amount";
+import { getIconUrl } from "~/lib/utils";
+import { abbreviateAddress } from "~/lib/address";
+import { type TokenData } from "~/hooks/resources";
+
 import {
   DropdownMenu,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuContent,
 } from "~/components/ui/dropdown-menu";
-
-import { roundToken } from "~/lib/amount";
-import { getIconUrl } from "~/lib/utils";
-import { abbreviateAddress } from "~/lib/address";
-
-import { type TokenData } from "~/hooks/resources";
 import SelectedToken from "./SelectedToken";
 
 export default function SelectTokenDropdown({
@@ -31,7 +30,7 @@ export default function SelectTokenDropdown({
       <DropdownMenuTrigger>
         <SelectedToken token={selected} />
       </DropdownMenuTrigger>
-      {tokens.length && (
+      {tokens.length ? (
         <DropdownMenuContent
           align="start"
           isOpen={isOpen}
@@ -45,7 +44,7 @@ export default function SelectTokenDropdown({
             const iconUrl = getIconUrl(item.icon);
 
             return (
-              <DropdownMenuItem key={item.id}>
+              <DropdownMenuItem key={item.id + amount}>
                 <div
                   key={item.id}
                   onClick={() => setToken(item)}
@@ -67,7 +66,7 @@ export default function SelectTokenDropdown({
                       </span>
                     </div>
                     <div className="flex flex-row gap-1">
-                      <div className="uppercase font-medium max-w-22 truncate">
+                      <div className="uppercase font-medium max-w-16 truncate">
                         {amount}
                       </div>
                       <span>{item.symbol}</span>
@@ -78,7 +77,7 @@ export default function SelectTokenDropdown({
             );
           })}
         </DropdownMenuContent>
-      )}
+      ) : null}
     </DropdownMenu>
   );
 }

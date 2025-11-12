@@ -4,7 +4,7 @@ import { AnimatePresence } from "motion/react";
 import ListItem from "~/components/ListItem";
 import Transaction from "~/components/Transactions/Transaction";
 import TransactionSkeleton from "~/components/Transactions/TransactionSkeleton";
-import TransactionEmptyState from "~/components/Transactions/TransactionEmptyState";
+import EmptyState from "~/components/EmptyState";
 
 import { useDialogStore } from "~/state/dialog";
 import { type MultisigAccount } from "~/program/multisig/codec";
@@ -80,7 +80,7 @@ function WithAccount({
         <TransactionSkeleton key="skeleton" />
       )}
       {isFetched && !transactions?.length && (
-        <TransactionEmptyState key="emptyState" />
+        <EmptyState key="emptyState" label="No transactions yet" />
       )}
     </div>
   );

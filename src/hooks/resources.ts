@@ -11,6 +11,8 @@ import { getAmount } from "~/lib/amount";
 import { type FromToken } from "~/program/multisig/message";
 import { SOL_MINT_ADDRESS } from "~/program/multisig/address";
 
+import { useWalletStore } from "~/state/wallet";
+
 import {
   type TokenMeta,
   fetchTokenMeta,
@@ -21,7 +23,8 @@ import {
   getWalletByMemberKey,
   getTransactionsByMultisig,
 } from "~/service/multisig";
-import { useWalletStore } from "~/state/wallet";
+import { fetchDriftBalance, supportedMarketSpots } from "~/service/drift";
+import { fetchKaminoBalance } from "~/service/kamino";
 import { getBalance, checkMinBalance } from "~/service/balance";
 
 export type TokenData = TokenMeta &
@@ -35,6 +38,8 @@ export type QueryKey =
   | "tokenMeta"
   | "tokenPrice"
   | "transaction"
+  | "driftBalance"
+  | "kaminoBalance"
   | "balanceMember"
   | "multisigAccount"
   | "multisigWalletsByKey";
@@ -44,6 +49,8 @@ export const queryKeys: { [key in QueryKey]: QueryKey } = {
   tokenMeta: "tokenMeta",
   tokenPrice: "tokenPrice",
   transaction: "transaction",
+  driftBalance: "driftBalance",
+  kaminoBalance: "kaminoBalance",
   balanceMember: "balanceMember",
   multisigAccount: "multisigAccount",
   multisigWalletsByKey: "multisigWalletsByKey",
@@ -54,6 +61,8 @@ const staleTimeByQueryKey: { [key in QueryKey]: number } = {
   balanceMember: 0,
   balance: 1000 * 30, // 30 sec
   tokenPrice: 1000 * 30, // 30 sec
+  driftBalance: 1000 * 30, // 30 sec
+  kaminoBalance: 1000 * 30, // 30 sec
   multisigAccount: 1000 * 30, // 30 sec
   multisigWalletsByKey: 1000 * 30, // 30 sec
   tokenMeta: 1000 * 60 * 60 * 24 * 30, // 1 month
@@ -251,6 +260,90 @@ export function useHydratedTransactions(
   };
 }
 
+export type EarnBalance = {
+  symbol: string;
+  balance: number;
+  programId: string;
+  kaminoVaultUSDCAddress?: Address | undefined;
+};
+
+export type EarnCoin = {
+  programId: string;
+  usdAmount: number;
+  id: string | undefined;
+  name: string | undefined;
+  symbol: string | undefined;
+  icon: string | undefined;
+  kaminoVaultUSDCAddress?: Address | undefined;
+};
+
+export function useKaminoBalance(vaultAddress: Address) {
+  return useQuery({
+    enabled: !!vaultAddress,
+    queryKey: [queryKeys.kaminoBalance, vaultAddress],
+    staleTime: staleTimeByQueryKey.kaminoBalance,
+    queryFn: async () => fetchKaminoBalance(vaultAddress),
+  });
+}
+export function useDriftBalance(vaultAddress: Address) {
+  return useQuery({
+    enabled: !!vaultAddress,
+    queryKey: [queryKeys.driftBalance, vaultAddress],
+    staleTime: staleTimeByQueryKey.driftBalance,
+    queryFn: async () => fetchDriftBalance(vaultAddress),
+  });
+}
+
+export function useEarnBalance(vaultAddress: Address) {
+  const {
+    data: kaminoBalance,
+    isLoading: kaminoBalanceLoading,
+    isFetched: kaminoBalanceFetched,
+  } = useKaminoBalance(vaultAddress);
+  const {
+    data: driftBalance,
+    isLoading: driftBalanceLoading,
+    isFetched: driftBalanceFetched,
+  } = useDriftBalance(vaultAddress);
+
+  const tokenMetas = useTokensMeta(
+    supportedMarketSpots.map((spot) => address(spot.mint.toString())),
+  );
+  const tokenMetasData = tokenMetas.map((meta) => meta.data);
+  const tokenMetasLoading = tokenMetas.map((meta) => meta.isLoading);
+
+  const isLoading =
+    kaminoBalanceLoading ||
+    driftBalanceLoading ||
+    tokenMetasLoading.some((loading) => loading);
+
+  const isFetched = kaminoBalanceFetched && driftBalanceFetched;
+
+  const data = [...(driftBalance || []), kaminoBalance].map((b) => {
+    if (!b) return null;
+
+    const tokenMeta = tokenMetasData.find((meta) => meta?.symbol === b?.symbol);
+
+    const coinEarn = {
+      id: tokenMeta?.id,
+      name: tokenMeta?.name,
+      icon: tokenMeta?.icon,
+      symbol: tokenMeta?.symbol,
+      usdAmount: b?.balance,
+      programId: b?.programId,
+      kaminoVaultUSDCAddress: b?.kaminoVaultUSDCAddress,
+    } satisfies EarnCoin;
+
+    return coinEarn;
+  });
+
+  return {
+    isLoading,
+    isFetched,
+    data: data.filter(Boolean),
+  };
+}
+
 export function useRefetchTransactions(multisigAddress: Address) {
   const queryClient = useQueryClient();
 
@@ -272,6 +365,12 @@ export function useRefetchBalance(vaultAddress: Address) {
       queryClient.refetchQueries({
         queryKey: [queryKeys.tokenPrice],
       }),
+      queryClient.refetchQueries({
+        queryKey: [queryKeys.driftBalance, vaultAddress],
+      }),
+      queryClient.refetchQueries({
+        queryKey: [queryKeys.kaminoBalance, vaultAddress],
+      }),
     ]);
   };
 }
@@ -287,5 +386,5 @@ export function useQueryReset() {
     queryClient.removeQueries({
       predicate: (query) => query.queryKey[0] !== queryKeys.tokenMeta,
     });
-  }, [queryClient]);
+  }, []);
 }

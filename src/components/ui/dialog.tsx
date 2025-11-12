@@ -31,7 +31,7 @@ export function DialogContent({
   return (
     <AnimatePresence>
       {isOpen && (
-        <Portal forceMount data-slot="dialog-portal">
+        <Portal data-slot="dialog-portal">
           <motion.div
             className="fixed inset-0 z-50"
             {...motionProps.dialog.overlay}

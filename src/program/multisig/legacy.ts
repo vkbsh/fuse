@@ -108,7 +108,7 @@ function addressFromLegacyPublicKey(legacyPublicKey: PublicKey): Address {
   return address(legacyPublicKey.toBase58());
 }
 
-function instructionFromLegacyInstruction(
+export function instructionFromLegacyInstruction(
   legacyInstruction: TransactionInstruction,
 ): Instruction {
   return {
@@ -132,6 +132,40 @@ function instructionFromLegacyInstruction(
   };
 }
 
+export async function createLegacyMessageFromLegacyInstruction({
+  signer,
+  instructions,
+}: {
+  signer: Address | string;
+  instructions: TransactionInstruction[];
+}) {
+  const { rpc } = getRpcClient();
+  const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
+
+  return new LegacyTransactionMessage({
+    instructions,
+    payerKey: new PublicKey(signer),
+    recentBlockhash: latestBlockhash.blockhash,
+  });
+}
+
+export function createLegacyInstructionFromInstruction(
+  instruction: Instruction,
+): TransactionInstruction {
+  const accounts = instruction.accounts ? instruction.accounts : [];
+
+  return {
+    programId: new PublicKey(instruction.programAddress),
+    keys: accounts.map((account) => ({
+      pubkey: new PublicKey(account.address),
+      isSigner:
+        account.role === WRITABLE_SIGNER || account.role === READONLY_SIGNER,
+      isWritable: account.role === WRITABLE || account.role === WRITABLE_SIGNER,
+    })),
+    data: Buffer.from(instruction.data as ReadonlyUint8Array),
+  };
+}
+
 export async function createLegacyTransactionMessage(
   signer: TransactionSigner,
   instructions: Instruction[],
@@ -142,23 +176,8 @@ export async function createLegacyTransactionMessage(
 
   return new LegacyTransactionMessage({
     payerKey: new PublicKey(signer),
-    instructions: instructions.map((ix) => {
-      const accounts = ix.accounts ? ix.accounts : [];
-
-      return {
-        programId: new PublicKey(ix.programAddress),
-        keys: accounts.map((account) => ({
-          pubkey: new PublicKey(account.address),
-          isSigner:
-            account.role === WRITABLE_SIGNER ||
-            account.role === READONLY_SIGNER,
-          isWritable:
-            account.role === WRITABLE || account.role === WRITABLE_SIGNER,
-        })),
-        data: Buffer.from(ix.data as ReadonlyUint8Array),
-      };
-    }),
     recentBlockhash: latestBlockhash.blockhash,
+    instructions: instructions.map(createLegacyInstructionFromInstruction),
   });
 }
 
