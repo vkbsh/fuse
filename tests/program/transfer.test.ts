@@ -96,7 +96,7 @@ describe("Interacting with Multisig Program", async () => {
         Number(transactionIndex),
       );
 
-      expect(parsedMessage).not.null;
+      expect(parsedMessage).not.toBeNull();
       expect(Number(parsedMessage?.amount)).equal(amount * LAMPORTS_PER_SOL);
       expect(parsedMessage?.toAccount).equal(recipientSolAddress);
       expect(parsedMessage?.fromAccount).equal(vaultAddress);
@@ -140,7 +140,7 @@ describe("Interacting with Multisig Program", async () => {
         Number(transactionIndex),
       );
 
-      expect(proposal).null;
+      expect(proposal).toBeNull();
     });
 
     test("Should verify account state after transaction execution", async () => {
@@ -213,7 +213,7 @@ describe("Interacting with Multisig Program", async () => {
         Number(transactionIndex),
       );
 
-      expect(parsedMessage).not.null;
+      expect(parsedMessage).not.toBeNull();
       expect(Number(parsedMessage?.amount)).equal(
         Math.round(amount * 10 ** fromToken.decimals),
       );
@@ -263,7 +263,7 @@ describe("Interacting with Multisig Program", async () => {
         Number(transactionIndex),
       );
 
-      expect(proposal).null;
+      expect(proposal).toBeNull();
     });
 
     test("Should verify account state after transaction execution", async () => {
@@ -347,7 +347,7 @@ describe("Interacting with Multisig Program", async () => {
         Number(transactionIndex),
       );
 
-      expect(parsedMessage).not.null;
+      expect(parsedMessage).not.toBeNull();
       expect(Number(parsedMessage?.amount)).equal(
         Math.round(amount * 10 ** fromToken.decimals),
       );
@@ -397,7 +397,7 @@ describe("Interacting with Multisig Program", async () => {
         Number(transactionIndex),
       );
 
-      expect(proposal).null;
+      expect(proposal).toBeNull();
     });
 
     test("Should verify account state after transaction execution", async () => {

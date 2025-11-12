@@ -49,15 +49,9 @@ type ParsedWithdrawInstruction<
     reserveCollateralMint: TAccountMetas[19];
     reserveCollateralTokenProgram: TAccountMetas[20];
     instructionSysvarAccount: TAccountMetas[21];
-
-    // Final accounts
-    eventAuthority2: TAccountMetas[22];
-    program2: TAccountMetas[23];
   };
   data: CustomData;
 };
-
-const LENGTH_OF_ACCOUNTS = 24;
 
 export function parseKaminoWithdrawInstruction<
   TProgram extends string,
@@ -69,10 +63,6 @@ export function parseKaminoWithdrawInstruction<
 ): ParsedWithdrawInstruction<TProgram, TAccountMetas> & {
   data: CustomData;
 } {
-  // if (instruction.accounts.length < LENGTH_OF_ACCOUNTS) {
-  //   throw new Error("Not enough accounts");
-  // }
-
   let accountIndex = 0;
   const getNextAccount = () => {
     const accountMeta = (instruction.accounts as TAccountMetas)[accountIndex]!;
@@ -108,8 +98,6 @@ export function parseKaminoWithdrawInstruction<
       reserveCollateralMint: getNextAccount(),
       reserveCollateralTokenProgram: getNextAccount(),
       instructionSysvarAccount: getNextAccount(),
-      eventAuthority2: getNextAccount(),
-      program2: getNextAccount(),
     },
     data: {
       mint: USDC_MINT,

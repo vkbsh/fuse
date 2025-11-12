@@ -90,8 +90,11 @@ export async function getTransactionsByMultisig(
     const transactions =
       await getTransactionsByMultisigAndIndex(multisigAddress);
 
-    const result = transactions
-      ?.filter(Boolean)
+    const result = (transactions || [])
+      .filter((tx) => {
+        if (!tx) return false;
+        return tx.transactionIndex > staleTransactionIndex;
+      })
       .sort(
         (a, b) => Number(b?.transactionIndex) - Number(a?.transactionIndex),
       );

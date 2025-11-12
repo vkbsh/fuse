@@ -11,6 +11,7 @@ export function getIconUrl(url: string): string | null {
   try {
     return new URL(url)?.toString();
   } catch (e) {
+    console.error(e);
     return null;
   }
 }
