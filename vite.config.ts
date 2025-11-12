@@ -8,7 +8,12 @@ import wasm from "vite-plugin-wasm";
 
 export default defineConfig({
   optimizeDeps: {
-    exclude: ["@orca-so/whirlpools-core"],
+    exclude: [
+      "@orca-so/whirlpools-core",
+      "vite-plugin-node-polyfills/shims/buffer",
+      "vite-plugin-node-polyfills/shims/global",
+      "vite-plugin-node-polyfills/shims/process",
+    ],
   },
   plugins: [
     react(),
