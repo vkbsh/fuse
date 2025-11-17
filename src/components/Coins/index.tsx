@@ -16,7 +16,7 @@ export default function Coins({ vaultAddress }: { vaultAddress: Address }) {
   const { data, isFetched } = useTokenInfo(vaultAddress);
 
   return (
-    <div className="flex flex-1 flex-col gap-0.5 overflow-y-scroll scroll-smooth scrollbar-hidden -mx-3">
+    <div className="flex flex-1 flex-col gap-0.5 -mx-3">
       <AnimatePresence>
         {!isFetched && data?.length ? (
           <CoinSkeleton />

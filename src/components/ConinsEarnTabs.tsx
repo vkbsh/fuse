@@ -41,7 +41,11 @@ export default function CoinsEarnTabs({
       </h3>
       <AnimatePresence mode="wait">
         {activeTab === "coins" ? (
-          <motion.div key="coins" {...motionProps.global.fadeIn}>
+          <motion.div
+            key="coins"
+            className="flex flex-1 overflow-y-scroll scroll-smooth scrollbar-hidden"
+            {...motionProps.global.fadeIn}
+          >
             <Coins vaultAddress={vaultAddress} />
           </motion.div>
         ) : (
