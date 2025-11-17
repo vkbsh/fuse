@@ -27,6 +27,7 @@ export default function ContentTransactionDialog({
     threshold,
     rentCollector,
     transactionIndex,
+    staleTransactionIndex,
   } = data || {};
 
   return (
@@ -49,6 +50,7 @@ export default function ContentTransactionDialog({
         transactionIndex={transactionIndex}
         rentCollectorAddress={rentCollector}
         vaultAddress={vaultAddress as Address}
+        staleTransactionIndex={staleTransactionIndex}
         walletAccount={walletAccount as UiWalletAccount}
       />
     </>

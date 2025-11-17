@@ -36,6 +36,7 @@ export default function TransactionFooter({
   walletAccount,
   transactionIndex,
   rentCollectorAddress,
+  staleTransactionIndex,
 }: {
   status: Status;
   threshold: number;
@@ -45,6 +46,7 @@ export default function TransactionFooter({
   vaultAddress: Address;
   transactionIndex: number;
   onCloseDialog: () => void;
+  staleTransactionIndex: number;
   rentCollectorAddress: Address;
   walletAccount: UiWalletAccount;
 }) {
@@ -72,23 +74,106 @@ export default function TransactionFooter({
     "solana:mainnet",
   );
 
+  // Check if transaction is stale
+  const isStaleTransaction = useMemo(() => {
+    if (!staleTransactionIndex) {
+      return false;
+    }
+
+    return transactionIndex <= staleTransactionIndex;
+  }, [staleTransactionIndex, transactionIndex]);
+
+  // Calculate cutoff for rejections (members.length - threshold + 1)
+  const rejectionCutoff = useMemo(() => {
+    const totalMembers = multisigStorage?.account?.members?.length || 0;
+    return totalMembers - threshold + 1;
+  }, [multisigStorage?.account?.members?.length, threshold]);
+
   const isCloudKey = hasCloudPermission(
     multisigStorage?.account?.members || [],
     address(walletAddress),
   );
-  const isExecuteDisabled = !isCloudKey || status !== "Approved";
-  const isRejectDisabled = useMemo(
-    () => rejected.some((a) => a === walletAddress),
-    [rejected, walletAddress],
-  );
-  const isApproveDisabled = useMemo(
+
+  // Permission checks
+  const canVote = useMemo(() => {
+    const member = multisigStorage?.account?.members?.find(
+      (m) => m.key === walletAddress,
+    );
+    return member && (member.permissions.mask & 2) !== 0; // Vote permission
+  }, [multisigStorage?.account?.members, walletAddress]);
+
+  const canExecute = useMemo(() => {
+    const member = multisigStorage?.account?.members?.find(
+      (m) => m.key === walletAddress,
+    );
+    return member && (member.permissions.mask & 4) !== 0; // Execute permission
+  }, [multisigStorage?.account?.members, walletAddress]);
+
+  // Voting state checks
+  const hasUserApproved = useMemo(
     () => approved.some((a) => a === walletAddress),
     [approved, walletAddress],
   );
-  const isCancelDisabled = useMemo(
+  const hasUserRejected = useMemo(
+    () => rejected.some((a) => a === walletAddress),
+    [rejected, walletAddress],
+  );
+  const hasUserCancelled = useMemo(
     () => cancelled.some((a) => a === walletAddress),
     [cancelled, walletAddress],
   );
+
+  // Action availability
+  const canApprove =
+    canVote && !hasUserApproved && !isStaleTransaction && status === "Active";
+  const canReject =
+    canVote && !hasUserRejected && !isStaleTransaction && status === "Active";
+  const canCancel =
+    canVote &&
+    !hasUserCancelled &&
+    (status === "Approved" || (status === "Active" && isStaleTransaction));
+  const canExecuteTransaction =
+    canExecute && status === "Approved" && !isStaleTransaction;
+
+  // Warning messages
+  const getWarningMessage = () => {
+    if (isStaleTransaction && status === "Active") {
+      if (!canVote) {
+        return "This proposal is stale and cannot be approved or rejected. Connect Recovery Key to cancel it and reclaim rent.";
+      }
+      return "This proposal is stale and cannot be approved or rejected. You can cancel it to reclaim rent.";
+    }
+
+    if (isStaleTransaction && status === "Approved") {
+      if (!canVote) {
+        return "This proposal is stale and cannot be executed. Connect Recovery Key to cancel it and reclaim rent.";
+      }
+      return "This proposal is stale and cannot be executed. You can cancel it to reclaim rent.";
+    }
+
+    if (!canVote && status === "Active") {
+      return "Connect Recovery Key to approve or reject this proposal.";
+    }
+
+    if (!canExecute && status === "Approved" && !isStaleTransaction) {
+      return "Connect Cloud Key to execute this proposal, or use a Recovery Key to cancel it.";
+    }
+
+    if (
+      status === "Approved" &&
+      !isStaleTransaction &&
+      !canVote &&
+      !canExecute
+    ) {
+      return "Connect Cloud Key to execute this proposal, or a key with voting permissions to cancel it.";
+    }
+
+    if (["Cancelled", "Rejected", "Executed"].includes(status)) {
+      return "This proposal is complete. You can reclaim rent from the proposal accounts.";
+    }
+
+    return null;
+  };
 
   const cancelHandler = async () => {
     try {
@@ -128,7 +213,7 @@ export default function TransactionFooter({
       console.error("Error [Approve Proposal]: ", e);
       toast.error("Failed to Approve Proposal");
     } finally {
-      setIsSubmitting({ ...isSubmitting, approve: true });
+      setIsSubmitting({ ...isSubmitting, approve: false });
       onCloseDialog();
     }
   };
@@ -172,7 +257,7 @@ export default function TransactionFooter({
       console.error("Error [Reject Proposal]: ", e);
       toast.error("Failed to Reject Proposal");
     } finally {
-      setIsSubmitting({ ...isSubmitting, reject: true });
+      setIsSubmitting({ ...isSubmitting, reject: false });
       onCloseDialog();
     }
   };
@@ -208,26 +293,17 @@ export default function TransactionFooter({
     );
   }
 
-  const connectMemberKeyLabel = isCloudKey ? "Recovery Key" : "Cloud Key";
-  let warningMessage: string | null = null;
-
-  if (status === "Approved") {
-    if (isExecuteDisabled && !isCloudKey) {
-      warningMessage = "Please connect your Cloud Key to Execute transaction";
-    } else if (isCancelDisabled && cancelled.length < threshold) {
-      warningMessage = `Please connect ${connectMemberKeyLabel} to Cancel`;
-    }
-  } else if (status === "Active") {
-    if (isApproveDisabled && approved.length < threshold) {
-      warningMessage = `Please connect ${connectMemberKeyLabel} to Approve`;
-    } else if (isRejectDisabled && rejected.length < threshold) {
-      warningMessage = `Please connect ${connectMemberKeyLabel} to Reject`;
-    }
-  }
+  const warningMessage = getWarningMessage();
 
   return (
     <>
-      {["Cancelled", "Rejected"].includes(status) && (
+      {warningMessage && (
+        <p className="text-sm text-warning text-center -my-6">
+          {warningMessage}
+        </p>
+      )}
+
+      {["Cancelled", "Rejected", "Executed"].includes(status) && (
         <div className="relative flex flex-row justify-center gap-2">
           <LoadingButton
             onClick={closeAccounts}
@@ -238,62 +314,55 @@ export default function TransactionFooter({
         </div>
       )}
 
-      {(status === "Active" || status === "Approved") && (
+      {status === "Active" && (
         <div className="relative flex flex-row justify-center gap-2">
-          {warningMessage && (
-            <span className="absolute -top-8 text-sm text-warning">
-              {warningMessage}
-            </span>
+          {canReject && (
+            <LoadingButton
+              variant="secondary"
+              onClick={rejectHandler}
+              isSubmitting={isSubmitting.reject}
+            >
+              Reject ({rejected.length}/{rejectionCutoff})
+            </LoadingButton>
           )}
-
-          {status === "Active" && (
-            <>
-              {!isRejectDisabled && (
-                <LoadingButton
-                  variant="secondary"
-                  onClick={rejectHandler}
-                  disabled={isRejectDisabled}
-                  isSubmitting={isSubmitting.reject}
-                >
-                  Reject
-                </LoadingButton>
-              )}
-
-              {!isApproveDisabled && (
-                <LoadingButton
-                  isSubmitting={isSubmitting.approve}
-                  onClick={approveHandler}
-                  disabled={isApproveDisabled}
-                >
-                  Approve
-                </LoadingButton>
-              )}
-            </>
+          {canApprove && (
+            <LoadingButton
+              isSubmitting={isSubmitting.approve}
+              onClick={approveHandler}
+            >
+              Approve ({approved.length}/{threshold})
+            </LoadingButton>
           )}
+          {isStaleTransaction && canCancel && (
+            <LoadingButton
+              variant="secondary"
+              onClick={cancelHandler}
+              isSubmitting={isSubmitting.cancel}
+            >
+              Cancel (Stale)
+            </LoadingButton>
+          )}
+        </div>
+      )}
 
-          {status === "Approved" && (
-            <>
-              {!isCancelDisabled && (
-                <LoadingButton
-                  variant="secondary"
-                  onClick={cancelHandler}
-                  disabled={isCancelDisabled}
-                  isSubmitting={isSubmitting.cancel}
-                >
-                  Cancel
-                </LoadingButton>
-              )}
-
-              {!isExecuteDisabled && (
-                <LoadingButton
-                  isSubmitting={isSubmitting.execute}
-                  onClick={executeHandler}
-                  disabled={isExecuteDisabled}
-                >
-                  Execute
-                </LoadingButton>
-              )}
-            </>
+      {status === "Approved" && (
+        <div className="relative flex flex-row justify-center gap-2">
+          {canCancel && (
+            <LoadingButton
+              variant="secondary"
+              onClick={cancelHandler}
+              isSubmitting={isSubmitting.cancel}
+            >
+              Cancel ({cancelled.length}/{threshold})
+            </LoadingButton>
+          )}
+          {canExecuteTransaction && (
+            <LoadingButton
+              isSubmitting={isSubmitting.execute}
+              onClick={executeHandler}
+            >
+              Execute
+            </LoadingButton>
           )}
         </div>
       )}

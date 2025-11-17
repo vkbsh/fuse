@@ -64,6 +64,7 @@ function WithAccount({
                     ...data,
                     threshold: multisigAccount?.threshold,
                     rentCollector: multisigAccount?.rentCollector,
+                    staleTransactionIndex: Number(staleTransactionIndex),
                   })
                 }
               >
