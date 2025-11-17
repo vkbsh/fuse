@@ -298,7 +298,7 @@ export default function TransactionFooter({
   return (
     <>
       {warningMessage && (
-        <p className="text-sm text-warning text-center -my-6">
+        <p className="text-sm text-warning text-center -my-4">
           {warningMessage}
         </p>
       )}
