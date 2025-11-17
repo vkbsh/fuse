@@ -74,7 +74,6 @@ export default function TransactionFooter({
     "solana:mainnet",
   );
 
-  // Check if transaction is stale
   const isStaleTransaction = useMemo(() => {
     if (!staleTransactionIndex) {
       return false;
@@ -83,7 +82,6 @@ export default function TransactionFooter({
     return transactionIndex <= staleTransactionIndex;
   }, [staleTransactionIndex, transactionIndex]);
 
-  // Calculate cutoff for rejections (members.length - threshold + 1)
   const rejectionCutoff = useMemo(() => {
     const totalMembers = multisigStorage?.account?.members?.length || 0;
     return totalMembers - threshold + 1;
@@ -94,22 +92,20 @@ export default function TransactionFooter({
     address(walletAddress),
   );
 
-  // Permission checks
   const canVote = useMemo(() => {
     const member = multisigStorage?.account?.members?.find(
       (m) => m.key === walletAddress,
     );
-    return member && (member.permissions.mask & 2) !== 0; // Vote permission
+    return member && (member.permissions.mask & 2) !== 0;
   }, [multisigStorage?.account?.members, walletAddress]);
 
   const canExecute = useMemo(() => {
     const member = multisigStorage?.account?.members?.find(
       (m) => m.key === walletAddress,
     );
-    return member && (member.permissions.mask & 4) !== 0; // Execute permission
+    return member && (member.permissions.mask & 4) !== 0;
   }, [multisigStorage?.account?.members, walletAddress]);
 
-  // Voting state checks
   const hasUserApproved = useMemo(
     () => approved.some((a) => a === walletAddress),
     [approved, walletAddress],
@@ -123,7 +119,6 @@ export default function TransactionFooter({
     [cancelled, walletAddress],
   );
 
-  // Action availability
   const canApprove =
     canVote && !hasUserApproved && !isStaleTransaction && status === "Active";
   const canReject =
@@ -135,7 +130,6 @@ export default function TransactionFooter({
   const canExecuteTransaction =
     canExecute && status === "Approved" && !isStaleTransaction;
 
-  // Warning messages
   const getWarningMessage = () => {
     if (isStaleTransaction && status === "Active") {
       if (!canVote) {

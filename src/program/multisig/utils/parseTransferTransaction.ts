@@ -153,7 +153,7 @@ export async function parseVaultTransactionMessage(
   const { accountKeys = [], instructions = [] } = message || {};
 
   if (!instructions.length) {
-    console.log("No instructions found");
+    console.error("No instructions found");
 
     return null;
   }
@@ -256,8 +256,6 @@ export async function parseVaultTransactionMessage(
       ? parseDriftWithdrawInstruction(driftWithdrawIx)
       : {};
 
-    console.log("Drift parsed accounts: ", accounts);
-
     const toAccount = accounts?.authority?.address;
     const fromAccount = accounts?.authority?.address;
 
@@ -282,8 +280,6 @@ export async function parseVaultTransactionMessage(
     const { data, accounts } = kaminoWithdrawIx
       ? parseKaminoWithdrawInstruction(kaminoWithdrawIx)
       : {};
-
-    console.log("Kamino parsed: ", { data, accounts });
 
     const toAccount = accounts?.user?.address;
     const fromAccount = accounts?.user?.address;

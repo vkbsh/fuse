@@ -28,6 +28,7 @@ export async function fetchKaminoBalance(
         kaminoVaultUSDCAddress = vAddress;
         const exchangeRate = (await vault.getExchangeRate()).toNumber();
         const totalUSDCShares = shares.totalShares.toNumber();
+
         balanceUSDC += totalUSDCShares * exchangeRate;
         break;
       }

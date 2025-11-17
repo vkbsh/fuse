@@ -7,9 +7,9 @@ import {
   type InstructionWithAccounts,
   address,
 } from "gill";
-import { KVAULT_PROGRAM_ID_MAINNET as KAMINO_PROGRAM_ID } from "~/program/kamino/address";
 
 import { getWithdrawInstructionDataDecoder } from "~/program/kamino/codec";
+import { KVAULT_PROGRAM_ID_MAINNET as KAMINO_PROGRAM_ID } from "~/program/kamino/address";
 
 const USDC_MINT = address("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
 
@@ -24,7 +24,6 @@ type ParsedWithdrawInstruction<
 > = {
   programAddress: Address<TProgram>;
   accounts: {
-    // WithdrawFromAvailable accounts (first 13)
     user: TAccountMetas[0];
     vaultState: TAccountMetas[1];
     tokenVault: TAccountMetas[2];
@@ -38,8 +37,6 @@ type ParsedWithdrawInstruction<
     klendProgram: TAccountMetas[10];
     eventAuthority: TAccountMetas[11];
     program: TAccountMetas[12];
-
-    // WithdrawFromInvested accounts (next 8)
     vaultStateReserve: TAccountMetas[13];
     reserve: TAccountMetas[14];
     ctokenVault: TAccountMetas[15];
