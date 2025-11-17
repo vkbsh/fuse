@@ -37,9 +37,10 @@ export default function Transaction({
     statusColor = "var(--color-destructive)";
   }
 
-  const isDrift = transaction.type === "earn" && transaction.name === "Drift";
-  const isKamino = transaction.type === "earn" && transaction.name === "Kamino";
-  const isTransferLabel = transaction.type === "transfer";
+  const isDrift = transaction?.type === "earn" && transaction?.name === "Drift";
+  const isKamino =
+    transaction?.type === "earn" && transaction?.name === "Kamino";
+  const isTransferLabel = transaction?.type === "transfer";
   const label = isDrift
     ? "Drift"
     : isKamino
@@ -49,12 +50,12 @@ export default function Transaction({
         : "Unknown";
 
   const transactionAmount =
-    transaction.type === "transfer"
+    transaction?.type === "transfer"
       ? roundToken(Number(amount))
       : "Full Amount";
 
   const amountComponent =
-    transaction.type === "transfer" ? (
+    transaction?.type === "transfer" ? (
       <div className="flex flex-row gap-1">
         <span className="truncate max-w-[60px]">{transactionAmount}</span>
         <span className="uppercase text-placeholder">
@@ -66,7 +67,7 @@ export default function Transaction({
     );
 
   const iconComponent =
-    transaction.type === "transfer" ? (
+    transaction?.type === "transfer" ? (
       <span className="relative w-[42px] h-[42px] rounded-2xl bg-[rgb(179,179,179)]/30 flex shrink-0 items-center justify-center">
         <ArrowUpIcon size={12} />
         <span className="absolute -top-1 -right-1 rounded-full">
@@ -82,7 +83,7 @@ export default function Transaction({
         <img
           className="w-[42px] h-[42px] rounded-2xl"
           src={
-            transaction.name === "Drift"
+            transaction?.name === "Drift"
               ? "/drift-logo.png"
               : "/kamino-logo.jpg"
           }
