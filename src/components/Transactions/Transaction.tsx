@@ -24,7 +24,7 @@ export default function Transaction({
   timestamp: number;
   message: ParsedVaultTransactionMessageWithCreator & { mint: Token };
 }) {
-  const { amount, toAccount, mint } = message || {};
+  const { amount, toAccount, mint, transaction } = message || {};
   const { icon, name, symbol } = mint || {};
 
   let statusColor = "var(--color-default)";
@@ -37,32 +37,76 @@ export default function Transaction({
     statusColor = "var(--color-destructive)";
   }
 
+  const isDrift = transaction.type === "earn" && transaction.name === "Drift";
+  const isKamino = transaction.type === "earn" && transaction.name === "Kamino";
+  const isTransferLabel = transaction.type === "transfer";
+  const label = isDrift
+    ? "Drift"
+    : isKamino
+      ? "Kamino"
+      : isTransferLabel
+        ? "Send"
+        : "Unknown";
+
+  const transactionAmount =
+    transaction.type === "transfer"
+      ? roundToken(Number(amount))
+      : "Full Amount";
+
+  const amountComponent =
+    transaction.type === "transfer" ? (
+      <div className="flex flex-row gap-1">
+        <span className="truncate max-w-[60px]">{transactionAmount}</span>
+        <span className="uppercase text-placeholder">
+          {symbol?.toLowerCase()}
+        </span>
+      </div>
+    ) : (
+      <span className="text-placeholder">Withdraw Full Amount</span>
+    );
+
+  const iconComponent =
+    transaction.type === "transfer" ? (
+      <span className="relative w-[42px] h-[42px] rounded-2xl bg-[rgb(179,179,179)]/30 flex shrink-0 items-center justify-center">
+        <ArrowUpIcon size={12} />
+        <span className="absolute -top-1 -right-1 rounded-full">
+          {icon ? (
+            <img alt={name} src={icon} className="w-4 h-4 rounded-full" />
+          ) : (
+            <span className="flex w-5 h-5 rounded-full bg-placeholder" />
+          )}
+        </span>
+      </span>
+    ) : (
+      <span className="relative w-[42px] h-[42px] rounded-2xl bg-[rgb(179,179,179)]/30 flex shrink-0 items-center justify-center">
+        <img
+          className="w-[42px] h-[42px] rounded-2xl"
+          src={
+            transaction.name === "Drift"
+              ? "/drift-logo.png"
+              : "/kamino-logo.jpg"
+          }
+        />
+        <span className="absolute -top-1 -right-1 rounded-full">
+          {icon ? (
+            <img alt={name} src={icon} className="w-4 h-4 rounded-full" />
+          ) : (
+            <span className="flex w-5 h-5 rounded-full bg-placeholder" />
+          )}
+        </span>
+      </span>
+    );
+
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center justify-between w-full">
         <div className="w-full flex flex-row items-center gap-4">
-          <span className="relative w-[42px] h-[42px] rounded-2xl bg-[rgb(179,179,179)]/30 flex shrink-0 items-center justify-center">
-            <ArrowUpIcon size={12} />
-            <span className="absolute -top-1 -right-1 rounded-full">
-              {icon ? (
-                <img alt={name} src={icon} className="w-4 h-4 rounded-full" />
-              ) : (
-                <span className="flex w-5 h-5 rounded-full bg-placeholder" />
-              )}
-            </span>
-          </span>
+          {iconComponent}
           <div className="w-full flex items-start flex-col">
-            <span className="capitalize text-base font-semibold">Send</span>
+            <span className="capitalize text-base font-semibold">{label}</span>
             <div className="flex flex-row gap-6 w-full">
               <div className="flex flex-row gap-0 text-sm justify-between font-medium w-full">
-                <div className="flex flex-row gap-1">
-                  <span className="truncate max-w-[60px]">
-                    {roundToken(Number(amount))}
-                  </span>
-                  <span className="uppercase text-placeholder">
-                    {symbol?.toLowerCase()}
-                  </span>
-                </div>
+                {amountComponent}
                 <div className="font-medium text-sm flex flex-row gap-1">
                   <span className="text-placeholder">To</span>
                   <span>{abbreviateAddress(toAccount)}</span>

@@ -44,6 +44,10 @@ type ParsedVaultTransactionMessage = {
   toAccount: Address;
   fromAccount: Address;
   mintAddress: Address;
+  transaction: {
+    type: "transfer" | "earn";
+    name?: "Drift" | "Kamino";
+  };
 };
 
 export type ParsedVaultTransactionMessageWithCreator =
@@ -205,6 +209,9 @@ export async function parseVaultTransactionMessage(
       mintAddress: SOL_MINT_ADDRESS,
       fromAccount: accounts.source.address,
       toAccount: accounts.destination.address,
+      transaction: {
+        type: "transfer",
+      },
     };
   }
 
@@ -244,6 +251,9 @@ export async function parseVaultTransactionMessage(
       fromAccount,
       mintAddress,
       amount: data.amount,
+      transaction: {
+        type: "transfer",
+      },
     };
   }
 
@@ -268,6 +278,10 @@ export async function parseVaultTransactionMessage(
         fromAccount,
         amount: data.amount,
         mintAddress: data.mint,
+        transaction: {
+          type: "earn",
+          name: "Drift",
+        },
       };
     }
   }
@@ -293,6 +307,10 @@ export async function parseVaultTransactionMessage(
         fromAccount,
         amount: data.amount,
         mintAddress: data.mint,
+        transaction: {
+          type: "earn",
+          name: "Kamino",
+        },
       };
     }
   }
