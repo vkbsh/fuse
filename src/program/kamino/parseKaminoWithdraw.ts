@@ -70,7 +70,6 @@ export function parseKaminoWithdrawInstruction<
     return accountMeta;
   };
 
-  // should have { discriminator, sharesAmount }
   const data = getWithdrawInstructionDataDecoder().decode(instruction.data);
 
   return {

@@ -283,7 +283,7 @@ export async function parseVaultTransactionMessage(
       ? parseKaminoWithdrawInstruction(kaminoWithdrawIx)
       : {};
 
-    console.log("Kamino parsed accounts: ", accounts);
+    console.log("Kamino parsed: ", { data, accounts });
 
     const toAccount = accounts?.user?.address;
     const fromAccount = accounts?.user?.address;

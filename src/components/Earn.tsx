@@ -44,7 +44,8 @@ export default function Earn({ vaultAddress }: { vaultAddress: Address }) {
       ) : (
         <div className="flex flex-col -mx-3">
           {earnBalance.data.map((coinEarn, i) => {
-            if (!coinEarn) return null;
+            if (!coinEarn || Number(coinEarn?.usdAmount || 0) < 0.002)
+              return null;
 
             return (
               <ListItem
