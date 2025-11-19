@@ -73,14 +73,18 @@ export async function fetchDriftBalance(
       spot.marketIndex,
     ) as SpotPosition;
 
+    if (!spotPosition) {
+      return null;
+    }
+
     const spotMarket = driftClient.getSpotMarketAccount(
       spot.marketIndex,
     ) as SpotMarketAccount;
 
     const tokenAmount = getTokenAmount(
-      spotPosition.scaledBalance,
+      spotPosition?.scaledBalance,
       spotMarket,
-      spotPosition.balanceType,
+      spotPosition?.balanceType,
     );
 
     const balance = convertToNumber(tokenAmount, spotConfig.precision);
@@ -90,9 +94,9 @@ export async function fetchDriftBalance(
     }
 
     return {
+      balance,
       symbol: spot.symbol,
       programId: DRIFT_PROGRAM_ID,
-      balance,
     };
   });
 

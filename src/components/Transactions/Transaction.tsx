@@ -42,9 +42,9 @@ export default function Transaction({
     transaction?.type === "earn" && transaction?.name === "Kamino";
   const isTransferLabel = transaction?.type === "transfer";
   const label = isDrift
-    ? "Drift"
+    ? "Withdraw"
     : isKamino
-      ? "Kamino"
+      ? "Withdraw"
       : isTransferLabel
         ? "Send"
         : "Unknown";
@@ -63,7 +63,7 @@ export default function Transaction({
         </span>
       </div>
     ) : (
-      <span className="text-placeholder">Withdraw Full Amount</span>
+      <span className="text-placeholder">Full Amount</span>
     );
 
   const iconComponent =

@@ -7,7 +7,7 @@ import motionProps from "~/lib/motion";
 import { formatUSD, formatDecimal } from "~/lib/amount";
 import { type EarnCoin } from "~/hooks/resources";
 
-import SelectTokenDropdown from "~/components/SelectTokenDropdown";
+import SelectEarnDropdown from "~/components/SelectEarnDropdown";
 
 import InitiateWithdrawEarnButton from "./InitiateWithdrawEarnButton";
 
@@ -40,10 +40,10 @@ export default function WithdrawEarnForm({
 
   return (
     <div className="relative flex flex-col gap-4">
-      <SelectTokenDropdown
-        token={earnCoin}
-        tokens={tokens}
-        setToken={setToken}
+      <SelectEarnDropdown
+        earnCoins={tokens}
+        setEarnCoin={setToken}
+        selectedEarnCoin={earnCoin}
       />
 
       <motion.span

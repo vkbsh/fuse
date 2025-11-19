@@ -43,13 +43,13 @@ export default function CoinsEarnTabs({
         {activeTab === "coins" ? (
           <motion.div
             key="coins"
-            className="flex flex-1 overflow-y-scroll scroll-smooth scrollbar-hidden"
-            {...motionProps.global.fadeIn}
+            className="flex flex-1 overflow-y-scroll scroll-smooth scrollbar-hidden -mx-3 px-3"
+            {...motionProps.global.tabs}
           >
             <Coins vaultAddress={vaultAddress} />
           </motion.div>
         ) : (
-          <motion.div key="earn" {...motionProps.global.fadeIn}>
+          <motion.div key="earn" {...motionProps.global.tabs}>
             <Earn vaultAddress={vaultAddress} />
           </motion.div>
         )}

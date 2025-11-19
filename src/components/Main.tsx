@@ -39,7 +39,7 @@ export default function Main() {
           variant="outline"
           onClick={onClick}
           disabled={!hasAllPermissions}
-          className="h-[40px] px-4 font-medium"
+          className="h-10 px-4 font-medium"
         >
           <CircleArrowUpIcon />
           <span>Withdraw</span>

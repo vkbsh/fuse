@@ -16,7 +16,7 @@ export const fetchTokenMeta = async (
 ): Promise<TokenMeta | null> => {
   const res = await fetch(`${tokenMetaUrl}?query=${mint}`);
   const json = await res.json();
-  const token = json?.[0];
+  const token = json?.[0] || null;
 
   return token;
 };

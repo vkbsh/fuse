@@ -30,7 +30,7 @@ export default function TotalBalance({
         Total Balance
       </span>
       <div className="flex flex-row text-[45px] h-16 font-bold">
-        <AnimatePresence initial={false}>
+        <AnimatePresence mode="wait">
           {earnBalance.isLoading ? (
             <TotalBalanceSkeleton />
           ) : (

@@ -194,7 +194,7 @@ export async function parseVaultTransactionMessage(
     !isDriftWithdrawIx &&
     !isKaminoWithdrawIx
   ) {
-    console.error("Invalid instruction");
+    console.error("Invalid instruction: ", instructionsFromLegacyInstructions);
 
     return null;
   }

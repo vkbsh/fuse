@@ -1,16 +1,17 @@
 import { motion } from "motion/react";
 
 import motionProps from "~/lib/motion";
-import Skeleton from "~/components/ui/skeleton";
 
 export default function TotalBalanceSkeleton() {
   return (
-    <motion.div
-      className="flex flex-row gap-1 h-16 pt-4"
-      {...motionProps.global.fadeIn}
+    <motion.span
+      className="text-[45px] h-16 font-bold"
+      initial={{ opacity: 0, filter: "blur(6px)" }}
+      exit={{ opacity: 0, filter: "blur(6px)" }}
+      animate={{ opacity: [0.5, 0.8], filter: "blur(6px)" }}
+      transition={{ duration: 1, repeat: Infinity, repeatType: "reverse" }}
     >
-      <Skeleton className="w-6 h-[36px] flex shrink-0" />
-      <Skeleton className="w-36 h-[36px] flex shrink-0" />
-    </motion.div>
+      $0.00
+    </motion.span>
   );
 }
