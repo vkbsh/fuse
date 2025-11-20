@@ -8,10 +8,12 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function getIconUrl(url: string): string | null {
+  if (!url) return null;
+
   try {
     return new URL(url)?.toString();
   } catch (e) {
-    console.error(e);
+    console.error(e, { url });
     return null;
   }
 }

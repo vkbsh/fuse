@@ -1,8 +1,8 @@
 import { useState } from "react";
 
 import { roundToken } from "~/lib/amount";
-import { getIconUrl } from "~/lib/utils";
 import { abbreviateAddress } from "~/lib/address";
+import { getIconUrl, getEarnMeta } from "~/lib/utils";
 import { type EarnCoin } from "~/hooks/resources";
 
 import {
@@ -11,16 +11,16 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
 } from "~/components/ui/dropdown-menu";
-import SelectedToken from "./SelectedEarnCoin";
+import SelectedEarnCoin from "./SelectedEarnCoin";
 
 export default function SelectTokenDropdown({
-  selectedEarnCoin,
   earnCoins,
   setEarnCoin,
+  selectedEarnCoin,
 }: {
   earnCoins: EarnCoin[];
-  selectedEarnCoin: EarnCoin | null | undefined;
   setEarnCoin: (earnCoin: EarnCoin) => void;
+  selectedEarnCoin: EarnCoin | null | undefined;
 }) {
   const [isOpen, onOpenChange] = useState(false);
   const selected = selectedEarnCoin || earnCoins?.[0];
@@ -28,7 +28,7 @@ export default function SelectTokenDropdown({
   return (
     <DropdownMenu open={isOpen} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger>
-        <SelectedToken earnCoin={selected} />
+        <SelectedEarnCoin earnCoin={selected} />
       </DropdownMenuTrigger>
       {earnCoins?.length ? (
         <DropdownMenuContent
@@ -39,9 +39,9 @@ export default function SelectTokenDropdown({
           {earnCoins.map((item) => {
             if (!item) return null;
 
-            const amount = roundToken(item.usdAmount);
-            const name = item.name === "Wrapped SOL" ? "Solana" : item.name;
             const iconUrl = getIconUrl(item.icon);
+            const amount = roundToken(item.usdAmount);
+            const meta = getEarnMeta(item.programId || "");
 
             return (
               <DropdownMenuItem key={item.id + amount}>
@@ -61,9 +61,7 @@ export default function SelectTokenDropdown({
                       ) : (
                         <span className="w-7 h-7 rounded-full bg-placeholder" />
                       )}
-                      <span className="max-w-18 truncate">
-                        {name || abbreviateAddress(item.mint)}
-                      </span>
+                      <span className="max-w-18 truncate">{meta.name}</span>
                     </div>
                     <div className="flex flex-row gap-1">
                       <div className="uppercase font-medium max-w-16 truncate">

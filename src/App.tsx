@@ -25,7 +25,7 @@ export default function App() {
           </motion.div>
         ) : (
           <motion.div
-            className="h-screen w-full max-w-[1280px] m-auto p-6 flex flex-col gap-10 justify-around"
+            className="h-screen w-full max-w-7xl m-auto p-6 flex flex-col gap-10 justify-around"
             {...motionProps.global.fadeIn}
           >
             <Dashboard />

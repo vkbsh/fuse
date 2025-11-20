@@ -1,14 +1,13 @@
 import { motion, AnimatePresence } from "motion/react";
 
-import Input from "~/components/ui/input";
-
 import motionProps from "~/lib/motion";
-import { getIconUrl } from "~/lib/utils";
-import { abbreviateAddress } from "~/lib/address";
-
+import { getIconUrl, getEarnMeta } from "~/lib/utils";
 import { type EarnCoin } from "~/hooks/resources";
 
+import Input from "~/components/ui/input";
+
 export default function SelectedToken({ earnCoin }: { earnCoin: EarnCoin }) {
+  const meta = getEarnMeta(earnCoin?.programId || "");
   const iconUrl = earnCoin?.icon ? getIconUrl(earnCoin.icon) : null;
 
   return (
@@ -28,14 +27,7 @@ export default function SelectedToken({ earnCoin }: { earnCoin: EarnCoin }) {
           )}
         </AnimatePresence>
       </div>
-      <Input
-        disabled
-        tabIndex={-2}
-        className="indent-12"
-        value={
-          earnCoin?.name || (earnCoin?.id ? abbreviateAddress(earnCoin.id) : "")
-        }
-      />
+      <Input disabled tabIndex={-2} className="indent-12" value={meta.name} />
     </div>
   );
 }

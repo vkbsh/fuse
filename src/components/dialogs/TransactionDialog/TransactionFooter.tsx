@@ -321,8 +321,8 @@ export default function TransactionFooter({
           )}
           {canApprove && (
             <LoadingButton
-              isSubmitting={isSubmitting.approve}
               onClick={approveHandler}
+              isSubmitting={isSubmitting.approve}
             >
               Approve ({approved.length}/{threshold})
             </LoadingButton>
@@ -352,8 +352,8 @@ export default function TransactionFooter({
           )}
           {canExecuteTransaction && (
             <LoadingButton
-              isSubmitting={isSubmitting.execute}
               onClick={executeHandler}
+              isSubmitting={isSubmitting.execute}
             >
               Execute
             </LoadingButton>
