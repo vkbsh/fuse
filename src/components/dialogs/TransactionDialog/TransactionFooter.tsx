@@ -297,7 +297,7 @@ export default function TransactionFooter({
         </p>
       )}
 
-      {["Cancelled", "Rejected", "Executed"].includes(status) && (
+      {["Cancelled", "Rejected"].includes(status) && (
         <div className="relative flex flex-row justify-center gap-2">
           <LoadingButton
             onClick={closeAccounts}

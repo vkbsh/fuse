@@ -1,7 +1,6 @@
 import { useState } from "react";
 
 import { roundToken } from "~/lib/amount";
-import { abbreviateAddress } from "~/lib/address";
 import { getIconUrl, getEarnMeta } from "~/lib/utils";
 import { type EarnCoin } from "~/hooks/resources";
 
