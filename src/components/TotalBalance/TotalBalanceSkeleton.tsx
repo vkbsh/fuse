@@ -8,7 +8,7 @@ export default function TotalBalanceSkeleton() {
       className="text-[52px] font-bold -mt-2"
       {...motionProps.global.totalAmountSkeleton}
     >
-      $XXXX
+      ------
     </motion.span>
   );
 }
