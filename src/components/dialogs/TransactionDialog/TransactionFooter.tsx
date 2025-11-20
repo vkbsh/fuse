@@ -8,7 +8,6 @@ import { useWalletAccountTransactionSigner } from "@solana/react";
 import {
   sendAndConfirmAccountsCloseMessage,
   sendAndConfirmProposalCancelMessage,
-  sendAndConfirmProposalRejectMessage,
   sendAndConfirmProposalApproveMessage,
   sendAndConfirmExecuteAndCloseAccountsMessage,
 } from "~/program/multisig/message";
@@ -28,7 +27,6 @@ import { type Status } from "~/components/dialogs/TransactionDialog/TransactionP
 export default function TransactionFooter({
   status,
   approved,
-  rejected,
   cancelled,
   threshold,
   onCloseDialog,
@@ -41,7 +39,6 @@ export default function TransactionFooter({
   status: Status;
   threshold: number;
   approved: Address[];
-  rejected: Address[];
   cancelled: Address[];
   vaultAddress: Address;
   transactionIndex: number;
@@ -51,7 +48,6 @@ export default function TransactionFooter({
   walletAccount: UiWalletAccount;
 }) {
   const [isSubmitting, setIsSubmitting] = useState({
-    reject: false,
     cancel: false,
     approve: false,
     execute: false,
@@ -82,11 +78,6 @@ export default function TransactionFooter({
     return transactionIndex <= staleTransactionIndex;
   }, [staleTransactionIndex, transactionIndex]);
 
-  const rejectionCutoff = useMemo(() => {
-    const totalMembers = multisigStorage?.account?.members?.length || 0;
-    return totalMembers - threshold + 1;
-  }, [multisigStorage?.account?.members?.length, threshold]);
-
   const isCloudKey = hasCloudPermission(
     multisigStorage?.account?.members || [],
     address(walletAddress),
@@ -110,10 +101,6 @@ export default function TransactionFooter({
     () => approved.some((a) => a === walletAddress),
     [approved, walletAddress],
   );
-  const hasUserRejected = useMemo(
-    () => rejected.some((a) => a === walletAddress),
-    [rejected, walletAddress],
-  );
   const hasUserCancelled = useMemo(
     () => cancelled.some((a) => a === walletAddress),
     [cancelled, walletAddress],
@@ -121,8 +108,6 @@ export default function TransactionFooter({
 
   const canApprove =
     canVote && !hasUserApproved && !isStaleTransaction && status === "Active";
-  const canReject =
-    canVote && !hasUserRejected && !isStaleTransaction && status === "Active";
   const canCancel =
     canVote &&
     !hasUserCancelled &&
@@ -133,9 +118,9 @@ export default function TransactionFooter({
   const getWarningMessage = () => {
     if (isStaleTransaction && status === "Active") {
       if (!canVote) {
-        return "This proposal is stale and cannot be approved or rejected. Connect Recovery Key to cancel it and reclaim rent.";
+        return "This proposal is stale and cannot be approved. Connect Recovery Key to cancel it and reclaim rent.";
       }
-      return "This proposal is stale and cannot be approved or rejected. You can cancel it to reclaim rent.";
+      return "This proposal is stale and cannot be approved. You can cancel it to reclaim rent.";
     }
 
     if (isStaleTransaction && status === "Approved") {
@@ -146,7 +131,7 @@ export default function TransactionFooter({
     }
 
     if (!canVote && status === "Active") {
-      return "Connect Recovery Key to approve or reject this proposal.";
+      return "Connect Recovery Key to approve this proposal.";
     }
 
     if (!canExecute && status === "Approved" && !isStaleTransaction) {
@@ -162,7 +147,7 @@ export default function TransactionFooter({
       return "Connect Cloud Key to execute this proposal, or a key with voting permissions to cancel it.";
     }
 
-    if (["Cancelled", "Rejected", "Executed"].includes(status)) {
+    if (["Cancelled", "Executed"].includes(status)) {
       return "This proposal is complete. You can reclaim rent from the proposal accounts.";
     }
 
@@ -235,27 +220,6 @@ export default function TransactionFooter({
     }
   };
 
-  const rejectHandler = async () => {
-    try {
-      setIsSubmitting({ ...isSubmitting, reject: true });
-      const signature = await sendAndConfirmProposalRejectMessage({
-        feePayer,
-        memberAddress: address(walletAddress),
-        multisigAddress: address(multisigAddress),
-        transactionIndex: BigInt(transactionIndex),
-      });
-
-      console.log("Signature [Reject Proposal]: ", signature);
-      await refetchTransactions();
-    } catch (e) {
-      console.error("Error [Reject Proposal]: ", e);
-      toast.error("Failed to Reject Proposal");
-    } finally {
-      setIsSubmitting({ ...isSubmitting, reject: false });
-      onCloseDialog();
-    }
-  };
-
   const closeAccounts = async () => {
     try {
       setIsSubmitting({ ...isSubmitting, closeAccounts: true });
@@ -297,7 +261,7 @@ export default function TransactionFooter({
         </p>
       )}
 
-      {["Cancelled", "Rejected"].includes(status) && (
+      {["Cancelled"].includes(status) && (
         <div className="relative flex flex-row justify-center gap-2">
           <LoadingButton
             onClick={closeAccounts}
@@ -310,15 +274,6 @@ export default function TransactionFooter({
 
       {status === "Active" && (
         <div className="relative flex flex-row justify-center gap-2">
-          {canReject && (
-            <LoadingButton
-              variant="secondary"
-              onClick={rejectHandler}
-              isSubmitting={isSubmitting.reject}
-            >
-              Reject ({rejected.length}/{rejectionCutoff})
-            </LoadingButton>
-          )}
           {canApprove && (
             <LoadingButton
               onClick={approveHandler}
