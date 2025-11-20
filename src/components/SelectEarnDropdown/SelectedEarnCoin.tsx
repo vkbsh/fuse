@@ -11,23 +11,27 @@ export default function SelectedToken({ earnCoin }: { earnCoin: EarnCoin }) {
   const iconUrl = earnCoin?.icon ? getIconUrl(earnCoin.icon) : null;
 
   return (
-    <div className="relative flex flex-row gap-2 items-center w-full">
-      <div className="absolute left-3 top-0 bottom-0 my-auto flex items-center">
-        <AnimatePresence initial={false} mode="wait">
-          {iconUrl ? (
-            <motion.img
-              key={iconUrl}
-              src={iconUrl}
-              alt={earnCoin?.name}
-              className="w-7 h-7 rounded-full"
-              {...motionProps.global.selectTokenDropdown}
-            />
-          ) : (
-            <span className="w-7 h-7 shrink-0 rounded-full bg-placeholder" />
-          )}
-        </AnimatePresence>
-      </div>
-      <Input disabled tabIndex={-2} className="indent-12" value={meta.name} />
+    <div className="relative">
+      <AnimatePresence initial={false} mode="wait">
+        <motion.img
+          src={meta.iconUrl}
+          alt={meta.name}
+          className="absolute top-0 bottom-0 m-auto left-4 w-7 h-7 rounded-full border border-border"
+          {...motionProps.global.fadeIn}
+        />
+        {iconUrl ? (
+          <motion.img
+            key={iconUrl}
+            src={iconUrl}
+            alt={earnCoin?.name}
+            className="absolute top-0 bottom-0 m-auto left-9 w-7 h-7 rounded-full border border-border"
+            {...motionProps.global.fadeIn}
+          />
+        ) : (
+          <span className="absolute top-0 bottom-0 m-auto left-9 w-7 h-7 shrink-0 rounded-full bg-placeholder" />
+        )}
+      </AnimatePresence>
+      <Input disabled tabIndex={-2} className="indent-18" value={meta.name} />
     </div>
   );
 }

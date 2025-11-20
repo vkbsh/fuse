@@ -73,6 +73,12 @@ export default {
       exit: { rotateY: -90, filter: "blur(4px)" },
       transition: { duration: 0.15 },
     },
+    totalAmountSkeleton: {
+      initial: { opacity: 0, filter: "blur(7px)" },
+      animate: { opacity: [0.5, 0.7], filter: "blur(7px)" },
+      exit: { opacity: 0, filter: "blur(7px)" },
+      transition: { duration: 1, repeat: Infinity, repeatType: "reverse" },
+    },
     tabs: {
       initial: { opacity: 0 },
       animate: { opacity: 1 },

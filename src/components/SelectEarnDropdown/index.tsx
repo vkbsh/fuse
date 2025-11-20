@@ -51,16 +51,26 @@ export default function SelectTokenDropdown({
                 >
                   <div className="flex flex-row gap-2 items-center justify-between w-full">
                     <div className="flex flex-row items-center gap-2.5">
-                      {iconUrl ? (
+                      <div className="relative w-10">
                         <img
-                          alt={item.name}
-                          src={iconUrl}
-                          className="w-7 h-7 rounded-full"
+                          src={meta.iconUrl}
+                          alt={meta.name}
+                          className="absolute top-0 bottom-0 m-auto left-0 w-7 h-7 rounded-full border border-border"
                         />
-                      ) : (
-                        <span className="w-7 h-7 rounded-full bg-placeholder" />
-                      )}
-                      <span className="max-w-18 truncate">{meta.name}</span>
+                        {iconUrl ? (
+                          <img
+                            key={iconUrl}
+                            src={iconUrl}
+                            alt={item?.name}
+                            className="absolute top-0 bottom-0 m-auto left-5 w-7 h-7 rounded-full border border-border"
+                          />
+                        ) : (
+                          <span className="absolute top-0 bottom-0 m-auto left-5 w-7 h-7 shrink-0 rounded-full bg-placeholder" />
+                        )}
+                      </div>
+                      <span className="ml-1.5 max-w-18 truncate">
+                        {meta.name}
+                      </span>
                     </div>
                     <div className="flex flex-row gap-1">
                       <div className="uppercase font-medium max-w-16 truncate">
