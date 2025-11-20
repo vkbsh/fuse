@@ -79,9 +79,9 @@ export default function Transaction({
         </span>
       </span>
     ) : (
-      <span className="relative w-[42px] h-[42px] rounded-2xl bg-[rgb(179,179,179)]/30 flex shrink-0 items-center justify-center">
+      <span className="relative w-[42px] h-[42px] rounded-full bg-[rgb(179,179,179)]/30 flex shrink-0 items-center justify-center">
         <img
-          className="w-[42px] h-[42px] rounded-2xl"
+          className="w-[42px] h-[42px] rounded-full"
           src={
             transaction?.name === "Drift"
               ? "/drift-logo.png"
