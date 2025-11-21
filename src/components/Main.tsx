@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { type Address } from "gill";
+import { type Address, address } from "gill";
 
 import Button from "~/components/ui/button";
 import CoinsEarnTabs from "./ConinsEarnTabs";
@@ -9,12 +9,15 @@ import { CircleArrowUpIcon } from "~/components/ui/icons/CircleArrowUp";
 
 import { useDialogStore } from "~/state/dialog";
 import { useWalletStore } from "~/state/wallet";
+import { useMemberBalance } from "~/hooks/resources";
 import { hasCloudPermission } from "~/program/multisig/utils/member";
 
 export default function Main() {
   const { onOpenChange } = useDialogStore("withdraw");
   const walletStorage = useWalletStore((s) => s.walletStorage);
   const multisigStorage = useWalletStore((s) => s.multisigStorage);
+
+  useMemberBalance(address(walletStorage?.address || ""));
 
   const multisigAddress = multisigStorage?.address as Address;
   const vaultAddress = multisigStorage?.defaultVault as Address;

@@ -7,9 +7,10 @@ import { useWalletAccountTransactionSigner } from "@solana/react";
 
 import {
   sendAndConfirmAccountsCloseMessage,
-  sendAndConfirmProposalCancelMessage,
   sendAndConfirmProposalApproveMessage,
   sendAndConfirmExecuteAndCloseAccountsMessage,
+  sendAndConfirmProposalCancelMessage,
+  sendAndConfirmProposalCancelAndCloseAccountsMessage,
 } from "~/program/multisig/message";
 import { hasCloudPermission } from "~/program/multisig/utils/member";
 
@@ -83,20 +84,6 @@ export default function TransactionFooter({
     address(walletAddress),
   );
 
-  const canVote = useMemo(() => {
-    const member = multisigStorage?.account?.members?.find(
-      (m) => m.key === walletAddress,
-    );
-    return member && (member.permissions.mask & 2) !== 0;
-  }, [multisigStorage?.account?.members, walletAddress]);
-
-  const canExecute = useMemo(() => {
-    const member = multisigStorage?.account?.members?.find(
-      (m) => m.key === walletAddress,
-    );
-    return member && (member.permissions.mask & 4) !== 0;
-  }, [multisigStorage?.account?.members, walletAddress]);
-
   const hasUserApproved = useMemo(
     () => approved.some((a) => a === walletAddress),
     [approved, walletAddress],
@@ -107,64 +94,37 @@ export default function TransactionFooter({
   );
 
   const canApprove =
-    canVote && !hasUserApproved && !isStaleTransaction && status === "Active";
+    !hasUserApproved && !isStaleTransaction && status === "Active";
   const canCancel =
-    canVote &&
     !hasUserCancelled &&
     (status === "Approved" || (status === "Active" && isStaleTransaction));
   const canExecuteTransaction =
-    canExecute && status === "Approved" && !isStaleTransaction;
-
-  const getWarningMessage = () => {
-    if (isStaleTransaction && status === "Active") {
-      if (!canVote) {
-        return "This proposal is stale and cannot be approved. Connect Recovery Key to cancel it and reclaim rent.";
-      }
-      return "This proposal is stale and cannot be approved. You can cancel it to reclaim rent.";
-    }
-
-    if (isStaleTransaction && status === "Approved") {
-      if (!canVote) {
-        return "This proposal is stale and cannot be executed. Connect Recovery Key to cancel it and reclaim rent.";
-      }
-      return "This proposal is stale and cannot be executed. You can cancel it to reclaim rent.";
-    }
-
-    if (!canVote && status === "Active") {
-      return "Connect Recovery Key to approve this proposal.";
-    }
-
-    if (!canExecute && status === "Approved" && !isStaleTransaction) {
-      return "Connect Cloud Key to execute this proposal, or use a Recovery Key to cancel it.";
-    }
-
-    if (
-      status === "Approved" &&
-      !isStaleTransaction &&
-      !canVote &&
-      !canExecute
-    ) {
-      return "Connect Cloud Key to execute this proposal, or a key with voting permissions to cancel it.";
-    }
-
-    if (["Cancelled", "Executed"].includes(status)) {
-      return "This proposal is complete. You can reclaim rent from the proposal accounts.";
-    }
-
-    return null;
-  };
+    isCloudKey && status === "Approved" && !isStaleTransaction;
 
   const cancelHandler = async () => {
     try {
       setIsSubmitting({ ...isSubmitting, cancel: true });
-      const signature = await sendAndConfirmProposalCancelMessage({
-        feePayer,
-        memberAddress: address(walletAddress),
-        multisigAddress: address(multisigAddress),
-        transactionIndex: BigInt(transactionIndex),
-      });
 
-      console.log("Signature [Cancel Proposal]: ", signature);
+      if (cancelled.length === 1) {
+        const signature =
+          await sendAndConfirmProposalCancelAndCloseAccountsMessage({
+            feePayer,
+            rentCollectorAddress,
+            memberAddress: address(walletAddress),
+            multisigAddress: address(multisigAddress),
+            transactionIndex: BigInt(transactionIndex),
+          });
+        console.log("Signature [Cancel Proposal, Close Accounts]: ", signature);
+      } else {
+        const signature = await sendAndConfirmProposalCancelMessage({
+          feePayer,
+          memberAddress: address(walletAddress),
+          multisigAddress: address(multisigAddress),
+          transactionIndex: BigInt(transactionIndex),
+        });
+        console.log("Signature [Cancel Proposal]: ", signature);
+      }
+
       await refetchTransactions();
     } catch (e) {
       console.error("Error [Cancel Proposal]: ", e);
@@ -251,72 +211,78 @@ export default function TransactionFooter({
     );
   }
 
-  const warningMessage = getWarningMessage();
+  if (isStaleTransaction || status === "Cancelled") {
+    return (
+      <div className="flex flex-row justify-center gap-2">
+        <LoadingButton
+          onClick={closeAccounts}
+          isSubmitting={isSubmitting.closeAccounts}
+        >
+          Reclaim rent
+        </LoadingButton>
+      </div>
+    );
+  }
 
-  return (
-    <>
-      {warningMessage && (
-        <p className="text-sm text-warning text-center -my-4">
-          {warningMessage}
-        </p>
-      )}
+  if (status === "Active") {
+    return (
+      <div className="relative flex flex-row justify-center gap-2">
+        {!canApprove && (
+          <span className="absolute -top-7.5 text-sm text-warning text-center">
+            Please connect a Recovery Key to Approve transaction
+          </span>
+        )}
+        <LoadingButton
+          disabled={!canApprove}
+          onClick={approveHandler}
+          isSubmitting={isSubmitting.approve}
+        >
+          {`Approve (${approved.length}/${threshold})`}
+        </LoadingButton>
+      </div>
+    );
+  }
 
-      {["Cancelled"].includes(status) && (
-        <div className="relative flex flex-row justify-center gap-2">
-          <LoadingButton
-            onClick={closeAccounts}
-            isSubmitting={isSubmitting.closeAccounts}
-          >
-            Reclaim rent
-          </LoadingButton>
-        </div>
-      )}
+  if (status === "Approved") {
+    let approveWarningMessage = "";
 
-      {status === "Active" && (
-        <div className="relative flex flex-row justify-center gap-2">
-          {canApprove && (
-            <LoadingButton
-              onClick={approveHandler}
-              isSubmitting={isSubmitting.approve}
-            >
-              Approve ({approved.length}/{threshold})
-            </LoadingButton>
-          )}
-          {isStaleTransaction && canCancel && (
-            <LoadingButton
-              variant="secondary"
-              onClick={cancelHandler}
-              isSubmitting={isSubmitting.cancel}
-            >
-              Cancel (Stale)
-            </LoadingButton>
-          )}
-        </div>
-      )}
+    if (!canExecuteTransaction && canCancel) {
+      approveWarningMessage =
+        "Please connect Cloud Key to Execute the transaction";
+    } else if (canExecuteTransaction && !canCancel) {
+      approveWarningMessage =
+        "Please connect Recovery Key to Cancel the transaction";
+    } else if (!canExecuteTransaction && !canCancel) {
+      approveWarningMessage = "Please connect Cloud Key";
+    }
 
-      {status === "Approved" && (
-        <div className="relative flex flex-row justify-center gap-2">
-          {canCancel && (
-            <LoadingButton
-              variant="secondary"
-              onClick={cancelHandler}
-              isSubmitting={isSubmitting.cancel}
-            >
-              Cancel ({cancelled.length}/{threshold})
-            </LoadingButton>
-          )}
-          {canExecuteTransaction && (
-            <LoadingButton
-              onClick={executeHandler}
-              isSubmitting={isSubmitting.execute}
-            >
-              Execute
-            </LoadingButton>
-          )}
-        </div>
-      )}
-    </>
-  );
+    return (
+      <div className="relative flex flex-row justify-center gap-2">
+        {approveWarningMessage && (
+          <span className="absolute -top-7.5 text-sm text-warning text-center">
+            {approveWarningMessage}
+          </span>
+        )}
+        <LoadingButton
+          variant="secondary"
+          disabled={!canCancel}
+          onClick={cancelHandler}
+          isSubmitting={isSubmitting.cancel}
+        >
+          {`Cancel (${cancelled.length}/${threshold})`}
+        </LoadingButton>
+        <LoadingButton
+          onClick={executeHandler}
+          disabled={!canExecuteTransaction}
+          isSubmitting={isSubmitting.execute}
+        >
+          Execute
+        </LoadingButton>
+      </div>
+    );
+  }
+
+  return null;
 }
 
 function LoadingButton({
@@ -326,7 +292,7 @@ function LoadingButton({
   children,
   isSubmitting,
 }: {
-  children: ReactNode;
+  children: string;
   onClick: () => void;
   disabled?: boolean;
   variant?: ButtonVariant;
@@ -343,7 +309,12 @@ function LoadingButton({
           <TextShimmer spread={3}>{children}</TextShimmer>
         </Button>
       ) : (
-        <Button variant={variant} onClick={onClick} disabled={disabled}>
+        <Button
+          variant={variant}
+          onClick={onClick}
+          disabled={disabled}
+          className={disabled ? "pointer-events-none" : ""}
+        >
           {children}
         </Button>
       )}

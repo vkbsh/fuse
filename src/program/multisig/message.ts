@@ -189,6 +189,41 @@ export async function sendAndConfirmProposalApproveMessage({
   });
 }
 
+export async function sendAndConfirmProposalCancelAndCloseAccountsMessage({
+  memo,
+  feePayer,
+  memberAddress,
+  multisigAddress,
+  transactionIndex,
+  rentCollectorAddress,
+}: {
+  memo?: string;
+  memberAddress: Address;
+  multisigAddress: Address;
+  transactionIndex: bigint;
+  feePayer: TransactionSigner;
+  rentCollectorAddress: Address;
+}) {
+  const instructions = [
+    await createProposalCancelInstruction({
+      memo,
+      memberAddress,
+      multisigAddress,
+      transactionIndex,
+    }),
+
+    await createCloseAccountsInstruction({
+      multisigAddress,
+      transactionIndex,
+      rentCollectorAddress,
+    }),
+  ];
+
+  return createAndConfirmMessage({
+    feePayer,
+    instructions,
+  });
+}
 export async function sendAndConfirmProposalCancelMessage({
   memo,
   feePayer,

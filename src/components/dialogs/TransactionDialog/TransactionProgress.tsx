@@ -2,19 +2,13 @@ import { type Address } from "gill";
 import { type ReactNode } from "react";
 import { motion, AnimatePresence } from "motion/react";
 
-import { CircleXIcon } from "~/components/ui/icons/CircleX";
 import { SquareXIcon } from "~/components/ui/icons/SquareX";
 import { SquareDotIcon } from "~/components/ui/icons/SquareDot";
 import { CirclePlusIcon } from "~/components/ui/icons/CirclePlus";
 
 import { abbreviateAddress } from "~/lib/address";
 
-export type Status =
-  | "Active"
-  | "Approved"
-  | "Rejected"
-  | "Executed"
-  | "Cancelled";
+export type Status = "Active" | "Approved" | "Executed" | "Cancelled";
 
 export default function TransactionProgress({
   status,
