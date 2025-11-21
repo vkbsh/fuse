@@ -19,18 +19,15 @@ export type Status =
 export default function TransactionProgress({
   status,
   approved,
-  rejected,
   cancelled,
   initiated,
 }: {
   status: Status;
   initiated: Address;
   approved: Address[];
-  rejected: Address[];
   cancelled: Address[];
 }) {
   const isCancelled = status === "Cancelled";
-  const isRejected = status === "Rejected" || rejected.length === 2;
   const isAllApproved = status === "Approved" || approved.length === 2;
 
   return (
@@ -62,16 +59,6 @@ export default function TransactionProgress({
           active={isCancelled}
           icon={<SquareXIcon size={25} />}
           addresses={cancelled}
-        />
-        {rejected.length > 0 && (
-          <Line key="line-rejected" active={isRejected} />
-        )}
-        <ProgressStatus
-          key="Rejected"
-          label="Rejected"
-          active={isRejected}
-          icon={<CircleXIcon size={25} />}
-          addresses={rejected}
         />
       </AnimatePresence>
     </div>

@@ -20,7 +20,6 @@ export default function ContentTransactionDialog({
     status,
     creator,
     message,
-    rejected,
     approved,
     timestamp,
     cancelled,
@@ -36,14 +35,12 @@ export default function ContentTransactionDialog({
       <Progress
         status={status}
         approved={approved}
-        rejected={rejected}
         initiated={creator}
         cancelled={cancelled}
       />
       <Footer
         status={status}
         approved={approved}
-        rejected={rejected}
         threshold={threshold}
         cancelled={cancelled}
         onCloseDialog={onCloseDialog}
