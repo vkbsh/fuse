@@ -86,19 +86,12 @@ export function useMultisigAccount(multisigAddress: Address) {
   });
 }
 
-export function useTransactions(
-  multisigAddress: Address,
-  staleTransactionIndex: number,
-) {
+export function useTransactions(multisigAddress: Address) {
   const query = useQuery({
-    enabled:
-      !!multisigAddress &&
-      staleTransactionIndex != undefined &&
-      !isNaN(staleTransactionIndex),
+    enabled: !!multisigAddress,
     queryKey: [queryKeys.transaction, multisigAddress],
     staleTime: staleTimeByQueryKey.transaction,
-    queryFn: async () =>
-      getTransactionsByMultisig(multisigAddress, staleTransactionIndex),
+    queryFn: async () => getTransactionsByMultisig(multisigAddress),
   });
 
   return query;
@@ -216,15 +209,8 @@ export const useTokenInfo = (vaultAddress: Address) => {
   };
 };
 
-export function useHydratedTransactions(
-  multisigAddress: Address,
-  staleTransactionIndex: number,
-) {
-  const {
-    data: txs,
-    isLoading,
-    isFetched,
-  } = useTransactions(multisigAddress, staleTransactionIndex);
+export function useHydratedTransactions(multisigAddress: Address) {
+  const { data: txs, isLoading, isFetched } = useTransactions(multisigAddress);
 
   const tokensMeta = useTokensMeta(
     Array.from(

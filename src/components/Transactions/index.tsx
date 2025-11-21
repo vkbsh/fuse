@@ -44,7 +44,7 @@ function WithAccount({
     isLoading,
     isFetched,
     data: transactions,
-  } = useHydratedTransactions(multisigAddress, Number(staleTransactionIndex));
+  } = useHydratedTransactions(multisigAddress);
   const { onOpenChange } = useDialogStore("transaction");
 
   return (

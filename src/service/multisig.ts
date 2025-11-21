@@ -50,7 +50,6 @@ export type VaultTransaction = {
     | "Executing";
   timestamp: number;
   approved: Address[];
-  rejected: Address[];
   cancelled: Address[];
   creator: Address | null;
   transactionIndex: number;
@@ -82,22 +81,14 @@ export async function getMultisigAccount(multisigAddress: Address) {
   }
 }
 
-export async function getTransactionsByMultisig(
-  multisigAddress: Address,
-  staleTransactionIndex: number,
-) {
+export async function getTransactionsByMultisig(multisigAddress: Address) {
   try {
     const transactions =
       await getTransactionsByMultisigAndIndex(multisigAddress);
 
-    const result = (transactions || [])
-      .filter((tx) => {
-        if (!tx) return false;
-        return tx.transactionIndex > staleTransactionIndex;
-      })
-      .sort(
-        (a, b) => Number(b?.transactionIndex) - Number(a?.transactionIndex),
-      );
+    const result = (transactions || []).sort(
+      (a, b) => Number(b?.transactionIndex) - Number(a?.transactionIndex),
+    );
 
     return result;
   } catch (e) {
@@ -236,7 +227,6 @@ async function getTransactionsByMultisigAndIndex(
 
       return {
         approved,
-        rejected,
         cancelled,
         status: status.__kind,
         message: parsedMessage,
